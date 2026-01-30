@@ -6,12 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const KRS_LOGIN_SSO_URL = process.env.KRS_LOGIN_SSO_URL!;
-const KRS_DOMAIN = process.env.KRS_DOMAIN!;
+const KRS_DASHBOARD_URL = process.env.KRS_DASHBOARD_URL!;
 const KRS_GET_SCHEDULES = process.env.KRS_GET_SCHEDULES!;
 const KRS_SUBMIT_SCHEDULES = process.env.KRS_SUBMIT_SCHEDULES!;
 export const envVariable = {
   KRS_LOGIN_SSO_URL,
-  KRS_DOMAIN,
+  KRS_DASHBOARD_URL,
   KRS_GET_SCHEDULES,
   KRS_SUBMIT_SCHEDULES,
 };

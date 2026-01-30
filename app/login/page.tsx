@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
+import { setLocalStorage } from "@/helper/local_storage";
 
 export default function Page() {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -31,9 +32,16 @@ export default function Page() {
         });
         return;
       }
-      router.push("/make-schedule");
+      const data = response.data;
+      console.log("Login successful:", data);
+      if (data?.user) {
+        setLocalStorage("active_user", data.user);
+      }
+      router.push("/schedule");
     } catch (error: any) {
-      toast.error(error?.message || "Terjadi kesalahan saat login");
+      toast.error(error?.message || "Terjadi kesalahan saat login", {
+        richColors: true,
+      });
     } finally {
       setIsLoading(false);
     }

@@ -1,38 +1,30 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { envVariable } from "@/lib/utils";
-import axios from "axios";
 import * as cheerio from "cheerio";
-import https from "https";
 import { getCookieMap, mapToHeaderString } from "@/helper/cookie";
+import axiosScrapClient from "@/helper/axios_client";
 
 export async function POST(req: Request) {
-  const agent = new https.Agent({ rejectUnauthorized: false });
-  const client = axios.create({
-    httpsAgent: agent,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    },
-    validateStatus: (status) => status >= 200 && status < 400,
-    maxRedirects: 0, // KITA HANDLE MANUAL
-  });
-
   try {
     const { username, password } = await req.json();
 
-    const getResponse = await client.get(envVariable.KRS_LOGIN_SSO_URL);
+    // 0. GET Login Page
+    const getResponse = await axiosScrapClient.get(
+      envVariable.KRS_LOGIN_SSO_URL,
+    );
     let cookieMap = getCookieMap(getResponse.headers["set-cookie"]);
     const $ = cheerio.load(getResponse.data);
     const $form = $(`form[action="${envVariable.KRS_LOGIN_SSO_URL}"]`);
     const _token = $form.find('input[name="_token"]').attr("value") || "";
 
+    // 1. POST Login
     const params = new URLSearchParams();
     params.append("_token", _token);
     params.append("username", username);
     params.append("password", password);
 
-    const postResponse = await client.post(
+    const postResponse = await axiosScrapClient.post(
       envVariable.KRS_LOGIN_SSO_URL,
       params,
       {
@@ -45,7 +37,7 @@ export async function POST(req: Request) {
       },
     );
 
-    // Credentials check - if redirect login again
+    // Validate credentials
     if (
       !postResponse.headers["location"] ||
       postResponse.headers["location"].includes("login")
@@ -56,7 +48,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // First redirect
+    // 2. First reidrect
     const firstRedirectUrl = postResponse.headers["location"];
     if (!firstRedirectUrl) {
       return NextResponse.json(
@@ -64,32 +56,56 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+
+    // Cookie update from POST login result
     cookieMap = getCookieMap(postResponse.headers["set-cookie"], cookieMap);
 
-    // Trigger second redirect
-    const redirectResponse = await client.get(firstRedirectUrl, {
+    // get Redirect 1
+    const redirectResponse = await axiosScrapClient.get(firstRedirectUrl, {
       headers: {
         Cookie: mapToHeaderString(cookieMap),
         Referer: envVariable.KRS_LOGIN_SSO_URL,
       },
     });
 
-    // Second redirect location
+    // Update cookies again after first redirect
+    cookieMap = getCookieMap(redirectResponse.headers["set-cookie"], cookieMap);
+
+    // 3. Handle Second Redirect (to Dashboard)
     const finalLocation = redirectResponse.headers["location"];
-    if (!finalLocation || !finalLocation.includes("beranda")) {
-      if (redirectResponse.status === 200) {
-      } else {
-        return NextResponse.json(
-          { message: "Username atau password salah" },
-          { status: 401 },
-        );
-      }
+    let finalHtml = redirectResponse.data;
+    if (finalLocation == envVariable.KRS_DASHBOARD_URL) {
+      const dashboardResponse = await axiosScrapClient.get(finalLocation, {
+        headers: {
+          Cookie: mapToHeaderString(cookieMap),
+          Referer: firstRedirectUrl,
+        },
+      });
+      finalHtml = dashboardResponse.data;
+      cookieMap = getCookieMap(
+        dashboardResponse.headers["set-cookie"],
+        cookieMap,
+      );
+    } else if (!finalLocation && redirectResponse.status !== 200) {
+      return NextResponse.json(
+        { message: "Gagal masuk ke halaman utama" },
+        { status: 401 },
+      );
     }
 
-    // Collect cookies
-    cookieMap = getCookieMap(redirectResponse.headers["set-cookie"], cookieMap);
+    let userData = { name: "", nim: username };
+    const $finalHome = cheerio.load(finalHtml);
+    const myNIM = $finalHome("a.link-primary").text().trim();
+    const myName =
+      $finalHome("a.link-primary").siblings("h5").text().trim() ||
+      $finalHome("a.link-primary").parent().find("h5").text().trim();
+
+    if (myName) {
+      userData = { name: myName, nim: myNIM || username };
+    }
+
+    // 5. Set final cookies and return response
     const finalCookieValue = mapToHeaderString(cookieMap);
-    // Save cookie to browser user`s
     const cookieStore = await cookies();
     cookieStore.set("external_session", finalCookieValue, {
       httpOnly: true,
@@ -97,7 +113,11 @@ export async function POST(req: Request) {
       sameSite: "lax",
       path: "/",
     });
-    return NextResponse.json({ success: true, redirectTarget: finalLocation });
+
+    return NextResponse.json(
+      { success: true, redirectTarget: finalLocation, user: userData },
+      { status: 200 },
+    );
   } catch (error: any) {
     console.error("FLOW ERROR:", error.message);
     return NextResponse.json(

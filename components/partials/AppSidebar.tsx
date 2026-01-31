@@ -13,8 +13,9 @@ import {
   ArrowBigRightDash,
   CalendarCog,
   LucideProps,
-  Send,
+  Sword,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
@@ -36,9 +37,9 @@ const sidebarNavs: NavItems = [
   },
   {
     type: "item",
-    title: "Submit KRS",
-    url: "/krs-submit",
-    icon: Send,
+    title: "Perang KRS",
+    url: "/submit",
+    icon: Sword,
   },
 ];
 
@@ -87,13 +88,13 @@ export default function AppSidebar() {
                         className="transition-all"
                         asChild
                       >
-                        <a
+                        <Link
                           href={item.url == pathname ? "#" : item.url}
                           className="flex items-center gap-2"
                         >
                           {Icon && <Icon />}
                           <span>{item.title}</span>
-                        </a>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

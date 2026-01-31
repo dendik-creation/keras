@@ -18,33 +18,30 @@ export default function AppLayout({
   pageDescriptionHeader,
   pageTitleHeader,
 }: AppLayoutProps) {
-  const [activeUser, setActiveUser] = useState<{
-    name: string;
-    nim: string;
-    major: string;
-    degree: string;
-  }>({
-    name: "...",
+  const [user, setUser] = useState({
+    name: "User",
     nim: "...",
-    major: "...",
-    degree: "...",
+    degree: "",
+    major: "",
   });
 
   useEffect(() => {
-    const user = getLocalStorage("active_user");
-    if (user && user.name && user.nim) {
-      setActiveUser(user);
-    }
+    try {
+      const stored = getLocalStorage("active_user");
+      if (stored) {
+        setUser(typeof stored === "string" ? JSON.parse(stored) : stored);
+      }
+    } catch (e) {}
   }, []);
 
   return (
     <SidebarProvider>
       <div className={`flex min-h-screen w-full ${className}`}>
         <AppSidebar />
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full h-screen overflow-hidden">
           <AppHeader
-            name={activeUser.name}
-            nim={`${activeUser.degree} ${activeUser.major} - ${activeUser.nim}`}
+            name={user.name}
+            nim={`${user.degree || ""} ${user.major || ""} - ${user.nim}`}
             pageTitle={pageTitleHeader}
             pageDescription={pageDescriptionHeader}
           />

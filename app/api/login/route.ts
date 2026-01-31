@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { envVariable } from "@/lib/utils";
 import * as cheerio from "cheerio";
 import { getCookieMap, mapToHeaderString } from "@/helper/cookie";
-import axiosScrapClient from "@/helper/axios_client";
+import { axiosScrapClient } from "@/helper/axios_client";
 
 export async function POST(req: Request) {
   try {

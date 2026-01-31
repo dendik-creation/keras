@@ -22,6 +22,7 @@ const LogoutMenu = () => {
       const response = await axios.post("/api/logout");
       if (response.status === 200) {
         removeLocalStorage("active_user");
+        removeLocalStorage("session_check_plan_time");
         window.location.href = "/login";
       }
     } catch (error) {

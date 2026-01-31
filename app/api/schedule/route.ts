@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { envVariable } from "@/lib/utils";
 import * as cheerio from "cheerio";
-import axiosScrapClient from "@/helper/axios_client";
+import { axiosScrapClient } from "@/helper/axios_client";
 import https from "https";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 

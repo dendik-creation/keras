@@ -19,4 +19,4 @@ const axiosScrapClient = axios.create({
   withCredentials: true,
 });
 
-export default axiosScrapClient;
+export { axiosScrapClient };

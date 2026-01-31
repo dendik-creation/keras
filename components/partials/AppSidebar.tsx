@@ -15,6 +15,7 @@ import {
   LucideProps,
   Send,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 type NavItems = {
@@ -42,11 +43,11 @@ const sidebarNavs: NavItems = [
 ];
 
 export default function AppSidebar() {
-  const pathname = window.location.pathname;
+  const pathname = usePathname();
   const items = sidebarNavs;
   return (
     <Sidebar>
-      <SidebarContent className="bg-yellow-800 min-h-full relative h-full flex flex-col">
+      <SidebarContent className="bg-violet-900 min-h-full relative h-full flex flex-col">
         <SidebarHeader className="mt-3 ms-3 gap-0">
           <span className="text-white/80 font-bold">KeRaS</span>
           <span className="text-white/60 text-sm font-normal">

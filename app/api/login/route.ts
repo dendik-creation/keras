@@ -75,12 +75,15 @@ export async function POST(req: Request) {
     const finalLocation = redirectResponse.headers["location"];
     let finalHtml = redirectResponse.data;
     if (finalLocation == envVariable.KRS_DASHBOARD_URL) {
-      const dashboardResponse = await axiosScrapClient.get(finalLocation, {
-        headers: {
-          Cookie: mapToHeaderString(cookieMap),
-          Referer: firstRedirectUrl,
+      const dashboardResponse = await axiosScrapClient.get(
+        envVariable.KRS_GET_SCHEDULES,
+        {
+          headers: {
+            Cookie: mapToHeaderString(cookieMap),
+            Referer: firstRedirectUrl,
+          },
         },
-      });
+      );
       finalHtml = dashboardResponse.data;
       cookieMap = getCookieMap(
         dashboardResponse.headers["set-cookie"],
@@ -93,15 +96,25 @@ export async function POST(req: Request) {
       );
     }
 
-    let userData = { name: "", nim: username };
+    let userData = { name: "", nim: username, major: "", degree: "" };
     const $finalHome = cheerio.load(finalHtml);
     const myNIM = $finalHome("a.link-primary").text().trim();
     const myName =
       $finalHome("a.link-primary").siblings("h5").text().trim() ||
       $finalHome("a.link-primary").parent().find("h5").text().trim();
-
+    const majorAndDegree = $finalHome(
+      'h2.accordion-header[style*="border-radius: 0"] > button.accordion-button',
+    )
+      .first()
+      .text()
+      .trim();
     if (myName) {
-      userData = { name: myName, nim: myNIM || username };
+      userData = {
+        name: myName,
+        nim: myNIM || username,
+        major: majorAndDegree.split(" - ")[0] || "",
+        degree: majorAndDegree.split(" - ")[1] || "",
+      };
     }
 
     // 5. Set final cookies and return response

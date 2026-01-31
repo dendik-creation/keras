@@ -170,7 +170,7 @@ export default function Page() {
                     </p>
                   </div>
 
-                  {!loading ? (
+                  {loading ? (
                     <div className="flex flex-col h-150 gap-3 justify-center items-center">
                       <div className="grid grid-cols-1 gap-3 w-1/2">
                         {[...Array(2)].map((_, idx) => (

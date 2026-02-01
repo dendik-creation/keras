@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ChevronDown } from "lucide-react";
@@ -55,7 +55,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
             <Avatar className="border-2 border-solid transition-all border-violet-500">
-              <AvatarImage src="/assets/img/user_icon.png" />
               <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
             </Avatar>
             <ChevronDown size={16} />

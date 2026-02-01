@@ -119,6 +119,7 @@
     * {
         @apply border-border outline-ring/50;
         font-family: "Space Grotesk", sans-serif !important;
+        scroll-behavior: smooth !important;
     }
     body {
         @apply bg-background text-foreground;

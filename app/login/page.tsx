@@ -2,18 +2,40 @@
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { CalendarSync, Loader2 } from "lucide-react";
+import { BadgeCheck, CalendarSync, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { setLocalStorage } from "@/helper/local_storage";
 import GuestAccess from "@/components/middleware_wrapper/GuestAccess";
+import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Link from "next/link";
 
 export default function Page() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(true);
   const router = useRouter();
+
+  const handleDisclaimerChange = (value: boolean) => {
+    setIsDisclaimerAccepted(value);
+    setLocalStorage("disclaimer_accepted", value);
+  };
+
+  useEffect(() => {
+    const accepted = localStorage.getItem("disclaimer_accepted") === "true";
+    setIsDisclaimerAccepted(accepted);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -48,10 +70,37 @@ export default function Page() {
   };
   return (
     <GuestAccess>
+      {/*Disclaimer Dialog*/}
+      <Dialog open={!isDisclaimerAccepted}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Informasi Penting</DialogTitle>
+            <DialogDescription>
+              KeRaS adalah alat bantu untuk mempercepat proses pengisian KRS.
+              Penggunaan sistem ini sepenuhnya menjadi tanggung jawab pengguna.
+              Selalu periksa kembali jadwal KRS yang telah diisi sebelum
+              mengirimkannya ke sistem resmi universitas. Kami tidak bertanggung
+              jawab atas kesalahan atau masalah yang mungkin terjadi akibat
+              penggunaan KeRaS.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                onClick={() => handleDisclaimerChange(true)}
+                variant="outline"
+              >
+                <BadgeCheck />
+                Saya paham
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="grid min-h-svh lg:grid-cols-2">
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex justify-center gap-2 md:justify-start">
-            <a href="#" className="flex items-center gap-2 font-medium">
+            <Link href="/" className="flex items-center gap-2 font-medium">
               <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
                 <CalendarSync className="size-4" />
               </div>
@@ -61,7 +110,7 @@ export default function Page() {
                   Buat Jadwal KRS-mu lebih cepat dan mudah
                 </span>
               </div>
-            </a>
+            </Link>
           </div>
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-xs">
@@ -93,7 +142,7 @@ export default function Page() {
                     <Input
                       id="password"
                       type="password"
-                      placeholder="••••"
+                      placeholder="****"
                       disabled={isLoading}
                       required
                       onChange={handleChange}
@@ -114,13 +163,7 @@ export default function Page() {
             </div>
           </div>
         </div>
-        <div className="bg-muted relative hidden lg:block">
-          <img
-            src="https://images.unsplash.com/photo-1754039984995-a91721ce1870?q=80&w=1561&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Image"
-            className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-          />
-        </div>
+        <div className="bg-violet-900 relative hidden lg:block" />
       </div>
     </GuestAccess>
   );

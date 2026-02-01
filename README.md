@@ -20,8 +20,8 @@ KeRaS is an open-source tool designed to help university students organize and s
 - [x] Implement "perang submit" feature for rapid submission
 - [x] Ensure no data is stored permanently
 - [x] Real-time data scraping from university website
-- []  Responsive design for mobile devices
-- []  Documentation and user guide
+- [ ] Responsive design for mobile devices
+- [ ] Documentation and user guide
 
 ## Installation
 1. Clone the repository:

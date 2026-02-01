@@ -74,7 +74,7 @@ export default function Page() {
       <Dialog open={!isDisclaimerAccepted}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Informasi Penting</DialogTitle>
+            <DialogTitle>Hanya Untuk Universitas Muria Kudus</DialogTitle>
             <DialogDescription>
               KeRaS adalah alat bantu untuk mempercepat proses pengisian KRS.
               Penggunaan sistem ini sepenuhnya menjadi tanggung jawab pengguna.

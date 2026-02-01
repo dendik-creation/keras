@@ -12,6 +12,7 @@ import {
   CalendarSearch,
   Save,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 
 import AppLayout from "@/components/partials/AppLayout";
@@ -36,6 +37,12 @@ import {
   parseTimeRange,
   ymdToIdDate,
 } from "@/helper/frontend_helper";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +51,7 @@ import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 export default function Page() {
   const [data, setData] = useState<OfferingCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -100,6 +108,12 @@ export default function Page() {
 
     newSelection.push(course);
     setSelectedCourses(newSelection);
+  };
+
+  const openRemoveScheduleDialog = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpenRemoveSchedule(true);
   };
 
   const handleSaveKRS = () => {
@@ -336,22 +350,41 @@ export default function Page() {
                           {totalSKS}
                         </span>
                       </div>
-                      <ConfirmDialog
-                        type="danger"
-                        title="Bersihkan Jadwal KRS"
-                        description="Menghapus jadwal akan mengosongkan semua matkul yang telah terpilih. Yakin?"
-                        triggerNode={
-                          <Button size="sm" variant={"destructive"}>
-                            <Trash2 />
-                            Bersihkan Jadwal
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            Aksi Jadwal
+                            <ChevronDown className="ml-2" />
                           </Button>
-                        }
-                        confirmAction={handleClearKRS}
-                      />
-                      <Button size="sm" onClick={handleSaveKRS}>
-                        <Save />
-                        Simpan Jadwal
-                      </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={handleSaveKRS}
+                            className="flex items-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            Simpan Jadwal
+                          </DropdownMenuItem>
+                          <ConfirmDialog
+                            open={openRemoveSchedule}
+                            onOpenChange={(open) => setOpenRemoveSchedule(open)}
+                            type="danger"
+                            title="Bersihkan Jadwal KRS"
+                            description="Menghapus jadwal akan mengosongkan semua matkul yang telah terpilih. Yakin?"
+                            triggerNode={
+                              <DropdownMenuItem
+                                onSelect={openRemoveScheduleDialog}
+                                className="flex items-center gap-2 text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Bersihkan Jadwal
+                              </DropdownMenuItem>
+                            }
+                            confirmAction={handleClearKRS}
+                          />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 

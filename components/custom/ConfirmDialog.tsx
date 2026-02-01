@@ -18,6 +18,8 @@ type ConfirmDialogProps = {
   triggerNode: React.ReactNode;
   confirmAction?: () => void;
   disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (value: boolean) => void;
 };
 
 const ConfirmDialog = ({
@@ -27,9 +29,11 @@ const ConfirmDialog = ({
   triggerNode,
   confirmAction,
   disabled = false,
+  open,
+  onOpenChange,
 }: ConfirmDialogProps) => {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
         {triggerNode}
       </DialogTrigger>

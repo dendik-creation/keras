@@ -216,8 +216,11 @@ const RotatingText = forwardRef<RotatingTextHandle, RotatingTextProps>(
     return (
       <motion.span
         className={cn("text-rotate", mainClassName)}
-        {...rest}
-        layout
+        {...(rest as Omit<
+          import("framer-motion").HTMLMotionProps<"span">,
+          "ref"
+        >)}
+        layout="position"
         transition={transition}
       >
         <span className="text-rotate-sr-only">{texts[currentTextIndex]}</span>
@@ -251,9 +254,9 @@ const RotatingText = forwardRef<RotatingTextHandle, RotatingTextProps>(
                       (char: string, charIndex: number) => (
                         <motion.span
                           key={charIndex}
-                          initial={initial}
-                          animate={animate}
-                          exit={exit}
+                          initial={initial as any}
+                          animate={animate as any}
+                          exit={exit as any}
                           transition={{
                             ...transition,
                             delay: getStaggerDelay(

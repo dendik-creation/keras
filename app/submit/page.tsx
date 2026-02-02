@@ -201,9 +201,14 @@ export default function Page() {
   };
 
   const processSubmitRequest = async (attemptId: number, ids: string[]) => {
-    const scheduleIds = getLocalStorage("krs_saved_schedule")
-      .filter((c) => c.saved_in_submit === false && c.schedule_submit_id != "")
-      .map((c) => c.schedule_submit_id as string);
+    const scheduleIds = (
+      getLocalStorage("krs_saved_schedule") as CourseSchedule[]
+    )
+      .filter(
+        (c: CourseSchedule) =>
+          c.saved_in_submit === false && c.schedule_submit_id != "",
+      )
+      .map((c: CourseSchedule) => c.schedule_submit_id as string);
     if (scheduleIds.length === 0) {
       updateLogStatus(attemptId, {
         status: "success",

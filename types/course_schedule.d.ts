@@ -9,6 +9,8 @@ export type CourseSchedule = {
   day: string;
   hour: string;
   classroom: string;
+  schedule_submit_id?: string;
+  saved_in_submit?: boolean;
 };
 
 export type OfferingCourse = {

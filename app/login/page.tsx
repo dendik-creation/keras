@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import axios from "axios";
 import { setLocalStorage } from "@/helper/local_storage";
 import GuestAccess from "@/components/middleware_wrapper/GuestAccess";
-import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import {
   Dialog,
   DialogClose,
@@ -157,6 +156,11 @@ export default function Page() {
                         <span>Login</span>
                       )}
                     </Button>
+                  </Field>
+                  <Field>
+                    <span className="text-xs text-center text-muted-foreground">
+                      Tidak dirancang untuk berpindah-pindah akun
+                    </span>
                   </Field>
                 </FieldGroup>
               </form>

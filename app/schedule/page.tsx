@@ -13,6 +13,10 @@ import {
   Save,
   Trash2,
   ChevronDown,
+  TextSearch,
+  ScanTextIcon,
+  Loader2,
+  SearchX,
 } from "lucide-react";
 
 import AppLayout from "@/components/partials/AppLayout";
@@ -49,17 +53,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 
 export default function Page() {
+  const [activeUser, setActiveUser] = useState<{
+    nim: string;
+    major: string;
+    name: string;
+    degree: string;
+  } | null>(null);
   const [data, setData] = useState<OfferingCourse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const initializeData = async () => {
+  const findAvailableSchedules = async () => {
     try {
       setLoading(true);
       const response = await axios.get("/api/schedule");
       setData(response.data.data || []);
+      setLocalStorage("offering_course", response.data.data || []);
     } catch (error) {
       toast.error("Gagal mengambil jadwal kuliah");
     } finally {
@@ -67,13 +78,27 @@ export default function Page() {
     }
   };
 
+  const handleFindSchedules = () => {
+    findAvailableSchedules();
+  };
+
+  useEffect(() => {
+    const user = getLocalStorage("active_user");
+    if (activeUser == null && user != null) {
+      setActiveUser(user);
+    }
+  }, [activeUser]);
+
   useEffect(() => {
     const savedCourses = getLocalStorage("krs_saved_schedule");
+    const offeringCourses = getLocalStorage("offering_course");
     if (savedCourses && Array.isArray(savedCourses)) {
       setSelectedCourses(savedCourses);
     }
+    if (offeringCourses) {
+      setData(offeringCourses);
+    }
     setIsHydrated(true);
-    initializeData();
   }, []);
 
   const handleSelectCourse = (course: CourseSchedule) => {
@@ -124,7 +149,18 @@ export default function Page() {
       return;
     }
 
-    setLocalStorage("krs_saved_schedule", selectedCourses);
+    const selectedWithScheduleSubmitPlaceholder = selectedCourses.map(
+      (course) => ({
+        ...course,
+        schedule_submit_id: "",
+        saved_in_submit: false,
+      }),
+    );
+
+    setLocalStorage(
+      "krs_saved_schedule",
+      selectedWithScheduleSubmitPlaceholder,
+    );
     toast.success("Jadwal KRS berhasil disimpan", {
       richColors: true,
     });
@@ -173,19 +209,40 @@ export default function Page() {
               <ResizablePanel defaultSize={40} minSize={30}>
                 <ScrollArea className="h-full bg-muted/10">
                   <div className="p-4 space-y-4">
-                    <div className="">
+                    <div className="flex flex-col gap-1">
                       <h3 className="font-semibold text-lg flex items-center gap-2">
                         <BookOpen className="w-5 h-5" /> Daftar Mata Kuliah
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Data terbaru pada{" "}
-                        {data[0]?.latest_update
-                          ? ymdToIdDate(data[0].latest_update, true)
-                          : "-"}
+                        {data[0]?.latest_update &&
+                          `Data terbaru pada ${ymdToIdDate(data[0].latest_update, true)}`}
                       </p>
+                      <Button
+                        disabled={loading}
+                        onClick={handleFindSchedules}
+                        size={"sm"}
+                        variant={"green"}
+                      >
+                        {loading ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <ScanTextIcon />
+                        )}
+                        <span>Perbarui ketersediaan jadwal</span>
+                      </Button>
                     </div>
 
-                    {loading ? (
+                    {!loading && data.length === 0 && isHydrated && (
+                      <div className="flex flex-col h-150 gap-3 justify-center items-center">
+                        <SearchX className="text-red-500" />
+                        <div className="text-center">
+                          Lakukan pencarian jadwal untuk menampilkan
+                          ketersediaan jadwal terbaru
+                        </div>
+                      </div>
+                    )}
+
+                    {loading && data.length === 0 ? (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">
                         <div className="grid grid-cols-1 gap-3 w-1/2">
                           {[...Array(2)].map((_, idx) => (
@@ -206,123 +263,127 @@ export default function Page() {
                       </div>
                     ) : (
                       <Accordion type="multiple" className="w-full">
-                        {groupedData.map((sem, semIdx) => (
-                          <AccordionItem key={semIdx} value={`sem-${semIdx}`}>
-                            <AccordionTrigger className="font-bold text-md hover:no-underline bg-gray-100 px-4 rounded-md mb-2 border">
-                              {sem.semester}
-                            </AccordionTrigger>
-                            <AccordionContent className="px-2 pt-2">
-                              <Accordion
-                                type="multiple"
-                                className="w-full space-y-2"
-                              >
-                                {Object.entries(sem.groupedCourses).map(
-                                  ([code, classes]) => {
-                                    const courseName = classes[0].course;
-                                    const courseCategory = classes[0].category;
-                                    const isCourseSelected =
-                                      selectedCourses.some(
-                                        (sc) => sc.code === code,
-                                      );
-                                    const selectedClass = selectedCourses.find(
-                                      (sc) => sc.code === code,
-                                    )?.class;
+                        {groupedData.length > 0 &&
+                          groupedData.map((sem, semIdx) => (
+                            <AccordionItem key={semIdx} value={`sem-${semIdx}`}>
+                              <AccordionTrigger className="font-bold text-md hover:no-underline bg-gray-100 px-4 rounded-md mb-2 border">
+                                {sem.semester}
+                              </AccordionTrigger>
+                              <AccordionContent className="px-2 pt-2">
+                                <Accordion
+                                  type="multiple"
+                                  className="w-full space-y-2"
+                                >
+                                  {Object.entries(sem.groupedCourses).map(
+                                    ([code, classes]) => {
+                                      const courseName = classes[0].course;
+                                      const courseCategory =
+                                        classes[0].category;
+                                      const isCourseSelected =
+                                        selectedCourses.some(
+                                          (sc) => sc.code === code,
+                                        );
+                                      const selectedClass =
+                                        selectedCourses.find(
+                                          (sc) => sc.code === code,
+                                        )?.class;
 
-                                    return (
-                                      <AccordionItem
-                                        key={code}
-                                        value={code}
-                                        className="border rounded-md bg-violet-100"
-                                      >
-                                        <AccordionTrigger className="px-4 hover:no-underline">
-                                          <div className="flex items-center justify-between w-full pr-4">
-                                            <div className="flex flex-col items-start text-left">
-                                              <span className="font-semibold text-sm">
-                                                {courseName}
-                                              </span>
-                                              <span className="text-xs text-muted-foreground">
-                                                {code} • {classes[0].sks} SKS •{" "}
-                                                {courseCategory}
-                                              </span>
-                                            </div>
-                                            {isCourseSelected && (
-                                              <Badge
-                                                variant="secondary"
-                                                className="text-xs bg-violet-600 text-white"
-                                              >
-                                                Kelas {selectedClass}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent className="p-2 space-y-2 bg-slate-50">
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                                            {classes.map((cls) => {
-                                              const isSelected =
-                                                selectedCourses.some(
-                                                  (sc) =>
-                                                    sc.code === cls.code &&
-                                                    sc.class === cls.class,
-                                                );
-                                              return (
-                                                <Card
-                                                  key={cls.schedule_id}
-                                                  onClick={() =>
-                                                    handleSelectCourse(cls)
-                                                  }
-                                                  className={`cursor-pointer transition-all hover:border-primary py-3 ${isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : ""}`}
+                                      return (
+                                        <AccordionItem
+                                          key={code}
+                                          value={code}
+                                          className="border rounded-md bg-violet-100"
+                                        >
+                                          <AccordionTrigger className="px-4 hover:no-underline">
+                                            <div className="flex items-center justify-between w-full pr-4">
+                                              <div className="flex flex-col items-start text-left">
+                                                <span className="font-semibold text-sm">
+                                                  {courseName}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                  {code} • {classes[0].sks} SKS
+                                                  • {courseCategory}
+                                                </span>
+                                              </div>
+                                              {isCourseSelected && (
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="text-xs bg-violet-600 text-white"
                                                 >
-                                                  <CardContent className="px-3">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                      <div className="flex items-center gap-2">
-                                                        <Badge
-                                                          variant={
-                                                            isSelected
-                                                              ? "default"
-                                                              : "outline"
-                                                          }
-                                                        >
-                                                          Kelas {cls.class}
-                                                        </Badge>
+                                                  Kelas {selectedClass}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </AccordionTrigger>
+                                          <AccordionContent className="p-2 space-y-2 bg-slate-50">
+                                            <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(250px,1fr))] w-full">
+                                              {classes.map((cls) => {
+                                                const isSelected =
+                                                  selectedCourses.some(
+                                                    (sc) =>
+                                                      sc.code === cls.code &&
+                                                      sc.class === cls.class,
+                                                  );
+                                                return (
+                                                  <Card
+                                                    key={cls.schedule_id}
+                                                    onClick={() =>
+                                                      handleSelectCourse(cls)
+                                                    }
+                                                    className={`cursor-pointer transition-all hover:border-primary py-3 ${isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : ""}`}
+                                                  >
+                                                    <CardContent className="px-3">
+                                                      <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                          <Badge
+                                                            variant={
+                                                              isSelected
+                                                                ? "default"
+                                                                : "outline"
+                                                            }
+                                                          >
+                                                            Kelas {cls.class}
+                                                          </Badge>
+                                                        </div>
                                                       </div>
-                                                    </div>
 
-                                                    <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
-                                                      <div className="flex items-center gap-2">
-                                                        <User className="w-4 h-4" />{" "}
-                                                        {cls.lecture}
+                                                      <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
+                                                        <div className="flex items-center gap-2">
+                                                          <User className="w-4 h-4" />{" "}
+                                                          {cls.lecture}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                          <CalendarClock className="w-4 h-4" />
+                                                          <span
+                                                            className={
+                                                              isSelected
+                                                                ? "font-semibold text-foreground"
+                                                                : ""
+                                                            }
+                                                          >
+                                                            {cls.day},{" "}
+                                                            {cls.hour}
+                                                          </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                          <Building2 className="w-4 h-4" />{" "}
+                                                          {cls.classroom}
+                                                        </div>
                                                       </div>
-                                                      <div className="flex items-center gap-2">
-                                                        <CalendarClock className="w-4 h-4" />
-                                                        <span
-                                                          className={
-                                                            isSelected
-                                                              ? "font-semibold text-foreground"
-                                                              : ""
-                                                          }
-                                                        >
-                                                          {cls.day}, {cls.hour}
-                                                        </span>
-                                                      </div>
-                                                      <div className="flex items-center gap-2">
-                                                        <Building2 className="w-4 h-4" />{" "}
-                                                        {cls.classroom}
-                                                      </div>
-                                                    </div>
-                                                  </CardContent>
-                                                </Card>
-                                              );
-                                            })}
-                                          </div>
-                                        </AccordionContent>
-                                      </AccordionItem>
-                                    );
-                                  },
-                                )}
-                              </Accordion>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
+                                                    </CardContent>
+                                                  </Card>
+                                                );
+                                              })}
+                                            </div>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                      );
+                                    },
+                                  )}
+                                </Accordion>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
                       </Accordion>
                     )}
                   </div>

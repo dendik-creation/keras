@@ -1,6 +1,6 @@
 export type SubmitLog = {
   attempt: number;
-  status: "pending" | "success" | "error";
+  status: "pending" | "success";
   messages: {
     status: "success" | "error";
     message: string;

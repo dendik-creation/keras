@@ -30,13 +30,17 @@ export const useSessionCheck = () => {
         return;
       }
 
+      const isNewBrowserSession =
+        typeof window !== "undefined" &&
+        !sessionStorage.getItem("app_initialized");
+
       const currentTime = new Date().getTime();
       const sessionCheckPlanTime = getLocalStorage("session_check_plan_time");
       const planTime = sessionCheckPlanTime
         ? parseInt(sessionCheckPlanTime, 10)
         : 0;
 
-      if (planTime > 0 && currentTime < planTime) {
+      if (!isNewBrowserSession && planTime > 0 && currentTime < planTime) {
         setUser(localUser);
         setIsAuthenticated(true);
         setIsValidating(false);
@@ -46,14 +50,18 @@ export const useSessionCheck = () => {
       try {
         await axios.get("/api/session-check");
 
+        // Update cache 1 jam
         const nextCheckTime = currentTime + 60 * 60 * 1000;
         setLocalStorage("session_check_plan_time", nextCheckTime.toString());
+        sessionStorage.setItem("app_initialized", "true");
 
         setUser(localUser);
         setIsAuthenticated(true);
       } catch (error) {
-        localStorage.removeItem("active_user");
-        localStorage.removeItem("session_check_plan_time");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("active_user");
+          localStorage.removeItem("session_check_plan_time");
+        }
         setIsAuthenticated(false);
         setUser(null);
       } finally {

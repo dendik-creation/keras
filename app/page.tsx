@@ -35,7 +35,7 @@ export default function Page() {
           speed={0.2}
           squareSize={70}
           direction="up"
-          borderColor="#C9B2FF"
+          borderColor="#C9B2FF50"
           hoverFillColor="#8d51ff40"
         />
       </div>

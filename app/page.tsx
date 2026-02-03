@@ -36,7 +36,7 @@ export default function Page() {
           squareSize={70}
           direction="up"
           borderColor="#C9B2FF"
-          hoverFillColor="#8d51ff80"
+          hoverFillColor="#8d51ff40"
         />
       </div>
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -51,16 +51,16 @@ export default function Page() {
             KeRaS.
           </span>
         </div>
-        <div className="hidden md:flex gap-10 text-sm font-medium text-slate-500">
+        <div className="hidden md:flex gap-10 text-sm font-bold text-slate-800">
           <a
             href="#features"
-            className="hover:text-slate-900 transition-colors"
+            className="hover:text-violet-700 transition-colors"
           >
             Fitur
           </a>
           <a
             href="#security"
-            className="hover:text-slate-900 transition-colors"
+            className="hover:text-violet-700 transition-colors"
           >
             Keamanan
           </a>
@@ -68,7 +68,7 @@ export default function Page() {
         <a href="https://github.com/dendik-creation/keras/" target="_blank">
           <Button
             variant="outline"
-            className="rounded-full border-slate-200 bg-white hover:bg-slate-50 shadow-sm transition-all"
+            className="rounded-full border-violet-400 bg-white hover:bg-violet-500 hover:border-white hover:text-white shadow-sm transition-all"
           >
             <Github className="w-4 h-4 mr-2" /> dendik-creation
           </Button>
@@ -110,7 +110,8 @@ export default function Page() {
           <Link href={"/login"}>
             <Button
               size="lg"
-              className="bg-blue-600  hover:bg-blue-700 text-white font-semibold px-10 h-14 text-lg rounded-2xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1"
+              variant="outline"
+              className="bg-white hover:bg-blue-600 hover:text-white font-semibold px-10 h-14 text-lg rounded-2xl shadow-lg shadow-blue-200 border-blue-600"
             >
               Mulai Sekarang <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

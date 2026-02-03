@@ -16,10 +16,29 @@ import {
 import Link from "next/link";
 import RotatingText from "@/components/RotatingText";
 import ElectricBorder from "@/components/ElectricBorder";
+import Squares from "@/components/Squares";
 
-export default function KeRaSLandingLight() {
+export default function Page() {
   return (
     <div className="min-h-screen bg-[#FCFCFC] text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden font-sans">
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          height: "100vh",
+          width: "100vw",
+          position: "absolute",
+          top: 0,
+          left: 0,
+        }}
+      >
+        <Squares
+          speed={0.2}
+          squareSize={70}
+          direction="up"
+          borderColor="#C9B2FF"
+          hoverFillColor="#8d51ff80"
+        />
+      </div>
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-50 blur-[120px] rounded-full opacity-60" />
         <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[40%] bg-orange-50 blur-[120px] rounded-full opacity-60" />
@@ -51,7 +70,7 @@ export default function KeRaSLandingLight() {
             variant="outline"
             className="rounded-full border-slate-200 bg-white hover:bg-slate-50 shadow-sm transition-all"
           >
-            <Github className="w-4 h-4 mr-2" /> Star
+            <Github className="w-4 h-4 mr-2" /> dendik-creation
           </Button>
         </a>
       </nav>
@@ -69,7 +88,7 @@ export default function KeRaSLandingLight() {
           Susun Jadwal <br />
           <div className="flex justify-center items-center">
             <RotatingText
-              texts={["Tanpa Ribet.", "Tanpa Drama.", "Dengan Mudah."]}
+              texts={["Tanpa Ribet", "Tanpa Drama", "Pasti Mudah"]}
               mainClassName="px-2 sm:px-2 md:px-3 text-indigo-600 overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg"
               staggerFrom={"last"}
               initial={{ y: "100%" }}
@@ -91,9 +110,9 @@ export default function KeRaSLandingLight() {
           <Link href={"/login"}>
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 h-14 text-lg rounded-2xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1"
+              className="bg-blue-600  hover:bg-blue-700 text-white font-semibold px-10 h-14 text-lg rounded-2xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1"
             >
-              KeRaS-in sekarang <ArrowRight className="ml-2 w-5 h-5" />
+              Mulai Sekarang <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
         </div>
@@ -141,12 +160,12 @@ export default function KeRaSLandingLight() {
                 <div className="flex flex-col flex-1">
                   <Swords className="w-12 h-12 mb-6 text-blue-400 transition-transform" />
                   <h3 className="text-3xl font-bold mb-3 tracking-tight">
-                    Perang Submit
+                    Perang KRS
                   </h3>
                   <p className="text-slate-400 leading-snug">
-                    Sistem akan otomatis melakukan submit KRS secara cepat dan
-                    berulang untuk meningkatkan peluang mendapatkan kelas
-                    incaran.
+                    Cukup dengan satu klik, Jadwal yang kamu siapkan akan
+                    terkirim dengan cepat ke sistem universitas tanpa klik
+                    satu-satu kembali.{" "}
                     <sup>
                       <a href="#note-1">1</a>
                     </sup>

@@ -32,11 +32,6 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const disclaimerKeyExists =
-      localStorage.getItem("disclaimer_accepted") !== null;
-    if (disclaimerKeyExists) {
-      localStorage.setItem("disclaimer_accepted", "false");
-    }
     const accepted = localStorage.getItem("disclaimer_accepted") === "true";
     setIsDisclaimerAccepted(accepted);
   }, []);

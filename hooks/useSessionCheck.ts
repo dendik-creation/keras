@@ -51,7 +51,7 @@ export const useSessionCheck = () => {
         await axios.get("/api/session-check");
 
         // Update cache 1 jam
-        const nextCheckTime = currentTime + 60 * 60 * 1000;
+        const nextCheckTime = currentTime + 60 * 60 * 2000;
         setLocalStorage("session_check_plan_time", nextCheckTime.toString());
         sessionStorage.setItem("app_initialized", "true");
 

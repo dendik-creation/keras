@@ -4,6 +4,8 @@ import AppHeader from "@/components/partials/AppHeader";
 import AppSidebar from "@/components/partials/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getLocalStorage } from "@/helper/local_storage";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -47,6 +49,8 @@ export default function AppLayout({
           />
           <main className="flex-1 p-4 bg-gray-50 overflow-y-auto">
             {children}
+            <Analytics />
+            <SpeedInsights />
           </main>
         </div>
       </div>

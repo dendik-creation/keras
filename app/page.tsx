@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   ShieldCheck,
   Github,
-  Flame,
   EyeOff,
   LayoutDashboard,
   ArrowRight,
@@ -17,6 +15,9 @@ import Link from "next/link";
 import RotatingText from "@/components/RotatingText";
 import ElectricBorder from "@/components/ElectricBorder";
 import Squares from "@/components/Squares";
+import changelogHistories from "@/lib/changelog";
+import { ymdToIdDate } from "@/helper/frontend_helper";
+import { Badge } from "@/components/ui/badge";
 
 export default function Page() {
   return (
@@ -64,6 +65,12 @@ export default function Page() {
           >
             Keamanan
           </a>
+          <a
+            href="#changelog"
+            className="hover:text-violet-700 transition-colors"
+          >
+            Changelog
+          </a>
         </div>
         <a href="https://github.com/dendik-creation/keras/" target="_blank">
           <Button
@@ -77,14 +84,7 @@ export default function Page() {
 
       {/* 1. HERO SECTION */}
       <section className="relative z-10 px-6 pt-20 pb-32 text-center max-w-5xl mx-auto">
-        <Badge
-          variant="outline"
-          className="mb-8 px-4 py-1.5 rounded-full border-blue-200 bg-blue-50/50 text-blue-600 font-medium"
-        >
-          <Flame />
-          <span>Pendatang Baru</span>
-        </Badge>
-        <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight mb-8 leading-[0.95] text-slate-900">
+        <h1 className="text-5xl md:text-8xl font-extrabold tracking-tight mb-8 leading-[0.95] text-slate-900">
           Susun Jadwal <br />
           <div className="flex justify-center items-center">
             <RotatingText
@@ -202,7 +202,10 @@ export default function Page() {
               <p className="text-slate-500 mb-10 leading-relaxed">
                 Data jadwal mata kuliah diambil secara real-time dari situs
                 resmi universitasmu. Pastikan kamu mendapatkan informasi paling
-                akurat dan terbaru tanpa perlu khawatir tentang data usang.
+                akurat dan terbaru tanpa perlu khawatir tentang data tertinggal.{" "}
+                <sup>
+                  <a href="#note-2">2</a>
+                </sup>
               </p>
             </CardContent>
           </Card>
@@ -249,7 +252,71 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 4. FOOTER */}
+      {/* 4. CHANGELOG SECTION */}
+      <section
+        id="changelog"
+        className="relative z-10 px-6 py-28 max-w-7xl mx-auto"
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
+              Changelog
+            </h2>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Ringkasan rilis dan perubahan penting pada KeRaS dari waktu ke
+              waktu.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {changelogHistories.map((item) => (
+              <div
+                key={`${item.version}-${item.title}`}
+                className="grid grid-cols-[140px_40px_1fr] gap-4 text-sm"
+              >
+                <div className="flex flex-col items-start justify-start gap-1 pt-1">
+                  <Badge variant={"outline"}>{item.version}</Badge>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {ymdToIdDate(item.date)}
+                  </span>
+                </div>
+
+                <div className="relative flex justify-center">
+                  <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-slate-200 dark:bg-slate-700" />
+                  <div className="relative flex items-start pt-4">
+                    <div
+                      className={`z-10 h-4 w-4 rounded-full border-2 border-blue-400 ${
+                        item.version === changelogHistories[0].version
+                          ? "bg-yellow-200"
+                          : "bg-white"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Card className="py-3">
+                    <CardContent className="px-3">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-sm font-semibold leading-snug">
+                          {item.title}
+                        </h3>
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-300">
+                          {item.changes.map((change, idx) => (
+                            <li key={idx}>{change}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. FOOTER */}
       <footer className="relative z-10 px-6 py-16 text-center">
         <div className="max-w-7xl mx-auto flex flex-col items-center gap-8">
           <div className="flex items-center gap-2">
@@ -270,16 +337,19 @@ export default function Page() {
             </Button>
           </a>
           <div className="w-full h-px bg-slate-100 my-4" />
-          <p className="text-md font-medium text-slate-400 uppercase tracking-[0.2em]">
-            Open Source Project
-          </p>
-          <footer className="mt-8 w-full flex flex-col items-center gap-2">
+          <footer className="mt-4 w-full flex flex-col items-center gap-2">
             <small
               className="text-sm text-slate-400 font-medium text-center leading-tight"
               id="note-1"
             >
               1. Peningkatan peluang bergantung pada performa sistem dari situs
               resmi universitas.
+            </small>
+            <small
+              className="text-sm text-slate-400 font-medium text-center leading-tight"
+              id="note-2"
+            >
+              2. Trigger manual dari mahasiswa untuk mendapatkan jadwal terbaru.
             </small>
           </footer>
         </div>

@@ -14,37 +14,19 @@ import {
 import Link from "next/link";
 import RotatingText from "@/components/RotatingText";
 import ElectricBorder from "@/components/ElectricBorder";
-import Squares from "@/components/Squares";
 import changelogHistories from "@/lib/changelog";
-import { ymdToIdDate } from "@/helper/frontend_helper";
-import { Badge } from "@/components/ui/badge";
+import Timeline, {
+  TimelineItem,
+  TimelineItemDate,
+  TimelineItemTitle,
+  TimelineItemDescription,
+} from "@/components/ui/timeline";
+import ShapeGrid from "@/components/ShapeGrid";
+import Lightning from "@/components/Lightning";
 
 export default function Page() {
   return (
     <div className="min-h-screen bg-[#FCFCFC] text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden font-sans">
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          height: "100vh",
-          width: "100vw",
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-      >
-        <Squares
-          speed={0.2}
-          squareSize={70}
-          direction="up"
-          borderColor="#C9B2FF50"
-          hoverFillColor="#8d51ff40"
-        />
-      </div>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-50 blur-[120px] rounded-full opacity-60" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[40%] bg-orange-50 blur-[120px] rounded-full opacity-60" />
-      </div>
-
       <nav className="relative z-10 flex justify-between items-center px-6 py-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <CalendarSync className="text-violet-900" />
@@ -81,6 +63,17 @@ export default function Page() {
           </Button>
         </a>
       </nav>
+
+      <div className="absolute inset-0 z-0">
+        <ShapeGrid
+          speed={0.2}
+          squareSize={60}
+          direction="down"
+          borderColor="#2563eb40"
+          hoverFillColor="#2563eb"
+          shape="hexagon"
+        />
+      </div>
 
       {/* 1. HERO SECTION */}
       <section className="relative z-10 px-6 pt-20 pb-32 text-center max-w-5xl mx-auto">
@@ -136,34 +129,31 @@ export default function Page() {
                 terpadu. Tidak perlu bolak-balik cek detail kelas, semua
                 informasi ada di depan mata.
               </p>
-              <div className="space-y-3">
-                <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 w-[70%] rounded-full" />
-                </div>
-                <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 w-[45%] rounded-full" />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Perang Submit - Action Box */}
-          <ElectricBorder
-            color="#FFC107"
-            speed={1}
-            chaos={0.15}
-            borderRadius={16}
-            className={"md:col-span-5 h-full flex"}
-            style={{ borderRadius: 16, minHeight: 220 }}
-          >
+          {/* Perang KRS - Action Box */}
+          <div className={"md:col-span-5 h-full flex relative"}>
+            <div className="absolute z-10 w-full h-full">
+              <Lightning
+                hue={70}
+                xOffset={0}
+                speed={1}
+                intensity={1}
+                size={1}
+              />
+            </div>
             <Card className="bg-slate-900 h-full border-none overflow-hidden text-white relative group flex flex-col">
               <CardContent className="p-10 flex flex-col h-full justify-between flex-1">
                 <div className="flex flex-col flex-1">
-                  <Swords className="w-12 h-12 mb-6 text-blue-400 transition-transform" />
-                  <h3 className="text-3xl font-bold mb-3 tracking-tight">
+                  <iframe
+                    src="https://lottie.host/embed/a39f5331-c6ad-4a20-80ec-323c1710060f/D3eSmSX0sN.lottie"
+                    className="w-20 h-20 z-20"
+                  ></iframe>
+                  <h3 className="text-3xl z-20 font-bold mb-3 tracking-tight">
                     Perang KRS
                   </h3>
-                  <p className="text-slate-400 leading-snug">
+                  <p className="text-slate-400 z-20 leading-snug">
                     Cukup dengan satu klik, Jadwal yang kamu siapkan akan
                     terkirim dengan cepat ke sistem universitas tanpa klik
                     satu-satu kembali.{" "}
@@ -174,7 +164,7 @@ export default function Page() {
                 </div>
               </CardContent>
             </Card>
-          </ElectricBorder>
+          </div>
 
           {/* Zero Database - Privacy */}
           <Card className="md:col-span-5 bg-slate-900 border-none overflow-hidden text-white relative group">
@@ -269,49 +259,22 @@ export default function Page() {
           </div>
 
           <div className="space-y-4">
-            {changelogHistories.map((item) => (
-              <div
-                key={`${item.version}-${item.title}`}
-                className="grid grid-cols-[140px_40px_1fr] gap-4 text-sm"
-              >
-                <div className="flex flex-col items-start justify-start gap-1 pt-1">
-                  <Badge variant={"outline"}>{item.version}</Badge>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    {ymdToIdDate(item.date)}
-                  </span>
-                </div>
-
-                <div className="relative flex justify-center">
-                  <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-slate-200 dark:bg-slate-700" />
-                  <div className="relative flex items-start pt-4">
-                    <div
-                      className={`z-10 h-4 w-4 rounded-full border-2 border-blue-400 ${
-                        item.version === changelogHistories[0].version
-                          ? "bg-yellow-200"
-                          : "bg-white"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Card className="py-3">
-                    <CardContent className="px-3">
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-sm font-semibold leading-snug">
-                          {item.title}
-                        </h3>
-                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-300">
-                          {item.changes.map((change, idx) => (
-                            <li key={idx}>{change}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            ))}
+            <Timeline orientation="vertical">
+              {changelogHistories.map((item, idx) => (
+                <TimelineItem
+                  key={idx}
+                  variant={idx == 0 ? "default" : "outline"}
+                >
+                  <TimelineItemDate>{item.date}</TimelineItemDate>
+                  <TimelineItemTitle>{item.title}</TimelineItemTitle>
+                  {item.changes.map((change, idx) => (
+                    <TimelineItemDescription className="mb-2" key={idx}>
+                      {change}
+                    </TimelineItemDescription>
+                  ))}
+                </TimelineItem>
+              ))}
+            </Timeline>
           </div>
         </div>
       </section>

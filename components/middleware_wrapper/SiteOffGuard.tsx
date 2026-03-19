@@ -61,7 +61,7 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
         <div className="flex-1 flex items-center justify-center p-8 md:p-12 lg:p-24 bg-white/40 backdrop-blur-sm border-r border-slate-200/50 relative">
           <iframe
             src="https://lottie.host/embed/179b787c-0a6a-4431-be7b-3c0aac0f7df6/a421RYO5z7.lottie"
-            className="w-full h-full"
+            className="w-full animate h-full"
           ></iframe>
         </div>
 
@@ -77,34 +77,34 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
             <div className="space-y-8 mb-8">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-4xl md:text-5xl font-bold text-primary animate-pulse">
+                  <span className="text-4xl md:text-5xl font-bold text-black">
                     {timeLeft.days.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                  <span className="text-xs font-bold text-slate-400 tracking-widest mt-2">
                     Hari
                   </span>
                 </div>
                 <div className="bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-4xl md:text-5xl font-bold text-primary animate-pulse">
+                  <span className="text-4xl md:text-5xl font-bold text-black">
                     {timeLeft.hours.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                  <span className="text-xs font-bold text-slate-400 tracking-widest mt-2">
                     Jam
                   </span>
                 </div>
                 <div className="bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-4xl md:text-5xl font-bold text-primary animate-pulse">
+                  <span className="text-4xl md:text-5xl font-bold text-black">
                     {timeLeft.minutes.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                  <span className="text-xs font-bold text-slate-400 tracking-widest mt-2">
                     Menit
                   </span>
                 </div>
                 <div className="bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-4xl md:text-5xl font-bold text-primary animate-pulse">
+                  <span className="text-4xl md:text-5xl font-bold text-black">
                     {timeLeft.seconds.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                  <span className="text-xs font-bold text-slate-400 tracking-widest mt-2">
                     Detik
                   </span>
                 </div>

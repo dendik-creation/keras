@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { toast } from "sonner";
 import {
   Clock,
   Building2,
@@ -40,8 +39,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SubmitLog } from "@/types/submit_log";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 
-const TOTAL_ATTEMPTS = 10;
+const TOTAL_ATTEMPTS = 3;
 const DELAY_MS = 300;
 
 export default function Page() {
@@ -81,7 +81,9 @@ export default function Page() {
       });
 
       if (!response.data.success) {
-        toast.error(response.data.message, { richColors: true });
+        gooeyToast.error("Terjadi kesalahan", {
+          description: response.data.message,
+        });
         setWarStarted(false);
         return false;
       }
@@ -135,11 +137,15 @@ export default function Page() {
 
   const handleStartWar = async () => {
     if (!isWarStarted) {
-      toast.error("Waktu perang KRS belum dimulai", { richColors: true });
+      gooeyToast.warning("Info Bosku", {
+        description: "Waktu perang KRS belum dimulai",
+      });
       return;
     }
     if (selectedCourses.length === 0) {
-      toast.error("Pilih jadwal dulu sebelum mulai War!");
+      gooeyToast.error("Jadwalmu kosong", {
+        description: "Pilih jadwal dulu sebelum mulai Perang!",
+      });
       return;
     }
     setIsSubmitting(true);
@@ -149,8 +155,8 @@ export default function Page() {
       .map((c) => c.schedule_submit_id as string);
 
     if (scheduleIds.length === 0) {
-      toast.success("Tidak ada jadwal lagi yang perlu di ikutkan perang", {
-        richColors: true,
+      gooeyToast.success("Info Bosku", {
+        description: "Tidak ada jadwal lagi yang perlu di ikutkan perang",
       });
       setIsSubmitting(false);
       return;
@@ -176,7 +182,9 @@ export default function Page() {
     }
     setTimeout(() => {
       setIsSubmitting(false);
-      toast.success("Perang berhasil diselesaikan", { richColors: true });
+      gooeyToast.success("Info Bosku", {
+        description: "Perang berhasil diselesaikan",
+      });
     }, 1000);
   };
 
@@ -320,7 +328,14 @@ export default function Page() {
 
   const SubmitReleaseCourse = async () => {
     if (readyReleases.length === 0) {
-      toast.error("Tidak ada jadwal yang dipilih untuk dihapus.");
+      gooeyToast.warning("Info Bosku", {
+        description: "Tidak ada jadwal yang dipilih untuk dihapus",
+        action: {
+          label: "Buka Jadwal",
+          onClick: () => (window.location.href = "/schedule"),
+          successLabel: "Utiwii",
+        },
+      });
       return;
     }
 
@@ -351,7 +366,9 @@ export default function Page() {
           data: { courses: JSON.stringify(releasableCourses) },
         });
       } catch (error) {
-        toast.error("Gagal melepas jadwal yang dipilih");
+        gooeyToast.error("Terjadi Kesalahan", {
+          description: "Gagal melepas jadwal yang dipilih",
+        });
         return;
       }
       const isSuccess = response.data.success;
@@ -374,11 +391,13 @@ export default function Page() {
         setSelectedCourses(updatedCourses);
         setLocalStorage("krs_saved_schedule", updatedCourses);
         setReadyReleases([]);
-        toast.success("Jadwal terpilih telah dilepaskan.", {
-          richColors: true,
+        gooeyToast.success("Info Bosku", {
+          description: "Jadwal terpilih telah dilepaskan",
         });
       } else {
-        toast.error("Gagal melepas jadwal yang dipilih.");
+        gooeyToast.error("Terjadi Kesalahan", {
+          description: "Gagal melepas jadwal yang dipilih",
+        });
       }
     }
 
@@ -394,7 +413,9 @@ export default function Page() {
       setSelectedCourses(updatedCourses);
       setLocalStorage("krs_saved_schedule", updatedCourses);
       setReadyReleases([]);
-      toast.success("Jadwal terpilih telah dihapus.", { richColors: true });
+      gooeyToast.success("Info Bosku", {
+        description: "Jadwal terpilih telah dihapus",
+      });
     }
     window.location.reload();
   };

@@ -3,7 +3,7 @@ import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
-import { toast } from "sonner";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 
 export default function AuthAccess({ children }: { children: ReactNode }) {
   const { isAuthenticated, isValidating } = useSessionCheck();
@@ -11,7 +11,9 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isValidating && !isAuthenticated) {
-      toast.error("Silakan login terlebih dahulu");
+      gooeyToast.error("Gak Bisa Akses", {
+        description: "Silakan login terlebih dahulu",
+      });
       router.push("/login");
     }
   }, [isValidating, isAuthenticated, router]);

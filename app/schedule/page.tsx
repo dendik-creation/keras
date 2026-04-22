@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { toast } from "sonner";
 import {
   CalendarClock,
   Clock,
@@ -13,7 +12,6 @@ import {
   Save,
   Trash2,
   ChevronDown,
-  TextSearch,
   ScanTextIcon,
   Loader2,
   SearchX,
@@ -51,6 +49,7 @@ import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 
 export default function Page() {
   const [activeUser, setActiveUser] = useState<{
@@ -69,10 +68,19 @@ export default function Page() {
     try {
       setLoading(true);
       const response = await axios.get("/api/schedule");
-      setData(response.data.data || []);
-      setLocalStorage("offering_course", response.data.data || []);
+      if (response.data.data.length == 0) {
+        gooeyToast.error("Terjadi Kesalahan", {
+          description: "Gagal mengambil jadwal kuliah",
+        });
+        return;
+      } else {
+        setData(response.data.data || []);
+        setLocalStorage("offering_course", response.data.data || []);
+      }
     } catch (error) {
-      toast.error("Gagal mengambil jadwal kuliah");
+      gooeyToast.error("Terjadi Kesalahan", {
+        description: "Gagal mengambil jadwal kuliah",
+      });
     } finally {
       setLoading(false);
     }
@@ -117,11 +125,8 @@ export default function Page() {
 
     const conflict = checkConflict(course, selectedCourses);
     if (conflict) {
-      toast.error(
+      gooeyToast.error(
         `Jadwal bentrok dengan kelas ${conflict.class} ${conflict.course}`,
-        {
-          richColors: true,
-        },
       );
       return;
     }
@@ -143,8 +148,8 @@ export default function Page() {
 
   const handleSaveKRS = () => {
     if (selectedCourses.length === 0) {
-      toast.warning("Belum ada jadwal yang dipilih", {
-        richColors: true,
+      gooeyToast.warning("Jadwal Gagal Disimpan", {
+        description: "Belum ada jadwal yang dipilih",
       });
       return;
     }
@@ -161,16 +166,16 @@ export default function Page() {
       "krs_saved_schedule",
       selectedWithScheduleSubmitPlaceholder,
     );
-    toast.success("Jadwal KRS berhasil disimpan", {
-      richColors: true,
+    gooeyToast.success("Jadwal Berhasil Disimpan", {
+      description: "Jadwal berhasil disimpan, siap untuk perang",
     });
   };
 
   const handleClearKRS = () => {
     setSelectedCourses([]);
     setLocalStorage("krs_saved_schedule", []);
-    toast.success("Jadwal KRS berhasil dibersihkan", {
-      richColors: true,
+    gooeyToast.success("Jadwal dikosongkan", {
+      description: "Kamu bisa mulai menyusun jadwal lagi",
     });
   };
 

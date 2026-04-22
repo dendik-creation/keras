@@ -37,6 +37,12 @@ const changelogHistories = [
     title: "Penyesuaian Changelog UI",
     changes: ["Penyesuaian Changelog UI berbasis Timeline"],
   },
+  {
+    version: "1.2.1",
+    date: "22 Apr 2026",
+    title: "Perubahan Tema Sistem",
+    changes: ["Perubahan tema dari minimalist ke bauhaus"],
+  },
 ];
 
 export default changelogHistories.reverse();

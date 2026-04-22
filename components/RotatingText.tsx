@@ -217,7 +217,7 @@ const RotatingText = forwardRef<RotatingTextHandle, RotatingTextProps>(
       <motion.span
         className={cn("text-rotate", mainClassName)}
         {...(rest as Omit<
-          import("framer-motion").HTMLMotionProps<"span">,
+          import("motion/react").HTMLMotionProps<"span">,
           "ref"
         >)}
         layout="position"

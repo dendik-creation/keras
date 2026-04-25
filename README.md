@@ -42,3 +42,6 @@ Contributions are welcome! Please open an issue or submit a pull request on [Git
 
 ## Any Issues?
 If you encounter any issues or have questions, please feel free to open an issue on the [GitHub repository](https://github.com/dendik-creation/keras/issues). Or contact me directly at [dendik_542](https://instagram.com/dendik_542).
+
+## Star History
+[![Star History Chart](https://api.star-history.com/chart?repos=dendik-creation/keras&type=date&legend=bottom-right)](https://www.star-history.com/?repos=dendik-creation%2Fkeras&type=date&legend=bottom-right)

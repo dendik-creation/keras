@@ -20,11 +20,10 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
 
   if (isValidating) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-50 flex-col gap-3">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">
-          Mengecek apakah kamu nyata...
-        </p>
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#F0F0F0] flex-col gap-4">
+        <div className="relative w-16 h-16 border-4 border-[#121212]">
+          <div className="absolute inset-1 bg-[#D02020] animate-spin" />
+        </div>
       </div>
     );
   }

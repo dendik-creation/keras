@@ -1,7 +1,6 @@
 "use client";
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 
 export default function GuestAccess({ children }: { children: ReactNode }) {
@@ -16,8 +15,10 @@ export default function GuestAccess({ children }: { children: ReactNode }) {
 
   if (isValidating) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#F0F0F0] flex-col gap-4">
+        <div className="relative w-16 h-16 border-4 border-[#121212]">
+          <div className="absolute inset-1 bg-[#D02020] animate-spin" />
+        </div>
       </div>
     );
   }

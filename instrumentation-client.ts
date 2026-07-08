@@ -12,3 +12,12 @@ if (token) {
     defaults: "2026-05-30",
   });
 }
+
+// Register the service worker so KeRaS is installable as a PWA.
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* SW registration is best-effort */
+    });
+  });
+}

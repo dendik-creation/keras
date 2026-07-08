@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+.dockerignore
+*.md
+.vscode
+.idea
+npm-debug.log*
+bun-debug.log*
+# Never bake secrets into the image; provided via build args / env_file instead.
+.env
+.env.local
+.env.*.local

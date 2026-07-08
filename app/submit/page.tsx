@@ -46,6 +46,7 @@ import { SubmitLog } from "@/types/submit_log";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TOTAL_ATTEMPTS = 3;
 const DELAY_MS = 300;
@@ -56,6 +57,7 @@ export default function Page() {
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMobile = useIsMobile();
   const [submitLogs, setSubmitLogs] = useState<SubmitLog[]>([]);
   const [readyReleases, setReadyReleases] = useState<
     {
@@ -455,14 +457,16 @@ export default function Page() {
         pageTitleHeader="Perang KRS"
         pageDescriptionHeader="Otomatiskan perang KRS kamu dengan sekali klik!"
       >
-        <div className="flex flex-col h-[calc(100vh-100px)]">
-          <div className="grow mt-4 border rounded-lg overflow-hidden bg-background shadow-sm">
-            <ResizablePanelGroup>
+        <div className="flex flex-col h-[calc(100dvh-160px)] md:h-[calc(100vh-100px)]">
+          <div className="grow mt-4 border-2 border-black overflow-hidden bg-white">
+            <ResizablePanelGroup
+              direction={isMobile ? "vertical" : "horizontal"}
+            >
               {/* War Action & Log Activity */}
               <ResizablePanel defaultSize={40} minSize={30}>
                 <div className="flex flex-col h-full bg-muted/10">
                   <ElectricBorder
-                    color={isSubmitting ? "#4c1d95" : "#14532d"}
+                    color={isSubmitting ? "#FF3000" : "#000000"}
                     speed={isSubmitting ? 4 : 1}
                     chaos={0.15}
                     style={{
@@ -470,9 +474,9 @@ export default function Page() {
                       width: "100%",
                     }}
                   >
-                    <div className="p-4 border-b bg-white space-y-4">
+                    <div className="p-4 border-b-2 border-black bg-white space-y-4">
                       <div className="">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                           <Sword className="w-5 h-5" /> Ayo Perang KRS
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -484,8 +488,8 @@ export default function Page() {
                         {isWarStarted ? (
                           <Button
                             size="lg"
-                            variant={"green"}
                             onClick={handleStartWar}
+                            variant="default"
                             disabled={
                               isSubmitting ||
                               selectedCourses.length === 0 ||
@@ -508,7 +512,7 @@ export default function Page() {
                         ) : (
                           <Button
                             size="lg"
-                            variant={"yellow"}
+                            variant={"outline"}
                             onClick={() => findActualScheduleIds()}
                             disabled={isFindActualSchedule}
                             className={`w-full font-bold text-md transition-all ${isFindActualSchedule ? "animate-pulse" : ""}`}
@@ -531,14 +535,14 @@ export default function Page() {
                   </ElectricBorder>
 
                   <div className="grow overflow-auto flex flex-col">
-                    <div className="px-4 py-2 bg-slate-50 border-b">
-                      <span className="text-xs font-semibold text-slate-500">
+                    <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">
+                      <span className="text-xs font-black uppercase tracking-widest text-black">
                         Aktivitas perang ({submitLogs.length} aktivitas)
                       </span>
                     </div>
                     <ScrollArea className="grow p-4">
                       {submitLogs.length === 0 && (
-                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground opacity-50 gap-2 border-2 border-dashed rounded-lg">
+                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground opacity-60 gap-2 border-2 border-dashed border-black uppercase tracking-widest text-xs font-bold">
                           <Sword className="w-8 h-8" />
                           <span className="text-sm">
                             Kamu belum melakukan perang
@@ -555,20 +559,20 @@ export default function Page() {
                           <AccordionItem
                             key={log.attempt}
                             value={`item-${log.attempt}`}
-                            className={`border rounded-md px-3 bg-white ${
+                            className={`border-2 px-3 bg-white ${
                               log.status === "success"
-                                ? "border-green-200 bg-green-50/50"
-                                : "border-yellow-200 bg-yellow-50/50"
+                                ? "border-black bg-white"
+                                : "border-[#555555] bg-[#F2F2F2]"
                             }`}
                           >
                             <AccordionTrigger className="hover:no-underline py-3">
                               <div className="flex items-center justify-between w-full pr-2">
                                 <div className="flex items-center gap-3">
                                   {log.status === "pending" && (
-                                    <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />
+                                    <Loader2 className="w-4 h-4 text-[#FF3000] animate-spin" />
                                   )}
                                   {log.status === "success" && (
-                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                    <CheckCircle2 className="w-4 h-4 text-black" />
                                   )}
 
                                   <span className="text-sm font-medium">
@@ -604,9 +608,9 @@ export default function Page() {
                                   >
                                     <AlertDescription className="text-xs text-black leading-relaxed">
                                       {msg.status == "error" ? (
-                                        <CircleX className="w-4 h-4 inline mr-1 text-red-600" />
+                                        <CircleX className="w-4 h-4 inline mr-1 text-[#FF3000]" />
                                       ) : (
-                                        <CheckCircle2 className="w-4 h-4 inline mr-1 text-green-600" />
+                                        <CheckCircle2 className="w-4 h-4 inline mr-1 text-black" />
                                       )}
                                       {msg.message}
                                     </AlertDescription>
@@ -633,9 +637,11 @@ export default function Page() {
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
                 <div className="flex flex-col h-full bg-white">
-                  <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+                  <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
-                      <h3 className="font-bold text-lg">Tabel Jadwal</h3>
+                      <h3 className="font-black text-lg uppercase tracking-tight">
+                        Tabel Jadwal
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         Jadwal kuliah dibawah akan disertakan pada proses perang
                       </p>
@@ -648,9 +654,10 @@ export default function Page() {
                         triggerNode={
                           <span>
                             <Button
-                              variant={"red"}
+                              variant={"destructive"}
                               size={"sm"}
                               disabled={readyReleases.length == 0}
+                              className="rounded-none uppercase font-bold tracking-widest"
                             >
                               <Trash2 />
                               <span>Hapus Terpilih</span>
@@ -660,10 +667,10 @@ export default function Page() {
                         confirmAction={SubmitReleaseCourse}
                       />
                       <div className="text-right">
-                        <span className="text-xs text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block uppercase tracking-widest">
                           Total SKS
                         </span>
-                        <span className="font-bold text-lg text-green-500">
+                        <span className="font-black text-lg text-[#FF3000] tabular-nums">
                           {totalSKS}
                         </span>
                       </div>
@@ -671,15 +678,15 @@ export default function Page() {
                   </div>
 
                   <div className="grow p-4 overflow-auto">
-                    {/* Calendar Grid */}
-                    <div className="grid grid-cols-5 gap-2 min-w-150">
+                    {/* Calendar Grid — 5 columns on desktop, stacked days on mobile */}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150">
                       {["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].map(
                         (day) => (
                           <div key={day} className="flex flex-col gap-2">
-                            <div className="text-center font-semibold py-2 border-b-2 border-green/20 text-muted-foreground uppercase tracking-wider">
+                            <div className="text-center font-black py-2 border-b-2 border-black text-black uppercase tracking-widest">
                               {day}
                             </div>
-                            <div className="space-y-2 h-full min-h-100 bg-white rounded-md p-2">
+                            <div className="space-y-2 h-full min-h-[80px] md:min-h-100 bg-white rounded-md p-2">
                               {selectedCourses
                                 .filter(
                                   (c) =>
@@ -699,16 +706,16 @@ export default function Page() {
                                       )
                                     }
                                     key={course.schedule_id}
-                                    className="relative cursor-pointer pt-0 hover:shadow-md transition-shadow overflow-hidden"
+                                    className="relative cursor-pointer pt-0 border-2 border-black overflow-hidden"
                                   >
                                     {readyReleases.some(
                                       (item) =>
                                         item.course_code === course.code &&
                                         item.course_class === course.class,
                                     ) && (
-                                      <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center z-10 transition-all bg-red-500 text-white">
+                                      <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center z-10 transition-all bg-[#FF3000] text-white">
                                         <div className="flex w-full justify-center items-center">
-                                          <p className="m-0 text-xs w-full text-center">
+                                          <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
                                             Siap dihapus
                                           </p>
                                         </div>
@@ -716,17 +723,17 @@ export default function Page() {
                                     )}
                                     <CardContent className="p-2">
                                       {course.saved_in_submit ? (
-                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-violet-500 text-white">
+                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-black text-white">
                                           <div className="flex w-full justify-center items-center">
-                                            <p className="m-0 text-xs w-full text-center">
+                                            <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
                                               Sudah punya
                                             </p>
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-yellow-300 text-black">
+                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-[#F2F2F2] text-black border-t-2 border-black">
                                           <div className="flex w-full justify-center items-center">
-                                            <p className="m-0 text-xs w-full text-center">
+                                            <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
                                               Belum punya
                                             </p>
                                           </div>
@@ -749,11 +756,11 @@ export default function Page() {
                                           {course.class}
                                         </Badge>
                                       </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-slate-600">
+                                      <div className="text-[10px] flex items-center gap-1 text-[#555555]">
                                         <Clock className="w-3 h-3" />{" "}
                                         {course.hour}
                                       </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-slate-600 mt-0.5">
+                                      <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
                                         <Building2 className="w-3 h-3" />{" "}
                                         {course.classroom}
                                       </div>
@@ -765,7 +772,7 @@ export default function Page() {
                                 (c) =>
                                   c.day.toLowerCase() === day.toLowerCase(),
                               ).length === 0 && (
-                                <div className="h-full text-sm gap-3 flex-col bg-red-50 rounded-md flex items-center justify-center">
+                                <div className="h-full text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-widest text-xs font-bold">
                                   <CalendarSearch />
                                   <span>Mau Libur Ya?</span>
                                 </div>

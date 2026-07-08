@@ -14,8 +14,8 @@ export const PageTitle = ({ title, description }: PageTitleProps) => {
     <>
       <div className="flex justify-start items-center gap-5 mb-5">
         <div className="flex flex-col gap-1">
-          <h2 className="font-semibold text-2xl">{title}</h2>
-          <span className="text-slate-700">{description}</span>
+          <h2 className="font-black text-2xl uppercase tracking-tight">{title}</h2>
+          <span className="text-[#555555]">{description}</span>
         </div>
       </div>
     </>

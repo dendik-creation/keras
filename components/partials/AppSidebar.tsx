@@ -49,28 +49,24 @@ export default function AppSidebar() {
   const items = sidebarNavs;
   return (
     <Sidebar>
-      <SidebarContent className="bg-[#F0F0F0] border-r-4 border-[#121212] min-h-full relative h-full flex flex-col">
+      <SidebarContent className="bg-white border-r-2 border-black min-h-full relative h-full flex flex-col">
         {/* Brand mark */}
-        <SidebarHeader className="mt-0 p-0 gap-0 border-b-4 border-[#121212]">
+        <SidebarHeader className="mt-0 p-0 gap-0 border-b-2 border-black">
           <div className="flex items-center gap-3 px-4 py-4">
-            <div className="w-8 h-8 bg-[#D02020] border-2 border-[#121212] flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
               <CalendarSync className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[#121212] font-black tracking-tighter text-base leading-none">
-                KeRaS.
+              <span className="text-black font-black uppercase tracking-tighter text-base leading-none">
+                KeRaS
               </span>
               <span className="text-[#555555] text-xs font-medium mt-0.5 leading-none">
                 Kawal KRS-mu dengan mudah
               </span>
             </div>
           </div>
-          {/* Bauhaus color strip */}
-          <div className="flex w-full">
-            <div className="flex-1 h-1.5 bg-[#D02020]" />
-            <div className="flex-1 h-1.5 bg-[#1040C0]" />
-            <div className="flex-1 h-1.5 bg-[#F0C020]" />
-          </div>
+          {/* Swiss accent strip */}
+          <div className="w-full h-1.5 bg-[#FF3000]" />
         </SidebarHeader>
 
         <SidebarGroup className="pt-4">
@@ -80,12 +76,12 @@ export default function AppSidebar() {
                 if (item.type === "splitter") {
                   return (
                     <SidebarMenuItem
-                      className="border-b-2 border-[#121212] mt-2 mx-2"
+                      className="border-b-2 border-black mt-2 mx-2"
                       key={item.title}
                     >
                       <SidebarMenuButton
                         disabled
-                        className="text-[#121212] uppercase text-xs font-black tracking-widest"
+                        className="text-black uppercase text-xs font-black tracking-widest"
                       >
                         <ArrowBigRightDash />
                         {item.title}
@@ -101,11 +97,11 @@ export default function AppSidebar() {
                       <SidebarMenuButton
                         isActive={isActive}
                         className={`
-                          rounded-none transition-none border-2 font-bold uppercase tracking-wide text-sm
+                          rounded-none transition-colors duration-200 border-2 font-bold uppercase tracking-widest text-sm
                           ${
                             isActive
-                              ? "bg-[#D02020] text-[#121212]! border-[#121212] shadow-[3px_3px_0px_0px_#121212]"
-                              : "bg-transparent text-[#121212] border-transparent hover:bg-[#F0C020] hover:text-[#121212] hover:border-[#121212]"
+                              ? "bg-black text-black! border-black hover:bg-black"
+                              : "bg-transparent text-black border-transparent hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]"
                           }
                         `}
                         asChild

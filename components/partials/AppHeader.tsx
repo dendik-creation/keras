@@ -3,7 +3,7 @@ import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ChevronDown } from "lucide-react";
+import { CalendarSync, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,16 +31,20 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <header
       className={cn(
-        "w-full h-16 flex items-center justify-between px-6 bg-[#F0F0F0] border-b-4 border-[#121212]",
+        "w-full h-16 flex items-center justify-between px-6 bg-white border-b-2 border-black",
         classNames,
       )}
     >
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="border-2 border-[#121212] rounded-none hover:bg-[#F0C020] hover:text-[#121212] transition-colors w-8 h-8 flex items-center justify-center" />
+        <SidebarTrigger className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center" />
+        {/* Mobile brand mark (no sidebar on mobile) */}
+        <div className="md:hidden w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
+          <CalendarSync className="w-4 h-4 text-white" />
+        </div>
         {/* Page Title */}
         {pageTitle && pageDescription && (
-          <div className="flex flex-col border-l-4 border-[#121212] pl-4">
-            <h2 className="font-black text-sm uppercase tracking-wide text-[#121212] leading-none">
+          <div className="flex flex-col border-l-2 border-black pl-4">
+            <h2 className="font-black text-sm uppercase tracking-widest text-black leading-none">
               {pageTitle}
             </h2>
             <span className="text-xs text-[#555555] font-medium mt-0.5">
@@ -55,22 +59,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           <div className="flex items-center gap-3 cursor-pointer select-none group">
             {!isMobile && (
               <div className="flex text-sm flex-col justify-center items-end">
-                <span className="font-bold text-[#121212] uppercase tracking-wide text-xs">
+                <span className="font-bold text-black uppercase tracking-widest text-xs">
                   {name}
                 </span>
                 <span className="text-xs font-black text-[#555555]">{nim}</span>
               </div>
             )}
-            <Avatar className="border-4 border-[#121212] rounded-none transition-all shadow-[3px_3px_0px_0px_#121212] group-hover:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px]">
-              <AvatarFallback className="rounded-none bg-[#D02020] text-white font-black text-base">
+            <Avatar className="border-2 border-black rounded-none transition-colors duration-200 group-hover:bg-[#FF3000]">
+              <AvatarFallback className="rounded-none bg-black text-white font-black text-base group-hover:bg-[#FF3000]">
                 {name?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <ChevronDown size={16} className="text-[#121212]" />
+            <ChevronDown size={16} className="text-black" />
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-56 rounded-none border-2 border-[#121212] shadow-[4px_4px_0px_0px_#121212] bg-white"
+          className="w-56 rounded-none border-2 border-black bg-white"
           align="end"
         >
           <LogoutMenu />

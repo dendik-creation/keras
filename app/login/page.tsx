@@ -76,21 +76,17 @@ export default function Page() {
       <GuestAccess>
         {/* ── Disclaimer Dialog ── */}
         <Dialog open={!isDisclaimerAccepted}>
-          <DialogContent className="rounded-none border-4 border-[#121212] shadow-[8px_8px_0px_0px_#121212] bg-white max-w-md">
+          <DialogContent className="rounded-none border-2 border-black bg-white max-w-md">
             <DialogHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-[#D02020] border-2 border-[#121212] flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
                   <CalendarSync className="text-white w-4 h-4" />
                 </div>
-                <DialogTitle className="font-black uppercase tracking-tight text-[#121212]">
+                <DialogTitle className="font-black uppercase tracking-tight text-black">
                   Hanya Untuk Universitas Muria Kudus
                 </DialogTitle>
               </div>
-              <div className="w-full h-1 flex">
-                <div className="flex-1 bg-[#D02020]" />
-                <div className="flex-1 bg-[#1040C0]" />
-                <div className="flex-1 bg-[#F0C020]" />
-              </div>
+              <div className="w-full h-0.5 bg-[#FF3000]" />
               <DialogDescription className="text-[#555555] leading-relaxed pt-3 font-medium">
                 KeRaS adalah alat bantu untuk mempercepat proses pengisian KRS.
                 Penggunaan sistem ini sepenuhnya menjadi tanggung jawab
@@ -104,7 +100,7 @@ export default function Page() {
               <DialogClose asChild>
                 <Button
                   onClick={() => handleDisclaimerChange(true)}
-                  className="rounded-none border-2 border-[#121212] bg-[#D02020] text-white hover:bg-[#121212] shadow-[4px_4px_0px_0px_#121212] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase font-black tracking-wider transition-all"
+                  className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
                 >
                   <BadgeCheck className="w-4 h-4 mr-2" />
                   Saya Paham
@@ -115,24 +111,20 @@ export default function Page() {
         </Dialog>
 
         {/* ── Main Layout ── */}
-        <div className="grid min-h-svh lg:grid-cols-2 bg-[#F0F0F0]">
-          {/* Left: Form Panel */}
-          <div className="flex flex-col p-0">
-            {/* Top color band */}
-            <div className="flex w-full">
-              <div className="flex-1 h-2 bg-[#D02020]" />
-              <div className="flex-1 h-2 bg-[#1040C0]" />
-              <div className="flex-1 h-2 bg-[#F0C020]" />
-            </div>
+        <div className="grid min-h-svh lg:grid-cols-12 bg-white">
+          {/* Left: Form Panel (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col p-0 lg:border-r-2 border-black">
+            {/* Top accent band */}
+            <div className="w-full h-2 bg-[#FF3000]" />
 
             <div className="flex flex-col flex-1 p-8 md:p-12">
               {/* Brand */}
               <Link href="/" className="flex items-center gap-3 w-fit mb-auto">
-                <div className="w-9 h-9 bg-[#D02020] border-2 border-[#121212] flex items-center justify-center shadow-[3px_3px_0px_0px_#121212]">
+                <div className="w-9 h-9 bg-black flex items-center justify-center">
                   <CalendarSync className="text-white w-5 h-5" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-black uppercase tracking-tighter text-[#121212] text-lg leading-none">
+                  <span className="font-black tracking-tighter text-black text-lg leading-none">
                     KeRaS
                   </span>
                   <span className="text-xs font-medium text-[#555555] leading-none mt-0.5">
@@ -142,28 +134,39 @@ export default function Page() {
               </Link>
 
               {/* Form */}
-              <div className="flex flex-1 items-center justify-center py-12">
-                <div className="w-full max-w-sm">
+              <div className="flex flex-1 items-center py-12">
+                <div className="w-full max-w-md">
+                  {/* Section label */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="text-[#FF3000] font-black text-sm tracking-widest">
+                      00
+                    </span>
+                    <div className="w-8 h-0.5 bg-[#FF3000]" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-black">
+                      Autentikasi
+                    </span>
+                  </div>
+
                   {/* Form heading */}
-                  <div className="mb-8">
-                    <h1 className="text-4xl mb-2 font-black uppercase tracking-tighter text-[#121212] leading-none">
-                      LOGIN DULU WOK
+                  <div className="mb-10">
+                    <h1 className="text-5xl md:text-6xl mb-3 font-black uppercase tracking-tighter text-black leading-[0.85]">
+                      Login <span className="text-[#FF3000]">Dulu Wok</span>
                     </h1>
                     <p className="text-[#555555] text-sm font-medium leading-snug">
                       Masukkan Username dan Password kamu{" "}
-                      <span className="text-[#121212] font-bold">
+                      <span className="text-black font-bold">
                         (sama seperti kanal)
                       </span>
                     </p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <FieldGroup>
                       {/* Username */}
                       <Field>
                         <FieldLabel
                           htmlFor="username"
-                          className="text-xs font-black uppercase tracking-widest text-[#121212] mb-1"
+                          className="text-xs font-black uppercase tracking-widest text-black mb-1"
                         >
                           Username
                         </FieldLabel>
@@ -176,7 +179,7 @@ export default function Page() {
                           required
                           onChange={handleChange}
                           value={form.username}
-                          className="rounded-none border-2 border-[#121212] bg-white focus:border-[#1040C0] focus:ring-0 font-medium h-12 shadow-[3px_3px_0px_0px_#121212] focus:shadow-[3px_3px_0px_0px_#1040C0] transition-all"
+                          className="rounded-none border-0 border-b-2 border-black bg-transparent px-0 focus:border-[#FF3000] focus-visible:ring-0 font-medium h-12 text-lg transition-colors duration-200"
                         />
                       </Field>
 
@@ -184,7 +187,7 @@ export default function Page() {
                       <Field>
                         <FieldLabel
                           htmlFor="password"
-                          className="text-xs font-black uppercase tracking-widest text-[#121212] mb-1"
+                          className="text-xs font-black uppercase tracking-widest text-black mb-1"
                         >
                           Password
                         </FieldLabel>
@@ -196,7 +199,7 @@ export default function Page() {
                           required
                           onChange={handleChange}
                           value={form.password}
-                          className="rounded-none border-2 border-[#121212] bg-white focus:border-[#1040C0] focus:ring-0 font-medium h-12 shadow-[3px_3px_0px_0px_#121212] focus:shadow-[3px_3px_0px_0px_#1040C0] transition-all"
+                          className="rounded-none border-0 border-b-2 border-black bg-transparent px-0 focus:border-[#FF3000] focus-visible:ring-0 font-medium h-12 text-lg transition-colors duration-200"
                         />
                       </Field>
 
@@ -205,7 +208,7 @@ export default function Page() {
                         <Button
                           disabled={isLoading}
                           type="submit"
-                          className="w-full rounded-none border-4 border-[#121212] bg-[#D02020] text-white hover:bg-[#121212] shadow-[6px_6px_0px_0px_#121212] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase font-black tracking-widest h-14 text-base transition-all mt-2"
+                          className="w-full rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest h-16 text-base transition-colors duration-200 mt-2"
                         >
                           {isLoading ? (
                             <Loader2 className="animate-spin w-5 h-5" />
@@ -217,7 +220,7 @@ export default function Page() {
 
                       {/* Disclaimer notice */}
                       <Field>
-                        <div className="border-l-4 border-[#F0C020] pl-3 py-1">
+                        <div className="border-l-2 border-[#FF3000] pl-3 py-1">
                           <span className="text-xs text-[#555555] font-medium leading-snug">
                             Tidak dirancang untuk berpindah-pindah akun
                           </span>
@@ -231,47 +234,37 @@ export default function Page() {
               {/* Back to home */}
               <Link
                 href="/"
-                className="text-xs font-bold uppercase tracking-widest text-[#555555] hover:text-[#D02020] transition-colors w-fit"
+                className="text-xs font-bold uppercase tracking-widest text-[#555555] hover:text-[#FF3000] transition-colors duration-200 w-fit"
               >
                 ← Kembali ke Beranda
               </Link>
             </div>
           </div>
 
-          {/* Right: Bauhaus Graphic Panel */}
-          <div className="hidden lg:flex bg-[#121212] border-l-4 border-[#121212] relative overflow-hidden flex-col items-center justify-center gap-0">
-            {/* Color strip at top */}
-            <div className="absolute top-0 left-0 right-0 flex">
-              <div className="flex-1 h-3 bg-[#D02020]" />
-              <div className="flex-1 h-3 bg-[#1040C0]" />
-              <div className="flex-1 h-3 bg-[#F0C020]" />
+          {/* Right: Swiss Geometric Panel (5 cols) */}
+          <div className="hidden lg:block lg:col-span-5 bg-black relative overflow-hidden swiss-grid-pattern">
+            {/* Red square */}
+            <div className="absolute top-16 left-16 w-44 h-44 bg-[#FF3000]" />
+            {/* Outline square */}
+            <div className="absolute top-28 left-28 w-44 h-44 border-2 border-white/40" />
+            {/* White circle outline */}
+            <div className="absolute bottom-28 right-16 w-40 h-40 border-2 border-white/60 rounded-full" />
+            {/* Solid red circle */}
+            <div className="absolute bottom-36 right-28 w-16 h-16 bg-[#FF3000] rounded-full" />
+            {/* Horizontal rule */}
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/20" />
+            {/* Vertical rule */}
+            <div className="absolute top-0 left-1/2 h-full w-0.5 bg-white/20" />
+            {/* Wordmark */}
+            <div className="absolute bottom-25 left-10">
+              <span className="text-white/90 font-black tracking-tighter text-5xl leading-none">
+                Sudah KeRaS<span className="text-[#FF3000]">.</span>
+              </span>
             </div>
-
-            {/* Big geometric composition */}
-            <div className="absolute top-16 left-12 w-48 h-48 bg-[#D02020] border-4 border-[#F0F0F0]/20" />
-            <div className="absolute top-32 left-32 w-32 h-32 rounded-full bg-[#1040C0] border-4 border-[#F0F0F0]/20" />
-            <div className="absolute bottom-24 right-12 w-40 h-40 bg-[#F0C020] border-4 border-[#F0F0F0]/20" />
-            <div className="absolute bottom-40 right-32 w-20 h-20 rounded-full bg-[#D02020] border-4 border-[#F0F0F0]/20" />
-            {/* Triangle SVG */}
-            <svg
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10"
-              width="320"
-              height="320"
-              viewBox="0 0 80 80"
-            >
-              <polygon
-                points="40,4 76,72 4,72"
-                fill="#F0F0F0"
-                stroke="#F0F0F0"
-                strokeWidth="2"
-              />
-            </svg>
-
-            {/* Bottom color strip */}
-            <div className="absolute bottom-0 left-0 right-0 flex">
-              <div className="flex-1 h-3 bg-[#F0C020]" />
-              <div className="flex-1 h-3 bg-[#1040C0]" />
-              <div className="flex-1 h-3 bg-[#D02020]" />
+            <div className="absolute bottom-10 left-10">
+              <span className="text-white/90 font-black tracking-tighter text-5xl leading-none">
+                Kah HaRimu?
+              </span>
             </div>
           </div>
         </div>

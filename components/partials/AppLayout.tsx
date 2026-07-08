@@ -2,6 +2,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import AppHeader from "@/components/partials/AppHeader";
 import AppSidebar from "@/components/partials/AppSidebar";
+import BottomNav from "@/components/partials/BottomNav";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getLocalStorage } from "@/helper/local_storage";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -39,7 +40,10 @@ export default function AppLayout({
   return (
     <SidebarProvider>
       <div className={`flex min-h-screen w-full ${className}`}>
-        <AppSidebar />
+        {/* Sidebar: desktop only — mobile uses the bottom nav */}
+        <div className="hidden md:block">
+          <AppSidebar />
+        </div>
         <div className="flex flex-col w-full h-screen overflow-hidden">
           <AppHeader
             name={user.name}
@@ -47,12 +51,13 @@ export default function AppLayout({
             pageTitle={pageTitleHeader}
             pageDescription={pageDescriptionHeader}
           />
-          <main className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+          <main className="flex-1 p-4 pb-24 md:pb-4 bg-[#F2F2F2] swiss-grid-pattern overflow-y-auto">
             {children}
             <Analytics />
             <SpeedInsights />
           </main>
         </div>
+        <BottomNav />
       </div>
     </SidebarProvider>
   );

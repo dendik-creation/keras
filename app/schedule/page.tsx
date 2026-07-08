@@ -50,6 +50,7 @@ import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Page() {
   const [activeUser, setActiveUser] = useState<{
@@ -63,6 +64,7 @@ export default function Page() {
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+  const isMobile = useIsMobile();
 
   const findAvailableSchedules = async () => {
     try {
@@ -207,15 +209,17 @@ export default function Page() {
         pageTitleHeader="Jadwal KRS-mu"
         pageDescriptionHeader="Siapkan jadwal kuliah kamu dengan mudah"
       >
-        <div className="flex flex-col h-[calc(100vh-100px)]">
-          <div className="grow mt-4 border rounded-lg overflow-hidden bg-background shadow-sm">
-            <ResizablePanelGroup>
+        <div className="flex flex-col h-[calc(100dvh-160px)] md:h-[calc(100vh-100px)]">
+          <div className="grow mt-4 border-2 border-black overflow-hidden bg-white">
+            <ResizablePanelGroup
+              direction={isMobile ? "vertical" : "horizontal"}
+            >
               {/* Schedule Offer */}
               <ResizablePanel defaultSize={40} minSize={30}>
-                <ScrollArea className="h-full bg-muted/10">
+                <ScrollArea className="h-full bg-[#F2F2F2]">
                   <div className="p-4 space-y-4">
-                    <div className="flex flex-col gap-1">
-                      <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                         <BookOpen className="w-5 h-5" /> Daftar Mata Kuliah
                       </h3>
                       <p className="text-xs text-muted-foreground">
@@ -226,7 +230,7 @@ export default function Page() {
                         disabled={loading}
                         onClick={handleFindSchedules}
                         size={"sm"}
-                        variant={"green"}
+                        className="bg-black text-white hover:bg-[#FF3000] rounded-none uppercase font-bold tracking-widest"
                       >
                         {loading ? (
                           <Loader2 className="animate-spin" />
@@ -239,7 +243,7 @@ export default function Page() {
 
                     {!loading && data.length === 0 && isHydrated && (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">
-                        <SearchX className="text-red-500" />
+                        <SearchX className="text-[#FF3000]" />
                         <div className="text-center">
                           Lakukan pencarian jadwal untuk menampilkan
                           ketersediaan jadwal terbaru
@@ -271,7 +275,7 @@ export default function Page() {
                         {groupedData.length > 0 &&
                           groupedData.map((sem, semIdx) => (
                             <AccordionItem key={semIdx} value={`sem-${semIdx}`}>
-                              <AccordionTrigger className="font-bold text-md hover:no-underline bg-gray-100 px-4 rounded-md mb-2 border">
+                              <AccordionTrigger className="font-black text-md uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-4 mb-2 border-2 border-black">
                                 {sem.semester}
                               </AccordionTrigger>
                               <AccordionContent className="px-2 pt-2">
@@ -297,7 +301,7 @@ export default function Page() {
                                         <AccordionItem
                                           key={code}
                                           value={code}
-                                          className="border rounded-md bg-violet-100"
+                                          className="border-2 border-black bg-white"
                                         >
                                           <AccordionTrigger className="px-4 hover:no-underline">
                                             <div className="flex items-center justify-between w-full pr-4">
@@ -313,14 +317,14 @@ export default function Page() {
                                               {isCourseSelected && (
                                                 <Badge
                                                   variant="secondary"
-                                                  className="text-xs bg-violet-600 text-white"
+                                                  className="text-xs bg-black text-white uppercase tracking-wide"
                                                 >
                                                   Kelas {selectedClass}
                                                 </Badge>
                                               )}
                                             </div>
                                           </AccordionTrigger>
-                                          <AccordionContent className="p-2 space-y-2 bg-slate-50">
+                                          <AccordionContent className="p-2 space-y-2 bg-[#F2F2F2]">
                                             <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(250px,1fr))] w-full">
                                               {classes.map((cls) => {
                                                 const isSelected =
@@ -335,7 +339,7 @@ export default function Page() {
                                                     onClick={() =>
                                                       handleSelectCourse(cls)
                                                     }
-                                                    className={`cursor-pointer transition-all hover:border-primary py-3 ${isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : ""}`}
+                                                    className={`cursor-pointer border-2 transition-colors duration-200 hover:border-[#FF3000] py-3 ${isSelected ? "border-[#FF3000] bg-[#FF3000]/5" : "border-black"}`}
                                                   >
                                                     <CardContent className="px-3">
                                                       <div className="flex justify-between items-start mb-2">
@@ -400,26 +404,32 @@ export default function Page() {
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
                 <div className="flex flex-col h-full bg-white">
-                  <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+                  <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
-                      <h3 className="font-bold text-lg">Tabel Jadwal</h3>
+                      <h3 className="font-black text-lg uppercase tracking-tight">
+                        Tabel Jadwal
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         Preview jadwal kamu
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-xs text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block uppercase tracking-widest">
                           Total SKS
                         </span>
-                        <span className="font-bold text-lg text-primary">
+                        <span className="font-black text-lg text-[#FF3000] tabular-nums">
                           {totalSKS}
                         </span>
                       </div>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="outline">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-none border-2 border-black uppercase font-bold tracking-widest"
+                          >
                             Aksi Jadwal
                             <ChevronDown className="ml-2" />
                           </Button>
@@ -455,15 +465,15 @@ export default function Page() {
                   </div>
 
                   <div className="grow p-4 overflow-auto">
-                    {/* Calendar Grid */}
-                    <div className="grid grid-cols-5 gap-2 min-w-150">
+                    {/* Calendar Grid — 5 columns on desktop, stacked days on mobile */}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150">
                       {["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].map(
                         (day) => (
                           <div key={day} className="flex flex-col gap-2">
-                            <div className="text-center font-semibold py-2 border-b-2 border-primary/20 text-muted-foreground uppercase tracking-wider">
+                            <div className="text-center font-black py-2 border-b-2 border-black text-black uppercase tracking-widest">
                               {day}
                             </div>
-                            <div className="space-y-2 h-full min-h-100 bg-white rounded-md p-2">
+                            <div className="space-y-2 h-full min-h-[80px] md:min-h-100 bg-white rounded-md p-2">
                               {selectedCourses
                                 .filter(
                                   (c) =>
@@ -477,10 +487,10 @@ export default function Page() {
                                 .map((course) => (
                                   <Card
                                     key={course.schedule_id}
-                                    className="relative pt-0 hover:shadow-md transition-shadow overflow-hidden"
+                                    className="relative pt-0 border-2 border-black overflow-hidden"
                                   >
                                     <CardContent className="p-2">
-                                      <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-primary hover:bg-red-500">
+                                      <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-black hover:bg-[#FF3000]">
                                         <button
                                           className="text-white flex items-center justify-center gap-2 text-sm text-center w-full absolute bottom-0 cursor-pointer left-0"
                                           style={{ minHeight: "2rem" }}
@@ -508,11 +518,11 @@ export default function Page() {
                                           {course.class}
                                         </Badge>
                                       </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-slate-600">
+                                      <div className="text-[10px] flex items-center gap-1 text-[#555555]">
                                         <Clock className="w-3 h-3" />{" "}
                                         {course.hour}
                                       </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-slate-600 mt-0.5">
+                                      <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
                                         <Building2 className="w-3 h-3" />{" "}
                                         {course.classroom}
                                       </div>
@@ -524,7 +534,7 @@ export default function Page() {
                                 (c) =>
                                   c.day.toLowerCase() === day.toLowerCase(),
                               ).length === 0 && (
-                                <div className="h-full text-sm gap-3 flex-col bg-red-50 rounded-md flex items-center justify-center">
+                                <div className="h-full text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-widest text-xs font-bold">
                                   <CalendarSearch />
                                   <span>Mau Libur Ya?</span>
                                 </div>

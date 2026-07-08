@@ -21,8 +21,9 @@ KeRaS is an open-source tool designed to help university students organize and s
 - [x] Ensure no data is stored permanently
 - [x] Real-time data scraping from university website
 - [x] Anonymous usage analytics via PostHog
-- [ ] Responsive design for mobile devices
-- [ ] Documentation and user guide
+- [x] Responsive design for mobile devices <Landing & Dashboard Pages (/schedule & /submit)>
+- [x] PWA support (installable, dedicated 192/512 + maskable + apple-touch icons)
+- [x] Docker Compose support for self-hosting (default port 3000, configurable)
 
 ## Installation
 1. Clone the repository:
@@ -43,6 +44,24 @@ KeRaS is an open-source tool designed to help university students organize and s
    ```bash
    bun run dev
    ```
+
+## Self-Hosting with Docker
+
+KeRaS ships with a `Dockerfile` (multi-stage, Bun + Next.js standalone) and a `docker-compose.yml`.
+
+1. Copy `.env.example` to `.env` and fill in your `KRS_*` URLs (and optionally the PostHog vars).
+2. Build and run:
+   ```bash
+   docker compose up -d --build
+   ```
+3. Open [http://localhost:3000](http://localhost:3000).
+
+**Changing the port:** set `PORT` in your `.env` (e.g. `PORT=8080`). Compose maps and runs the app on that port.
+
+Notes:
+- `NEXT_PUBLIC_*` values are inlined at **build time** — rebuild (`--build`) after changing them.
+- `KRS_*` and other server-side vars are read at **runtime** from `.env` (via `env_file`), so no rebuild is needed when they change.
+- No database is required; the container is stateless.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/dendik-creation/keras/).

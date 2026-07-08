@@ -65,6 +65,39 @@ const changelogHistories = [
       "Revisi informasi keamanan dari 'No Tracking' menjadi 'Analitik Anonim'",
     ],
   },
+  {
+    version: "1.5.0",
+    date: "8 Jul 2026",
+    title: "Redesain Swiss Style",
+    changes: [
+      "Refactor UI ke Swiss International Typographic Style (grid, tipografi grotesque, monokrom + merah signal)",
+      "Palet baru: putih, hitam, abu #F2F2F2, aksen Swiss Red #FF3000; font Inter menggantikan Outfit",
+      "Tekstur pattern (grid, dots, diagonal, noise) untuk kedalaman tanpa bayangan",
+      "Label section bernomor, layout asimetris, dan hover inversi warna",
+      "Dashboard (jadwal & perang KRS), sidebar, header, dan state loading ikut diseragamkan Swiss",
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: "8 Jul 2026",
+    title: "Mobile Responsive & PWA",
+    changes: [
+      "Desain responsif untuk landing dan dashboard (/schedule & /submit)",
+      "Bottom navigation khusus mobile menggantikan sidebar pada dashboard",
+      "Kalender jadwal disusun ulang menjadi tumpukan per-hari di layar kecil",
+      "Dukungan PWA: dapat di-install sebagai app (manifest, service worker, ikon 192/512 + maskable + apple touch)",
+    ],
+  },
+  {
+    version: "1.7.0",
+    date: "8 Jul 2026",
+    title: "Docker Self-Hosting",
+    changes: [
+      "Dukungan Docker Compose untuk self-hosting (Bun + Next.js standalone)",
+      "Port default 3000 dan dapat diubah lewat variabel PORT di .env",
+      "Variabel server (KRS) dibaca saat runtime; variabel publik di-bake saat build",
+    ],
+  },
 ];
 
 export default changelogHistories.reverse();

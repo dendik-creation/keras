@@ -6,7 +6,8 @@
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
-    --font-sans: var(--font-outfit);
+    --font-sans: var(--font-inter);
+    --color-swiss-accent: #FF3000;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,80 +47,126 @@
     --radius-4xl: 0rem;
 }
 
-/* ─── BAUHAUS LIGHT-MODE ONLY ─── */
+/* ─── SWISS INTERNATIONAL TYPOGRAPHIC STYLE — LIGHT ONLY ─── */
 :root {
-    /* No radius — Bauhaus rule */
+    /* No radius — strictly rectangular */
     --radius: 0rem;
 
-    /* Canvas & ink */
-    --background: #F0F0F0;
-    --foreground: #121212;
+    /* Canvas & ink — pure white / pure black */
+    --background: #FFFFFF;
+    --foreground: #000000;
 
     /* Cards */
     --card: #FFFFFF;
-    --card-foreground: #121212;
+    --card-foreground: #000000;
 
     /* Popovers / dropdowns */
     --popover: #FFFFFF;
-    --popover-foreground: #121212;
+    --popover-foreground: #000000;
 
-    /* Primary = Bauhaus Red */
-    --primary: #D02020;
+    /* Primary CTA = solid black (hover flips to Swiss Red) */
+    --primary: #000000;
     --primary-foreground: #FFFFFF;
 
-    /* Secondary = Bauhaus Yellow */
-    --secondary: #F0C020;
-    --secondary-foreground: #121212;
+    /* Secondary = muted gray */
+    --secondary: #F2F2F2;
+    --secondary-foreground: #000000;
 
-    /* Muted = lighter off-white */
-    --muted: #E0E0E0;
+    /* Muted rhythm gray */
+    --muted: #F2F2F2;
     --muted-foreground: #555555;
 
-    /* Accent = Bauhaus Blue */
-    --accent: #1040C0;
+    /* Accent = Swiss Red — the only signal color */
+    --accent: #FF3000;
     --accent-foreground: #FFFFFF;
 
-    /* Destructive */
-    --destructive: #D02020;
+    /* Destructive = Swiss Red */
+    --destructive: #FF3000;
 
-    /* Hard black border */
-    --border: #121212;
-    --input: #121212;
-    --ring: #121212;
+    /* Structure is visible — pure black */
+    --border: #000000;
+    --input: #000000;
 
-    /* Charts keep primary palette */
-    --chart-1: #D02020;
-    --chart-2: #1040C0;
-    --chart-3: #F0C020;
-    --chart-4: #121212;
-    --chart-5: #F0F0F0;
+    /* Focus ring — Swiss Red */
+    --ring: #FF3000;
 
-    /* Sidebar — off-white with black border */
-    --sidebar: #F0F0F0;
-    --sidebar-foreground: #121212;
-    --sidebar-primary: #D02020;
+    /* Charts — monochrome + red signal */
+    --chart-1: #FF3000;
+    --chart-2: #000000;
+    --chart-3: #555555;
+    --chart-4: #999999;
+    --chart-5: #F2F2F2;
+
+    /* Sidebar — white with black border */
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #000000;
+    --sidebar-primary: #000000;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #F0C020;
-    --sidebar-accent-foreground: #121212;
-    --sidebar-border: #121212;
-    --sidebar-ring: #121212;
+    --sidebar-accent: #FF3000;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: #000000;
+    --sidebar-ring: #FF3000;
 }
 
 /* Force light mode — no dark variant */
 @layer base {
     * {
         @apply border-border outline-ring/50;
-        font-family: "Outfit", sans-serif !important;
+        font-family: var(--font-inter), "Inter", "Helvetica Neue", Arial, sans-serif;
         scroll-behavior: smooth !important;
         border-radius: 0 !important;
     }
     body {
         @apply bg-background text-foreground;
-        background-color: #F0F0F0;
-        color: #121212;
+        background-color: #FFFFFF;
+        color: #000000;
     }
-    /* Global Bauhaus button override */
     button, [role="button"] {
         border-radius: 0 !important;
+    }
+}
+
+/* ─── SWISS TEXTURE PATTERNS (depth without shadow) ─── */
+@layer utilities {
+    /* 24px grid lines @ ~3% */
+    .swiss-grid-pattern {
+        background-image:
+            linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+    /* 16px dot matrix @ ~4% */
+    .swiss-dots {
+        background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+        background-size: 16px 16px;
+    }
+    /* 45deg diagonal lines @ ~2% */
+    .swiss-diagonal {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgba(0, 0, 0, 0.025) 0,
+            rgba(0, 0, 0, 0.025) 1px,
+            transparent 1px,
+            transparent 10px
+        );
+    }
+    /* Fractal paper noise @ ~1.5% — global body overlay */
+    .swiss-noise::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.02;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
     }
 }

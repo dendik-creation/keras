@@ -15,10 +15,12 @@ import {
   CalendarSync,
   Swords,
   Server,
-  Star,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
 import RotatingText from "@/components/RotatingText";
+import InstallPWAButton from "@/components/custom/InstallPWAButton";
+import GithubStarButton from "@/components/custom/GithubStarButton";
 import changelogHistories from "@/lib/changelog";
 import Timeline, {
   TimelineItem,
@@ -29,126 +31,18 @@ import Timeline, {
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ─── Inline SVG Bauhaus Primitives ───────────────────────────────────────────
-function BauhausSquare({
-  size = 80,
-  color = "#D02020",
-  borderColor = "#121212",
-  className = "",
-}: {
-  size?: number;
-  color?: string;
-  borderColor?: string;
-  className?: string;
-}) {
+// ─── Swiss Section Label ──────────────────────────────────────────────────────
+function SectionLabel({ index, label }: { index: string; label: string }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 80 80"
-      className={className}
-      style={{ overflow: "visible" }}
-    >
-      <rect
-        x="4"
-        y="4"
-        width="72"
-        height="72"
-        fill={color}
-        stroke={borderColor}
-        strokeWidth="4"
-      />
-    </svg>
-  );
-}
-
-function BauhausCircle({
-  size = 80,
-  color = "#1040C0",
-  borderColor = "#121212",
-  className = "",
-}: {
-  size?: number;
-  color?: string;
-  borderColor?: string;
-  className?: string;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 80 80"
-      className={className}
-      style={{ overflow: "visible" }}
-    >
-      <circle
-        cx="40"
-        cy="40"
-        r="36"
-        fill={color}
-        stroke={borderColor}
-        strokeWidth="4"
-      />
-    </svg>
-  );
-}
-
-function BauhausTriangle({
-  size = 80,
-  color = "#F0C020",
-  borderColor = "#121212",
-  className = "",
-}: {
-  size?: number;
-  color?: string;
-  borderColor?: string;
-  className?: string;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 80 80"
-      className={className}
-      style={{ overflow: "visible" }}
-    >
-      <polygon
-        points="40,6 74,70 6,70"
-        fill={color}
-        stroke={borderColor}
-        strokeWidth="4"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function BauhausHalfCircle({
-  size = 80,
-  color = "#D02020",
-  borderColor = "#121212",
-  className = "",
-}: {
-  size?: number;
-  color?: string;
-  borderColor?: string;
-  className?: string;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size / 2}
-      viewBox="0 0 80 40"
-      className={className}
-      style={{ overflow: "visible" }}
-    >
-      <path
-        d="M 4 40 A 36 36 0 0 1 76 40"
-        fill={color}
-        stroke={borderColor}
-        strokeWidth="4"
-      />
-    </svg>
+    <div className="flex items-center gap-4">
+      <span className="text-[#FF3000] font-black text-sm tracking-widest tabular-nums">
+        {index}
+      </span>
+      <div className="w-8 h-0.5 bg-[#FF3000]" />
+      <span className="text-xs font-bold uppercase tracking-widest text-black">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -157,7 +51,6 @@ export default function Page() {
 
   useGSAP(
     () => {
-      // Helper function for strict Bauhaus reveals
       const reveal = (
         selector: string,
         trigger: string = selector,
@@ -165,97 +58,53 @@ export default function Page() {
       ) => {
         gsap.fromTo(
           selector,
-          { y: 40, opacity: 0 },
+          { y: 32, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 0.6,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "power2.out",
             stagger,
-            scrollTrigger: {
-              trigger: trigger,
-              start: "top 85%",
-            },
+            scrollTrigger: { trigger, start: "top 85%" },
           },
         );
       };
 
-      // ── REVEALS (Viewport Triggered, No Scaling, No Delays) ──────────
       reveal(".gsap-nav");
-      reveal(".gsap-hero-badge");
-      reveal(".gsap-headline-line", ".gsap-headline-line", 0.1);
+      reveal(".gsap-hero-label");
+      reveal(".gsap-headline-line", ".gsap-headline-line", 0.08);
       reveal(".gsap-hero-sub");
       reveal(".gsap-cta-btn");
-      reveal(".gsap-hero-bands > div", ".gsap-hero-bands", 0.1);
+      reveal(".gsap-hero-composition");
 
       reveal(".gsap-features-label", "#features");
       reveal(".gsap-features-heading", "#features");
-      reveal(".gsap-feat-card", ".gsap-feat-grid", 0.1);
+      reveal(".gsap-feat-card", ".gsap-feat-grid", 0.08);
 
+      reveal(".gsap-security-label", "#security");
       reveal(".gsap-security-heading", "#security");
-      reveal(".gsap-security-card", ".gsap-security-grid", 0.1);
+      reveal(".gsap-security-card", ".gsap-security-grid", 0.08);
 
+      reveal(".gsap-changelog-label", "#changelog");
       reveal(".gsap-changelog-heading", "#changelog");
       reveal(".gsap-changelog-body", "#changelog");
 
       reveal(".gsap-footer-content", "footer");
 
-      // ── BAUHAUS SVG SHAPES — infinite loops (Untouched) ──────────────
-      gsap.to(".bauhaus-sq-1", {
+      // Precise, mechanical geometry loops
+      gsap.to(".swiss-rotate", {
         rotation: 360,
-        duration: 16,
+        duration: 24,
         ease: "none",
         repeat: -1,
         transformOrigin: "50% 50%",
       });
-      gsap.to(".bauhaus-sq-2", {
+      gsap.to(".swiss-rotate-rev", {
         rotation: -360,
-        duration: 22,
+        duration: 30,
         ease: "none",
         repeat: -1,
         transformOrigin: "50% 50%",
-      });
-      gsap.to(".bauhaus-tri-1", {
-        rotation: 360,
-        duration: 20,
-        ease: "none",
-        repeat: -1,
-        transformOrigin: "50% 50%",
-      });
-      gsap.to(".bauhaus-tri-2", {
-        rotation: -360,
-        duration: 14,
-        ease: "none",
-        repeat: -1,
-        transformOrigin: "50% 50%",
-      });
-      gsap.to(".bauhaus-cir-1", {
-        y: "-=20",
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        duration: 2.8,
-      });
-      gsap.to(".bauhaus-cir-2", {
-        y: "+=18",
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        duration: 3.2,
-      });
-      gsap.to(".bauhaus-cir-3", {
-        y: "-=14",
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        duration: 2.2,
-      });
-      gsap.to(".bauhaus-half-1", {
-        y: "-=12",
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        duration: 4.0,
       });
     },
     { scope: containerRef },
@@ -264,290 +113,264 @@ export default function Page() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-[#F0F0F0] text-[#121212] selection:bg-[#F0C020] selection:text-[#121212] overflow-x-hidden font-sans relative"
+      className="min-h-screen bg-white text-black selection:bg-[#FF3000] selection:text-white overflow-x-hidden font-sans"
     >
       {/* ─── NAV ─── */}
-      <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-4 border-[#121212]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#D02020] flex items-center justify-center border-2 border-[#121212]">
+      <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-black">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-black flex items-center justify-center">
             <CalendarSync className="text-white w-4 h-4" />
           </div>
-          <span className="text-xl font-black tracking-tighter text-[#121212]">
+          <span className="text-xl font-black tracking-tighter text-black">
             KeRaS.
           </span>
         </div>
-        <div className="hidden md:flex gap-10 text-sm font-bold text-[#121212] uppercase tracking-wider">
+        <div className="hidden md:flex gap-10 text-xs font-bold text-black uppercase tracking-widest">
           <a
             href="#features"
-            className="hover:text-[#D02020] transition-colors"
+            className="hover:text-[#FF3000] transition-colors duration-200"
           >
             Fitur
           </a>
           <a
             href="#security"
-            className="hover:text-[#D02020] transition-colors"
+            className="hover:text-[#FF3000] transition-colors duration-200"
           >
             Keamanan
           </a>
           <a
             href="#changelog"
-            className="hover:text-[#D02020] transition-colors"
+            className="hover:text-[#FF3000] transition-colors duration-200"
           >
             Changelog
           </a>
           <Link
             href="/analytics"
-            className="hover:text-[#D02020] transition-colors"
+            className="hover:text-[#FF3000] transition-colors duration-200"
           >
             Analitik
           </Link>
         </div>
-        <a href="https://github.com/dendik-creation/keras/" target="_blank">
-          <Button
-            variant="outline"
-            className="rounded-none border-2 border-[#121212] bg-[#F0C020] text-[#121212] hover:bg-[#121212] hover:text-[#F0C020] shadow-[4px_4px_0px_0px_#121212] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase font-bold tracking-wider transition-all"
-          >
-            <Star className="w-4 h-4 mr-2" /> Star Repository
-          </Button>
-        </a>
+        <GithubStarButton />
       </nav>
 
       {/* ─── HERO ─── */}
-      <section className="relative z-10 overflow-hidden">
-        <div className="w-full h-3 bg-[#F0C020]" />
-
-        <div className="relative flex flex-col items-center px-6 pt-20 pb-0 max-w-5xl mx-auto">
-          {/* Rotating Square — top-left */}
-          <div className="bauhaus-sq-1 absolute top-6 left-0 -translate-x-1/2 hidden md:block opacity-90 pointer-events-none">
-            <BauhausSquare size={120} color="#1040C0" />
-          </div>
-          {/* Floating Circle — top-right */}
-          <div className="bauhaus-cir-1 absolute top-8 right-8 hidden md:block opacity-80 pointer-events-none">
-            <BauhausCircle size={80} color="#D02020" />
-          </div>
-          {/* Rotating Triangle — mid-right */}
-          <div className="bauhaus-tri-1 absolute top-52 right-4 hidden md:block opacity-70 pointer-events-none">
-            <BauhausTriangle size={60} color="#F0C020" />
-          </div>
-          {/* Floating Half-circle — lower-left */}
-          <div className="bauhaus-half-1 absolute bottom-20 left-8 hidden md:block opacity-60 pointer-events-none">
-            <BauhausHalfCircle size={100} color="#1040C0" />
-          </div>
-          {/* Small floating circle — accent */}
-          <div className="bauhaus-cir-2 absolute top-40 left-16 hidden md:block opacity-50 pointer-events-none">
-            <BauhausCircle size={32} color="#F0C020" />
-          </div>
-
-          {/* Badge */}
-          <div className="gsap-hero-badge opacity-0 inline-flex items-center gap-2 bg-[#1040C0] text-white border-2 border-[#121212] shadow-[4px_4px_0px_0px_#121212] px-4 py-1.5 mb-8 uppercase tracking-widest text-xs font-black">
-            <span className="w-2 h-2 bg-[#F0C020] inline-block" />
-            Ini versi 2 kayaknya
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-6 leading-[0.88] text-[#121212] text-center uppercase w-full">
-            <div className="gsap-headline-line opacity-0">ADIOS</div>
-            <div className="gsap-headline-line opacity-0 flex justify-center items-center mt-2">
-              <RotatingText
-                texts={["KRS RIBET", "PENUH DRAMA", "MANUALAN"]}
-                mainClassName="px-2 sm:px-2 md:px-3 text-[#D02020] overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-none"
-                staggerFrom={"last"}
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "-120%" }}
-                staggerDuration={0.025}
-                splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-                transition={{ type: "", damping: 30, stiffness: 400 }}
-                rotationInterval={2000}
-              />
+      <section className="relative z-10 border-b-2 border-black">
+        <div className="grid lg:grid-cols-12 max-w-7xl mx-auto">
+          {/* Left: Headline block (7 cols) */}
+          <div className="lg:col-span-7 px-6 pt-16 pb-20 lg:border-r-2 border-black">
+            <div className="gsap-hero-label opacity-0 mb-8">
+              <SectionLabel index="00" label="Versi 2 Kayaknya" />
             </div>
-          </h1>
 
-          {/* Sub-copy */}
-          <p className="gsap-hero-sub opacity-0 text-lg md:text-xl text-[#555555] max-w-2xl mx-auto mb-12 leading-relaxed font-medium text-center">
-            Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
-            <span className="text-[#121212] font-black">KeRaS</span> hadir
-            sebagai solusi untukmu.
-          </p>
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] uppercase text-black">
+              <div className="gsap-headline-line opacity-0">Adios</div>
+              <div className="gsap-headline-line opacity-0 flex items-center mt-1">
+                <RotatingText
+                  texts={["KRS Ribet", "Penuh Drama", "Manualan"]}
+                  mainClassName="text-[#FF3000] overflow-hidden justify-start rounded-none"
+                  staggerFrom={"last"}
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "-120%" }}
+                  staggerDuration={0.02}
+                  splitLevelClassName="overflow-hidden"
+                  transition={{ type: "", damping: 30, stiffness: 400 }}
+                  rotationInterval={2200}
+                />
+              </div>
+            </h1>
 
-          {/* CTA */}
-          <div className="flex justify-center items-center mb-0">
-            <Link href={"/login"}>
-              <Button
-                size="lg"
-                className="gsap-cta-btn opacity-0 w-full md:w-[360px] bg-[#D02020] text-white border-4 border-[#121212] shadow-[8px_8px_0px_0px_#121212] rounded-none uppercase font-black tracking-widest h-16 text-lg hover:-translate-y-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
-              >
-                Yuk Coba <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
+            <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-[#555555] max-w-xl mt-8 mb-10 leading-relaxed font-medium">
+              Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
+              <span className="text-black font-black">KeRaS</span> hadir sebagai
+              solusi objektif, cepat, jelas, tanpa drama.
+            </p>
+
+            <div className="gsap-cta-btn opacity-0 w-full lg:w-fit">
+              <div className="flex flex-col sm:flex-row gap-0 border-2 border-black">
+                <Link href="/login">
+                  <Button className="rounded-none w-full bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0">
+                    Aku Nak Coba <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/analytics">
+                  <Button className="rounded-none bg-white text-black hover:bg-black hover:text-white uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0 sm:border-l-2 border-t-2 sm:border-t-0 border-black w-full sm:w-auto">
+                    Lihat Analitik
+                  </Button>
+                </Link>
+              </div>
+              <InstallPWAButton className="w-full" />
+            </div>
           </div>
-        </div>
 
-        {/* Bottom color bands */}
-        <div className="gsap-hero-bands w-full flex mt-16">
-          <div className="opacity-0 flex-1 h-4 bg-[#D02020] border-t-4 border-[#121212]" />
-          <div className="opacity-0 flex-1 h-4 bg-[#1040C0] border-t-4 border-[#121212]" />
-          <div className="opacity-0 flex-1 h-4 bg-[#F0C020] border-t-4 border-[#121212]" />
+          {/* Right: Geometric composition (5 cols) */}
+          <div className="gsap-hero-composition opacity-0 lg:col-span-5 relative min-h-[320px] lg:min-h-full swiss-grid-pattern overflow-hidden">
+            {/* Red square */}
+            <div className="absolute top-12 left-12 w-32 h-32 bg-[#FF3000]" />
+            {/* Black rectangle */}
+            <div className="absolute bottom-16 right-14 w-40 h-24 bg-black" />
+            {/* Outline circle (rotating marker) */}
+            <div className="swiss-rotate absolute top-24 right-16 w-28 h-28 border-2 border-black rounded-full flex items-center justify-center">
+              <div className="w-2 h-2 bg-[#FF3000] rounded-full absolute top-1" />
+            </div>
+            {/* Small solid black circle */}
+            <div className="absolute bottom-24 left-20 w-12 h-12 bg-black rounded-full" />
+            {/* Diagonal line */}
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black/80" />
+            {/* Rotating plus */}
+            <div className="swiss-rotate-rev absolute bottom-12 left-1/2 text-[#FF3000]">
+              <Plus className="w-10 h-10" strokeWidth={3} />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ─── FEATURES SECTION ─── */}
+      {/* ─── 01. FEATURES ─── */}
       <section
         id="features"
-        className="relative z-10 px-6 py-24 max-w-7xl mx-auto"
+        className="relative z-10 px-6 py-20 md:py-28 max-w-7xl mx-auto"
       >
-        {/* Counter-rotating square in bg */}
-        <div className="bauhaus-sq-2 absolute top-16 right-4 opacity-[0.06] pointer-events-none hidden md:block">
-          <BauhausSquare size={200} color="#1040C0" borderColor="#1040C0" />
+        <div className="gsap-features-label opacity-0 mb-4">
+          <SectionLabel index="01" label="Fitur Utama" />
         </div>
-
-        <div className="gsap-features-label opacity-0 flex items-center gap-4 mb-2">
-          <div className="w-8 h-1 bg-[#D02020]" />
-          <span className="text-xs font-black uppercase tracking-widest text-[#D02020]">
-            Fitur Utama
-          </span>
-        </div>
-        <h2 className="gsap-features-heading opacity-0 text-5xl md:text-7xl font-black tracking-tighter mb-12 leading-[0.9] uppercase text-[#121212]">
+        <h2 className="gsap-features-heading opacity-0 text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-14 leading-[0.85] uppercase text-black">
           Apa Saja <br />
-          <span className="text-[#1040C0]">Keahliannya</span>
+          <span className="text-[#FF3000]">Keahliannya</span>
         </h2>
 
-        <div className="gsap-feat-grid grid md:grid-cols-12 gap-0 border-4 border-[#121212] shadow-[8px_8px_0px_0px_#121212]">
+        <div className="gsap-feat-grid grid md:grid-cols-12 border-2 border-black">
           {/* Unified View */}
-          <div className="gsap-feat-card opacity-0 md:col-span-7 bg-white border-r-0 md:border-r-4 border-b-4 md:border-b-0 border-[#121212] p-10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#1040C0] border-l-4 border-b-4 border-[#121212]" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 bg-[#F0C020] border-4 border-[#121212] flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
-                <LayoutDashboard className="w-7 h-7 text-[#121212]" />
+          <article className="gsap-feat-card opacity-0 md:col-span-7 bg-white md:border-r-2 border-b-2 md:border-b-0 border-black p-8 md:p-12 group hover:bg-[#FF3000] transition-colors duration-200">
+            <div className="flex items-start justify-between mb-8">
+              <div className="w-14 h-14 border-2 border-black flex items-center justify-center group-hover:border-white transition-colors duration-200">
+                <LayoutDashboard className="w-7 h-7 text-black group-hover:text-white transition-colors duration-200" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-[#121212] mb-3">
-                Unified View
-              </h3>
-              <p className="text-[#555555] leading-relaxed font-medium max-w-md">
-                Lihat semua jadwal mata kuliah yang tersedia dalam satu tampilan
-                terpadu. Tidak perlu bolak-balik cek detail kelas, semua
-                informasi ada di depan mata.
-              </p>
+              <span className="text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
+                01
+              </span>
             </div>
-          </div>
+            <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black group-hover:text-white mb-3 transition-colors duration-200">
+              Unified View
+            </h3>
+            <p className="text-[#555555] group-hover:text-white/90 leading-relaxed font-medium max-w-md transition-colors duration-200">
+              Lihat semua jadwal mata kuliah yang tersedia dalam satu tampilan
+              terpadu. Tidak perlu bolak-balik cek detail kelas, semua informasi
+              ada di depan mata.
+            </p>
+          </article>
 
           {/* Perang KRS */}
-          <div className="gsap-feat-card opacity-0 md:col-span-5 bg-[#1040C0] p-10 relative overflow-hidden group border-b-4 md:border-b-0 border-[#121212]">
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-[#F0C020] border-t-4 border-l-4 border-[#121212]" />
-            <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[#D02020] border-2 border-[#121212]" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-full bg-white border-4 border-[#121212] flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#121212]">
-                <Swords className="w-7 h-7 text-[#1040C0]" />
+          <article className="gsap-feat-card opacity-0 md:col-span-5 bg-black p-8 md:p-12 group hover:bg-[#FF3000] transition-colors duration-200 border-b-2 md:border-b-0 border-black">
+            <div className="flex items-start justify-between mb-8">
+              <div className="w-14 h-14 border-2 border-white flex items-center justify-center">
+                <Swords className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-3">
-                Perang KRS
-              </h3>
-              <p className="text-blue-100 leading-snug font-medium">
-                Cukup dengan satu klik, Jadwal yang kamu siapkan akan terkirim
-                dengan cepat ke sistem universitas tanpa klik satu-satu kembali.{" "}
-                <sup>
-                  <a
-                    href="#note-1"
-                    className="text-[#F0C020] hover:underline font-bold"
-                  >
-                    1
-                  </a>
-                </sup>
-              </p>
+              <span className="text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
+                02
+              </span>
             </div>
-          </div>
+            <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white mb-3">
+              Perang KRS
+            </h3>
+            <p className="text-white/70 group-hover:text-white leading-snug font-medium transition-colors duration-200">
+              Cukup satu klik, jadwal yang kamu siapkan terkirim cepat ke sistem
+              universitas tanpa klik satu-satu.{" "}
+              <sup>
+                <a
+                  href="#note-1"
+                  className="text-[#FF3000] group-hover:text-white hover:underline font-bold"
+                >
+                  1
+                </a>
+              </sup>
+            </p>
+          </article>
 
           {/* Zero Database */}
-          <div className="gsap-feat-card opacity-0 md:col-span-5 bg-white border-r-0 md:border-r-4 border-t-4 border-[#121212] p-10 relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-16 h-16 bg-[#D02020] border-r-4 border-b-4 border-[#121212]" />
-            <div className="relative z-10 pt-4">
-              <div className="w-14 h-14 bg-[#121212] border-4 border-[#121212] flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
-                <ShieldCheck className="w-7 h-7 text-[#F0C020]" />
+          <article className="gsap-feat-card opacity-0 md:col-span-5 bg-[#F2F2F2] swiss-dots md:border-r-2 border-t-2 border-black p-8 md:p-12 group hover:bg-black transition-colors duration-200">
+            <div className="flex items-start justify-between mb-8">
+              <div className="w-14 h-14 border-2 border-black group-hover:border-white flex items-center justify-center transition-colors duration-200">
+                <ShieldCheck className="w-7 h-7 text-black group-hover:text-white transition-colors duration-200" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-[#121212] mb-3">
-                Zero Database
-              </h3>
-              <p className="text-[#555555] leading-snug font-medium">
-                Kami tidak menyimpan data pribadimu. Semua informasi diproses
-                secara temporer untuk menjaga privasimu tetap aman.
-              </p>
+              <span className="text-xs font-black tracking-widest text-[#FF3000]">
+                03
+              </span>
             </div>
-          </div>
+            <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black group-hover:text-white mb-3 transition-colors duration-200">
+              Zero Database
+            </h3>
+            <p className="text-[#555555] group-hover:text-white/80 leading-snug font-medium transition-colors duration-200">
+              Kami tidak menyimpan data pribadimu. Semua informasi diproses
+              secara temporer untuk menjaga privasimu tetap aman.
+            </p>
+          </article>
 
           {/* Realtime Scrapping */}
-          <div className="gsap-feat-card opacity-0 md:col-span-7 bg-[#F0C020] border-t-4 border-[#121212] p-10 relative overflow-hidden group">
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-[#121212] border-t-4 border-l-4 border-[#121212]" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 bg-white border-4 border-[#121212] flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#121212]">
-                <TextSearch className="w-7 h-7 text-[#121212]" />
+          <article className="gsap-feat-card opacity-0 md:col-span-7 bg-white border-t-2 border-black p-8 md:p-12 group hover:bg-[#FF3000] transition-colors duration-200">
+            <div className="flex items-start justify-between mb-8">
+              <div className="w-14 h-14 border-2 border-black group-hover:border-white flex items-center justify-center transition-colors duration-200">
+                <TextSearch className="w-7 h-7 text-black group-hover:text-white transition-colors duration-200" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-[#121212] mb-3">
-                Realtime Scrapping
-              </h3>
-              <p className="text-[#121212]/70 leading-relaxed font-medium max-w-md">
-                List jadwal mata kuliah yang kamu dapatkan selalu terbaru untuk
-                memastikan kamu tidak tertinggal ingpo.{" "}
-                <sup>
-                  <a href="#note-2" className="text-[#D02020] font-bold">
-                    2
-                  </a>
-                </sup>
-              </p>
+              <span className="text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
+                04
+              </span>
             </div>
-          </div>
+            <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black group-hover:text-white mb-3 transition-colors duration-200">
+              Realtime Scrapping
+            </h3>
+            <p className="text-[#555555] group-hover:text-white/90 leading-relaxed font-medium max-w-md transition-colors duration-200">
+              List jadwal mata kuliah yang kamu dapatkan selalu terbaru untuk
+              memastikan kamu tidak tertinggal ingpo.{" "}
+              <sup>
+                <a
+                  href="#note-2"
+                  className="text-[#FF3000] group-hover:text-white font-bold"
+                >
+                  2
+                </a>
+              </sup>
+            </p>
+          </article>
         </div>
       </section>
 
-      {/* ─── SECURITY SECTION ─── */}
+      {/* ─── 02. SECURITY ─── */}
       <section
         id="security"
-        className="relative z-10 px-6 py-24 max-w-7xl mx-auto"
+        className="relative z-10 border-t-2 border-black bg-[#F2F2F2] swiss-grid-pattern"
       >
-        {/* Counter-rotating triangle in bg */}
-        <div className="bauhaus-tri-2 absolute top-20 left-4 opacity-[0.06] pointer-events-none hidden md:block">
-          <BauhausTriangle size={160} color="#D02020" borderColor="#D02020" />
-        </div>
+        <div className="px-6 py-20 md:py-28 max-w-7xl mx-auto">
+          <div className="gsap-security-label opacity-0 mb-4">
+            <SectionLabel index="02" label="Keamanan" />
+          </div>
+          <h2 className="gsap-security-heading opacity-0 text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-14 leading-[0.85] uppercase text-black">
+            Nasib Datamu <span className="text-[#FF3000]">Bagaimana?</span>
+          </h2>
 
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-8 h-1 bg-[#1040C0]" />
-          <span className="text-xs font-black uppercase tracking-widest text-[#1040C0]">
-            Keamanan
-          </span>
-        </div>
-        <h2 className="gsap-security-heading opacity-0 text-5xl md:text-7xl font-black tracking-tighter mb-12 leading-[0.9] uppercase text-[#121212]">
-          Nasib Datamu <span className="text-[#D02020]">Bagaimana?</span>
-        </h2>
-
-        <div className="gsap-security-grid grid md:grid-cols-12 gap-0 border-4 border-[#121212] shadow-[8px_8px_0px_0px_#121212]">
-          <div className="gsap-security-card opacity-0 md:col-span-5 bg-[#121212] border-r-0 md:border-r-4 border-[#121212] p-10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-[#D02020] border-l-4 border-b-4 border-[#F0F0F0]/20" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-full bg-[#D02020] border-4 border-white flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#D02020]">
-                <ChartPie className="w-7 h-7 text-white" />
+          <div className="gsap-security-grid grid md:grid-cols-12 border-2 border-black bg-white">
+            <div className="gsap-security-card opacity-0 md:col-span-5 bg-black md:border-r-2 border-b-2 md:border-b-0 border-black p-8 md:p-12 group">
+              <div className="w-14 h-14 border-2 border-[#FF3000] flex items-center justify-center mb-8">
+                <ChartPie className="w-7 h-7 text-[#FF3000]" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-3">
+              <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white mb-3">
                 Analitik Anonim
               </h3>
-              <p className="text-[#888] leading-snug font-medium">
+              <p className="text-white/70 leading-snug font-medium">
                 Kami mengumpulkan statistik penggunaan secara anonim. NIM-mu
                 selalu disamarkan dan tidak ada data pribadi yang disimpan.
               </p>
             </div>
-          </div>
-          <div className="gsap-security-card opacity-0 md:col-span-7 bg-[#121212] p-10 relative overflow-hidden group border-t-4 md:border-t-0 border-[#D02020]">
-            <div className="bauhaus-cir-3 absolute bottom-4 right-4 opacity-20 pointer-events-none">
-              <BauhausCircle size={96} color="#1040C0" borderColor="#F0C020" />
-            </div>
-            <div className="relative z-10">
-              <div className="w-14 h-14 bg-[#1040C0] border-4 border-white flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform">
-                <Server className="w-7 h-7 text-white" />
+            <div className="gsap-security-card opacity-0 md:col-span-7 bg-white p-8 md:p-12">
+              <div className="w-14 h-14 border-2 border-black flex items-center justify-center mb-8">
+                <Server className="w-7 h-7 text-black" />
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-3">
+              <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black mb-3">
                 Just Accessing
               </h3>
-              <p className="text-[#888] leading-relaxed font-medium max-w-md">
-                <strong className="text-white">KeRaS</strong> menggunakan sesi
-                login kamu untuk akses situs resmi krs universitas sebagai
+              <p className="text-[#555555] leading-relaxed font-medium max-w-md">
+                <strong className="text-black">KeRaS</strong> menggunakan sesi
+                login kamu untuk akses situs resmi KRS universitas sebagai
                 jembatan konten mata kuliah untuk jadwalmu. Udah itu aja.
               </p>
             </div>
@@ -555,22 +378,19 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ─── CHANGELOG SECTION ─── */}
+      {/* ─── 03. CHANGELOG ─── */}
       <section
         id="changelog"
-        className="relative z-10 px-6 py-24 max-w-7xl mx-auto"
+        className="relative z-10 border-t-2 border-black px-6 py-20 md:py-28 max-w-7xl mx-auto"
       >
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-8 h-1 bg-[#F0C020]" />
-          <span className="text-xs font-black uppercase tracking-widest text-[#F0C020] bg-[#121212] px-2 py-0.5">
-            Changelog
-          </span>
+        <div className="gsap-changelog-label opacity-0 mb-4">
+          <SectionLabel index="03" label="Changelog" />
         </div>
         <div className="gsap-changelog-heading opacity-0">
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-0 leading-[0.9] uppercase text-[#121212]">
+          <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase text-black">
             Developer
           </h2>
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-4 leading-[0.9] uppercase text-[#D02020]">
+          <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 leading-[0.85] uppercase text-[#FF3000]">
             Ngapain Aja Sih
           </h2>
           <p className="text-[#555555] font-medium mb-10">
@@ -578,7 +398,7 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="gsap-changelog-body opacity-0 border-4 border-[#121212] shadow-[8px_8px_0px_0px_#121212] bg-white p-8">
+        <div className="gsap-changelog-body opacity-0 border-2 border-black bg-white p-6 md:p-8">
           <div className="overflow-x-auto w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="min-w-[800px]">
               <Timeline orientation="horizontal">
@@ -603,43 +423,39 @@ export default function Page() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="relative z-10 bg-[#121212] border-t-4 border-[#121212]">
-        <div className="w-full flex">
-          <div className="flex-1 h-3 bg-[#D02020]" />
-          <div className="flex-1 h-3 bg-[#1040C0]" />
-          <div className="flex-1 h-3 bg-[#F0C020]" />
-        </div>
-        <div className="gsap-footer-content opacity-0 max-w-7xl mx-auto px-6 py-16 flex flex-col items-center gap-8">
+      <footer className="relative z-10 bg-black border-t-2 border-black">
+        <div className="gsap-footer-content opacity-0 max-w-7xl mx-auto px-6 py-16 flex flex-col items-start gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#D02020] border-2 border-white flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#FF3000] flex items-center justify-center">
               <CalendarSync className="text-white w-4 h-4" />
             </div>
             <span className="text-xl font-black tracking-tighter text-white">
               KeRaS.
             </span>
           </div>
-          <h3 className="text-2xl font-black uppercase tracking-tight text-white max-w-md text-center">
-            KRS-an jadi lebih tenang, kelas incaran pun aman.
+          <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white max-w-2xl leading-[0.9]">
+            KRS-an jadi lebih tenang, kelas incaran pun{" "}
+            <span className="text-[#FF3000]">aman.</span>
           </h3>
           <a href="https://github.com/dendik-creation/keras/" target="_blank">
             <Button
-              variant="ghost"
-              className="text-[#888] hover:text-[#F0C020] hover:bg-transparent gap-2 uppercase font-bold tracking-wider border-2 border-[#555] hover:border-[#F0C020] transition-colors rounded-none"
+              variant="outline"
+              className="rounded-none border-2 border-white bg-transparent text-white hover:bg-[#FF3000] hover:border-[#FF3000] gap-2 uppercase font-bold tracking-widest transition-colors duration-200"
             >
               <Github className="w-4 h-4" /> Kontribusi
             </Button>
           </a>
-          <div className="w-full h-px bg-[#333]" />
-          <div className="w-full flex flex-col items-center gap-2">
+          <div className="w-full h-0.5 bg-white/20" />
+          <div className="w-full flex flex-col items-start gap-2">
             <small
-              className="text-sm text-[#666] font-medium text-center leading-tight"
+              className="text-sm text-white/50 font-medium leading-tight"
               id="note-1"
             >
               1. Peningkatan peluang bergantung pada performa sistem dari situs
               resmi universitas.
             </small>
             <small
-              className="text-sm text-[#666] font-medium text-center leading-tight"
+              className="text-sm text-white/50 font-medium leading-tight"
               id="note-2"
             >
               2. Trigger manual dari mahasiswa untuk mendapatkan jadwal terbaru.

@@ -44,7 +44,7 @@ const changelogHistories = [
     changes: ["Perubahan tema dari minimalist ke bauhaus"],
   },
   {
-    version: "1.3.0",
+    version: "2.0.0",
     date: "8 Jul 2026",
     title: "Refactor Arsitektur Modular",
     changes: [
@@ -55,7 +55,7 @@ const changelogHistories = [
     ],
   },
   {
-    version: "1.4.0",
+    version: "2.1.0",
     date: "8 Jul 2026",
     title: "Integrasi Analitik PostHog",
     changes: [
@@ -66,7 +66,7 @@ const changelogHistories = [
     ],
   },
   {
-    version: "1.5.0",
+    version: "2.1.1",
     date: "8 Jul 2026",
     title: "Redesain Swiss Style",
     changes: [
@@ -78,7 +78,7 @@ const changelogHistories = [
     ],
   },
   {
-    version: "1.6.0",
+    version: "2.1.2",
     date: "8 Jul 2026",
     title: "Mobile Responsive & PWA",
     changes: [
@@ -89,13 +89,11 @@ const changelogHistories = [
     ],
   },
   {
-    version: "1.7.0",
+    version: "2.1.3",
     date: "8 Jul 2026",
     title: "Docker Self-Hosting",
     changes: [
       "Dukungan Docker Compose untuk self-hosting (Bun + Next.js standalone)",
-      "Port default 3000 dan dapat diubah lewat variabel PORT di .env",
-      "Variabel server (KRS) dibaca saat runtime; variabel publik di-bake saat build",
     ],
   },
 ];

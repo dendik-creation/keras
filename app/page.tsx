@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   ShieldCheck,
   Github,
-  EyeOff,
+  ChartPie,
   LayoutDashboard,
   ArrowRight,
   TextSearch,
@@ -295,13 +295,19 @@ export default function Page() {
           >
             Changelog
           </a>
+          <Link
+            href="/analytics"
+            className="hover:text-[#D02020] transition-colors"
+          >
+            Analitik
+          </Link>
         </div>
         <a href="https://github.com/dendik-creation/keras/" target="_blank">
           <Button
             variant="outline"
             className="rounded-none border-2 border-[#121212] bg-[#F0C020] text-[#121212] hover:bg-[#121212] hover:text-[#F0C020] shadow-[4px_4px_0px_0px_#121212] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase font-bold tracking-wider transition-all"
           >
-            <Star className="w-4 h-4 mr-2" /> Ramaikan
+            <Star className="w-4 h-4 mr-2" /> Star Repository
           </Button>
         </a>
       </nav>
@@ -335,7 +341,7 @@ export default function Page() {
           {/* Badge */}
           <div className="gsap-hero-badge opacity-0 inline-flex items-center gap-2 bg-[#1040C0] text-white border-2 border-[#121212] shadow-[4px_4px_0px_0px_#121212] px-4 py-1.5 mb-8 uppercase tracking-widest text-xs font-black">
             <span className="w-2 h-2 bg-[#F0C020] inline-block" />
-            Woi Coba Dulu
+            Ini versi 2 kayaknya
           </div>
 
           {/* Headline */}
@@ -517,14 +523,14 @@ export default function Page() {
             <div className="absolute top-0 right-0 w-16 h-16 bg-[#D02020] border-l-4 border-b-4 border-[#F0F0F0]/20" />
             <div className="relative z-10">
               <div className="w-14 h-14 rounded-full bg-[#D02020] border-4 border-white flex items-center justify-center mb-6 group-hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_#D02020]">
-                <EyeOff className="w-7 h-7 text-white" />
+                <ChartPie className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-3">
-                No Tracking
+                Analitik Anonim
               </h3>
               <p className="text-[#888] leading-snug font-medium">
-                Aktivitasmu tidak terekam sama sekali sejak kamu login hingga
-                kamu logout kembali
+                Kami mengumpulkan statistik penggunaan secara anonim. NIM-mu
+                selalu disamarkan dan tidak ada data pribadi yang disimpan.
               </p>
             </div>
           </div>

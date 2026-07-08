@@ -54,6 +54,17 @@ const changelogHistories = [
       "Peningkatan keterbacaan dan reusabilitas kode",
     ],
   },
+  {
+    version: "1.4.0",
+    date: "8 Jul 2026",
+    title: "Integrasi Analitik PostHog",
+    changes: [
+      "Integrasi analitik penggunaan anonim menggunakan PostHog",
+      "NIM mahasiswa selalu disamarkan (6 digit awal, sisanya bintang) sebelum dikirim",
+      "Pencatatan aktivitas perang KRS: jumlah jadwal disiapkan vs berhasil didapatkan",
+      "Revisi informasi keamanan dari 'No Tracking' menjadi 'Analitik Anonim'",
+    ],
+  },
 ];
 
 export default changelogHistories.reverse();

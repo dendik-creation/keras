@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import axios from "axios";
 import { setLocalStorage } from "@/helper/local_storage";
+import { trackLogin } from "@/lib/analytics/events";
 import GuestAccess from "@/components/middleware_wrapper/GuestAccess";
 import {
   Dialog,
@@ -58,6 +59,7 @@ export default function Page() {
       const data = response.data;
       if (data?.user) {
         setLocalStorage("active_user", data.user);
+        void trackLogin(data.user);
       }
       router.push("/schedule");
     } catch (error: any) {

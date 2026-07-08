@@ -35,6 +35,12 @@ import { Button } from "@/components/ui/button";
 import { CourseSchedule } from "@/types/course_schedule";
 import { parseTimeRange, ymdToIdDate } from "@/helper/frontend_helper";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import {
+  ActiveUser,
+  identifyStudent,
+  trackPrepared,
+  trackWarFinished,
+} from "@/lib/analytics/events";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SubmitLog } from "@/types/submit_log";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
@@ -127,6 +133,9 @@ export default function Page() {
   };
 
   useEffect(() => {
+    const activeUser = getLocalStorage("active_user") as ActiveUser | null;
+    if (activeUser) void identifyStudent(activeUser);
+
     const savedCourses = getLocalStorage("krs_saved_schedule");
     if (savedCourses && Array.isArray(savedCourses)) {
       setSelectedCourses(savedCourses);
@@ -162,6 +171,9 @@ export default function Page() {
       return;
     }
 
+    const activeUser = getLocalStorage("active_user") as ActiveUser | null;
+    if (activeUser) trackPrepared(activeUser, selectedCourses.length);
+
     const wait = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -185,6 +197,18 @@ export default function Page() {
       gooeyToast.success("Info Bosku", {
         description: "Perang berhasil diselesaikan",
       });
+
+      // Analytics: prepared vs successfully secured schedules
+      const finalCourses =
+        (getLocalStorage("krs_saved_schedule") as CourseSchedule[] | null) ||
+        [];
+      const preparedCount = finalCourses.length;
+      const successCount = finalCourses.filter(
+        (c) => c.saved_in_submit === true,
+      ).length;
+      if (activeUser) {
+        trackWarFinished(activeUser, preparedCount, successCount);
+      }
     }, 1000);
   };
 

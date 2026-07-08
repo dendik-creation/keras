@@ -43,6 +43,17 @@ const changelogHistories = [
     title: "Perubahan Tema Sistem",
     changes: ["Perubahan tema dari minimalist ke bauhaus"],
   },
+  {
+    version: "1.3.0",
+    date: "8 Jul 2026",
+    title: "Refactor Arsitektur Modular",
+    changes: [
+      "Restrukturisasi backend menjadi arsitektur modular (service, controller, validator) per module: auth, schedule, submit, site",
+      "Penambahan utilitas server bersama (session, https-agent, http-error) untuk mengurangi duplikasi",
+      "Route API dibuat tipis dengan re-export controller tanpa mengubah path maupun perilaku",
+      "Peningkatan keterbacaan dan reusabilitas kode",
+    ],
+  },
 ];
 
 export default changelogHistories.reverse();

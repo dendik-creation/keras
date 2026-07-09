@@ -5,17 +5,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Public (client-side) vars must be baked in at build time.
         NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:-}
         NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-https://us.i.posthog.com}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-    # Change the exposed port by setting PORT in your .env (default 3000).
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     environment:
       - PORT=${PORT:-3000}
       - HOSTNAME=0.0.0.0
-    # Server-side vars (KRS_* urls, etc.) are injected at runtime from .env.
     env_file:
       - .env
     restart: unless-stopped

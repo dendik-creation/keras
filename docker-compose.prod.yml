@@ -1,8 +1,6 @@
 services:
   keras:
     container_name: keras
-    # Pull the prebuilt image from GitHub Container Registry instead of building.
-    # Override the tag with IMAGE_TAG in .env (default: latest).
     image: ghcr.io/dendik-creation/keras:${IMAGE_TAG:-latest}
     pull_policy: always
     ports:
@@ -10,8 +8,6 @@ services:
     environment:
       - PORT=${PORT:-3000}
       - HOSTNAME=0.0.0.0
-    # Server-side vars (KRS_* urls, TURNSTILE_SECRET_KEY) injected at runtime.
-    # NEXT_PUBLIC_* values are already baked into the image at build time.
     env_file:
       - .env
     restart: unless-stopped

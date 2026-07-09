@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "KeRaS — Asisten KRS",
+    name: "KeRaS",
     short_name: "KeRaS",
-    description: "Siapkan jadwal KRS-mu dengan mudah, cepat, tanpa drama.",
+    description: "KeRaS",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -25,13 +25,13 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
-        src: "/icon-192.png",
+        src: "/icon-192-maskable.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icon-512.png",
+        src: "/icon-512-maskable.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

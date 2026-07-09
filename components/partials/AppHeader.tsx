@@ -3,7 +3,8 @@ import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { CalendarSync, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,9 +39,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="flex items-center gap-4">
         <SidebarTrigger className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center" />
         {/* Mobile brand mark (no sidebar on mobile) */}
-        <div className="md:hidden w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
-          <CalendarSync className="w-4 h-4 text-white" />
-        </div>
+        <Image
+          src="/logo.png"
+          alt="KeRaS"
+          width={32}
+          height={32}
+          className="md:hidden w-8 h-8 object-contain flex-shrink-0"
+        />
         {/* Page Title */}
         {pageTitle && pageDescription && (
           <div className="flex flex-col border-l-2 border-black pl-4">

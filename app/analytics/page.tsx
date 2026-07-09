@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { BarChart3, CalendarSync } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -20,9 +21,14 @@ export default function AnalyticsPage() {
       {/* NAV */}
       <nav className="relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-black">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black flex items-center justify-center">
-            <CalendarSync className="text-white w-4 h-4" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="KeRaS"
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain"
+            priority
+          />
           <span className="text-xl font-black tracking-tighter text-black">
             KeRaS.
           </span>

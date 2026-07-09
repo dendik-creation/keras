@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck, CalendarSync, Loader2 } from "lucide-react";
+import { BadgeCheck, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -79,9 +80,13 @@ export default function Page() {
           <DialogContent className="rounded-none border-2 border-black bg-white max-w-md">
             <DialogHeader>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
-                  <CalendarSync className="text-white w-4 h-4" />
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="KeRaS"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain flex-shrink-0"
+                />
                 <DialogTitle className="font-black uppercase tracking-tight text-black">
                   Hanya Untuk Universitas Muria Kudus
                 </DialogTitle>
@@ -120,9 +125,14 @@ export default function Page() {
             <div className="flex flex-col flex-1 p-8 md:p-12">
               {/* Brand */}
               <Link href="/" className="flex items-center gap-3 w-fit mb-auto">
-                <div className="w-9 h-9 bg-black flex items-center justify-center">
-                  <CalendarSync className="text-white w-5 h-5" />
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="KeRaS"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 object-contain"
+                  priority
+                />
                 <div className="flex flex-col">
                   <span className="font-black tracking-tighter text-black text-lg leading-none">
                     KeRaS

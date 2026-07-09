@@ -12,12 +12,12 @@ import {
   LayoutDashboard,
   ArrowRight,
   TextSearch,
-  CalendarSync,
   Swords,
   Server,
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import RotatingText from "@/components/RotatingText";
 import InstallPWAButton from "@/components/custom/InstallPWAButton";
 import GithubStarButton from "@/components/custom/GithubStarButton";
@@ -118,9 +118,14 @@ export default function Page() {
       {/* ─── NAV ─── */}
       <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-black">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black flex items-center justify-center">
-            <CalendarSync className="text-white w-4 h-4" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="KeRaS"
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain"
+            priority
+          />
           <span className="text-xl font-black tracking-tighter text-black">
             KeRaS.
           </span>
@@ -426,9 +431,13 @@ export default function Page() {
       <footer className="relative z-10 bg-black border-t-2 border-black">
         <div className="gsap-footer-content opacity-0 max-w-7xl mx-auto px-6 py-16 flex flex-col items-start gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#FF3000] flex items-center justify-center">
-              <CalendarSync className="text-white w-4 h-4" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="KeRaS"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain bg-white"
+            />
             <span className="text-xl font-black tracking-tighter text-white">
               KeRaS.
             </span>

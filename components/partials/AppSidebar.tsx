@@ -12,10 +12,10 @@ import {
 import {
   ArrowBigRightDash,
   CalendarCog,
-  CalendarSync,
   LucideProps,
   Sword,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
@@ -53,9 +53,14 @@ export default function AppSidebar() {
         {/* Brand mark */}
         <SidebarHeader className="mt-0 p-0 gap-0 border-b-2 border-black">
           <div className="flex items-center gap-3 px-4 py-4">
-            <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
-              <CalendarSync className="w-4 h-4 text-white" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="KeRaS"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain flex-shrink-0"
+              priority
+            />
             <div className="flex flex-col">
               <span className="text-black font-black uppercase tracking-tighter text-base leading-none">
                 KeRaS

@@ -96,6 +96,14 @@ const changelogHistories = [
       "Dukungan Docker Compose untuk self-hosting (Bun + Next.js standalone)",
     ],
   },
+  {
+    version: "2.2.0",
+    date: "9 Jul 2026",
+    title: "Cloudflare Challange",
+    changes: [
+      "Menambahkan deteksi robot menggunakan cloudflare ketika website di load",
+    ],
+  },
 ];
 
 export default changelogHistories.reverse();

@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import Image from "next/image";
 import GuardLoader from "@/components/middleware_wrapper/GuardLoader";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -104,6 +105,15 @@ export default function TurnstileGuard({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-8 bg-white swiss-grid-pattern px-6">
       <div className="w-full h-2 bg-[#FF3000] absolute top-0 left-0" />
+
+      <Image
+        src="/logo.png"
+        alt="KeRaS"
+        width={64}
+        height={64}
+        className="w-16 h-16 object-contain"
+        priority
+      />
 
       <div className="flex items-center gap-4">
         <div className="w-8 h-0.5 bg-[#FF3000]" />

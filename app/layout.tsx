@@ -7,7 +7,9 @@ import TurnstileGuard from "@/components/middleware_wrapper/TurnstileGuard";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  // Variable font: one file serves every weight (400–900). No `weight` array,
+  // otherwise Next fetches a separate static file per weight.
+  display: "swap",
 });
 
 export const metadata: Metadata = {

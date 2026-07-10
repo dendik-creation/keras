@@ -15,6 +15,7 @@ import {
   ScanTextIcon,
   Loader2,
   SearchX,
+  Share2,
 } from "lucide-react";
 
 import AppLayout from "@/components/partials/AppLayout";
@@ -47,6 +48,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -62,6 +64,7 @@ export default function Page() {
   const [data, setData] = useState<OfferingCourse[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
+  const [openShareSchedule, setOpenShareSchedule] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const isMobile = useIsMobile();
@@ -146,6 +149,18 @@ export default function Page() {
     event.preventDefault();
     event.stopPropagation();
     setOpenRemoveSchedule(true);
+  };
+
+  const openShareScheduleDialog = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (selectedCourses.length === 0) {
+      gooeyToast.warning("Belum Ada Jadwal", {
+        description: "Pilih minimal satu mata kuliah untuk dibagikan",
+      });
+      return;
+    }
+    setOpenShareSchedule(true);
   };
 
   const handleSaveKRS = () => {
@@ -442,6 +457,13 @@ export default function Page() {
                             <Save className="w-4 h-4" />
                             Simpan Jadwal
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={openShareScheduleDialog}
+                            className="flex items-center gap-2"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            Bagikan Jadwal
+                          </DropdownMenuItem>
                           <ConfirmDialog
                             open={openRemoveSchedule}
                             onOpenChange={(open) => setOpenRemoveSchedule(open)}
@@ -461,6 +483,13 @@ export default function Page() {
                           />
                         </DropdownMenuContent>
                       </DropdownMenu>
+
+                      <ShareScheduleDialog
+                        open={openShareSchedule}
+                        onOpenChange={setOpenShareSchedule}
+                        courses={selectedCourses}
+                        user={activeUser}
+                      />
                     </div>
                   </div>
 

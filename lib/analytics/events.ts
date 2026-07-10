@@ -92,6 +92,21 @@ export function trackPwaInstalled(source: string = "unknown") {
   posthog.capture("pwa_dipasang", { source });
 }
 
+/** Fired when a student generates a share link for their schedule. */
+export function trackScheduleShared(sharedCount: number) {
+  if (!ready()) return;
+  posthog.capture("jadwal_dibagikan", { shared_count: sharedCount });
+}
+
+/** Fired when a student adopts a schedule opened from a share link. */
+export function trackScheduleAdopted(adoptedCount: number, replaced: boolean) {
+  if (!ready()) return;
+  posthog.capture("jadwal_diadopsi", {
+    adopted_count: adoptedCount,
+    replaced_existing: replaced,
+  });
+}
+
 /** Detach the identity on logout so a shared browser isn't merged. */
 export function resetAnalytics() {
   if (!ready()) return;

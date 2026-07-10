@@ -62,7 +62,18 @@ export default function Page() {
         setLocalStorage("active_user", data.user);
         void trackLogin(data.user);
       }
-      router.push("/schedule");
+      // Honor a callbackUrl (e.g. adopting a shared schedule) when it's a safe
+      // internal path; otherwise fall back to the schedule page.
+      const callbackUrl = new URLSearchParams(window.location.search).get(
+        "callbackUrl",
+      );
+      const safeCallback =
+        callbackUrl &&
+        callbackUrl.startsWith("/") &&
+        !callbackUrl.startsWith("//")
+          ? callbackUrl
+          : "/schedule";
+      router.push(safeCallback);
     } catch (error: any) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: error?.message,

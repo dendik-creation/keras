@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Check } from "lucide-react";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { trackPwaInstalled } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -14,8 +15,10 @@ interface BeforeInstallPromptEvent extends Event {
 /** Hero CTA that triggers the native PWA install prompt (add to home screen). */
 export default function InstallPWAButton({
   className,
+  source = "landing_hero",
 }: {
   className?: string;
+  source?: string;
 }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
     null,
@@ -33,6 +36,9 @@ export default function InstallPWAButton({
     const onInstalled = () => {
       setInstalled(true);
       setDeferred(null);
+      // Authoritative install signal (fires once per install on Android /
+      // desktop) — record it as the new `pwa_dipasang` analytics event.
+      trackPwaInstalled(source);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -40,7 +46,7 @@ export default function InstallPWAButton({
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [source]);
 
   const handleClick = async () => {
     if (deferred) {

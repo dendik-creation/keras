@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
               title="KeRaS Analytics Dashboard"
               src={DASHBOARD_EMBED_URL}
               width="100%"
-              height={1400}
+              height={2000}
               frameBorder="0"
               allowFullScreen
               sandbox="allow-scripts allow-same-origin allow-popups"

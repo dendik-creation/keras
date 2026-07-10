@@ -81,6 +81,17 @@ export function trackWarFinished(
   });
 }
 
+/**
+ * Fired once when KeRaS is installed as a PWA (added to the home screen).
+ * Anonymous by design — installs usually happen on the landing page before a
+ * student logs in. PostHog attaches device/OS/browser props automatically, so
+ * breakdowns by platform work without any extra fields here.
+ */
+export function trackPwaInstalled(source: string = "unknown") {
+  if (!ready()) return;
+  posthog.capture("pwa_dipasang", { source });
+}
+
 /** Detach the identity on logout so a shared browser isn't merged. */
 export function resetAnalytics() {
   if (!ready()) return;

@@ -16,6 +16,7 @@ import {
   Loader2,
   SearchX,
   Share2,
+  Sparkles,
 } from "lucide-react";
 
 import AppLayout from "@/components/partials/AppLayout";
@@ -38,6 +39,7 @@ import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import {
   checkConflict,
   parseTimeRange,
+  saveScheduleToStorage,
   ymdToIdDate,
 } from "@/helper/frontend_helper";
 import {
@@ -49,6 +51,7 @@ import {
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
+import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -65,6 +68,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [openShareSchedule, setOpenShareSchedule] = useState(false);
+  const [openGenerateAi, setOpenGenerateAi] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const isMobile = useIsMobile();
@@ -163,6 +167,12 @@ export default function Page() {
     setOpenShareSchedule(true);
   };
 
+  const openGenerateAiDialog = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpenGenerateAi(true);
+  };
+
   const handleSaveKRS = () => {
     if (selectedCourses.length === 0) {
       gooeyToast.warning("Jadwal Gagal Disimpan", {
@@ -171,18 +181,7 @@ export default function Page() {
       return;
     }
 
-    const selectedWithScheduleSubmitPlaceholder = selectedCourses.map(
-      (course) => ({
-        ...course,
-        schedule_submit_id: "",
-        saved_in_submit: false,
-      }),
-    );
-
-    setLocalStorage(
-      "krs_saved_schedule",
-      selectedWithScheduleSubmitPlaceholder,
-    );
+    saveScheduleToStorage(selectedCourses);
     gooeyToast.success("Jadwal Berhasil Disimpan", {
       description: "Jadwal berhasil disimpan, siap untuk perang",
     });
@@ -458,6 +457,13 @@ export default function Page() {
                             Simpan Jadwal
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onSelect={openGenerateAiDialog}
+                            className="flex items-center gap-2"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            Buat dengan AI
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onSelect={openShareScheduleDialog}
                             className="flex items-center gap-2"
                           >
@@ -489,6 +495,13 @@ export default function Page() {
                         onOpenChange={setOpenShareSchedule}
                         courses={selectedCourses}
                         user={activeUser}
+                      />
+
+                      <GenerateScheduleDialog
+                        open={openGenerateAi}
+                        onOpenChange={setOpenGenerateAi}
+                        offeringCourses={data}
+                        onGenerated={setSelectedCourses}
                       />
                     </div>
                   </div>

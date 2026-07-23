@@ -10,6 +10,36 @@ import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
 import GuardLoader from "@/components/middleware_wrapper/GuardLoader";
 
+/** Single odometer digit — a 0-9 strip that rolls vertically to the active digit. */
+function RollingDigit({ digit }: { digit: number }) {
+  return (
+    <span className="inline-block h-[1em] overflow-hidden align-top">
+      <span
+        className="flex flex-col transition-transform duration-500 ease-out"
+        style={{ transform: `translateY(-${digit}em)` }}
+      >
+        {Array.from({ length: 10 }, (_, n) => (
+          <span key={n} className="h-[1em] leading-none">
+            {n}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+/** Odometer-style rolling number — each digit rolls independently on change. */
+function RollingNumber({ value }: { value: number }) {
+  const padded = Math.max(value, 0).toString().padStart(2, "0");
+  return (
+    <span className="inline-flex tabular-nums">
+      {padded.split("").map((char, i) => (
+        <RollingDigit key={padded.length - i} digit={Number(char)} />
+      ))}
+    </span>
+  );
+}
+
 export default function SiteOffGuard({ children }: { children: ReactNode }) {
   const { isLoading, isSiteOff, deadline } = useSiteOffCheck();
 
@@ -19,6 +49,7 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
     minutes: 0,
     seconds: 0,
   });
+  const [timeReady, setTimeReady] = useState(false);
 
   useEffect(() => {
     const targetDateString = deadline || "2026-03-10T08:00:00";
@@ -26,12 +57,11 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
 
     if (isNaN(targetDate)) return;
 
-    const interval = setInterval(() => {
+    const tick = () => {
       const now = new Date().getTime();
       const difference = targetDate - now;
 
       if (difference <= 0) {
-        clearInterval(interval);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
         setTimeLeft({
@@ -43,6 +73,15 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
           seconds: Math.floor((difference % (1000 * 60)) / 1000),
         });
       }
+      setTimeReady(true);
+
+      return difference <= 0;
+    };
+
+    if (tick()) return;
+
+    const interval = setInterval(() => {
+      if (tick()) clearInterval(interval);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -112,10 +151,10 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
   /* ─── SITE OFF STATE ─── */
   if (isSiteOff) {
     const timeBlocks = [
-      { value: timeLeft.days, label: "HARI" },
-      { value: timeLeft.hours, label: "JAM" },
-      { value: timeLeft.minutes, label: "MENIT" },
-      { value: timeLeft.seconds, label: "DETIK" },
+      { value: timeLeft.days, label: "Hari" },
+      { value: timeLeft.hours, label: "Jam" },
+      { value: timeLeft.minutes, label: "Menit" },
+      { value: timeLeft.seconds, label: "Detik" },
     ];
 
     return (
@@ -183,11 +222,11 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
                           : "bg-black"
                       }`}
                     />
-                    {block.value == 0 ? (
+                    {!timeReady ? (
                       <Skeleton className="w-12 h-12 bg-[#F2F2F2]" />
                     ) : (
-                      <span className="text-4xl md:text-5xl font-black text-black tabular-nums leading-none">
-                        {block.value.toString().padStart(2, "0")}
+                      <span className="text-4xl md:text-5xl font-black text-black leading-none">
+                        <RollingNumber value={block.value} />
                       </span>
                     )}
                     <span className="text-[10px] font-black text-[#555555] tracking-[0.2em] mt-2 uppercase">

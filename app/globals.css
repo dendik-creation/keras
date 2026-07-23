@@ -162,6 +162,69 @@
     }
 }
 
+/* ─── SWISS TOASTER (goey-toast) — flat, monochrome, one red signal ─── */
+.gooey-title {
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 900 !important;
+}
+.gooey-titleDefault,
+.gooey-titleSuccess,
+.gooey-titleWarning,
+.gooey-titleInfo,
+.gooey-titleLoading {
+    color: #000000 !important;
+}
+.gooey-titleError {
+    color: #FF3000 !important;
+}
+.gooey-description {
+    color: #555555 !important;
+    font-weight: 500 !important;
+}
+.gooey-timestamp {
+    color: #999999 !important;
+}
+.gooey-actionButton {
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 700 !important;
+}
+.gooey-actionDefault,
+.gooey-actionSuccess,
+.gooey-actionWarning,
+.gooey-actionInfo {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+}
+.gooey-actionDefault:hover,
+.gooey-actionSuccess:hover,
+.gooey-actionWarning:hover,
+.gooey-actionInfo:hover {
+    background: #FF3000 !important;
+}
+.gooey-actionError {
+    background: #FF3000 !important;
+    color: #FFFFFF !important;
+}
+.gooey-actionError:hover {
+    background: #000000 !important;
+}
+.gooey-closeButton {
+    border-color: #000000 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+}
+.gooey-progressDefault,
+.gooey-progressSuccess,
+.gooey-progressWarning,
+.gooey-progressInfo {
+    background: #000000 !important;
+}
+.gooey-progressError {
+    background: #FF3000 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

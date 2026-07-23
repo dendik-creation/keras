@@ -1,6 +1,19 @@
 import { CourseSchedule } from "@/types/course_schedule";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { setLocalStorage } from "@/helper/local_storage";
+
+export const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
+
+/** Persist the selected courses under the app's single saved-schedule key. */
+export const saveScheduleToStorage = (courses: CourseSchedule[]): void => {
+  const withSubmitPlaceholder = courses.map((course) => ({
+    ...course,
+    schedule_submit_id: "",
+    saved_in_submit: false,
+  }));
+  setLocalStorage(SAVED_SCHEDULE_KEY, withSubmitPlaceholder);
+};
 
 export const parseTimeRange = (timeStr: string) => {
   if (!timeStr) return { start: 0, end: 0 };

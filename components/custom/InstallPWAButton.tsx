@@ -67,14 +67,7 @@ export default function InstallPWAButton({
     "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0 border-black";
 
   if (installed) {
-    return (
-      <Button
-        disabled
-        className={cn(base, "bg-black text-white", className)}
-      >
-        <Check className="w-5 h-5 mr-2" /> App Sudah Terpasang
-      </Button>
-    );
+    return null;
   }
 
   return (

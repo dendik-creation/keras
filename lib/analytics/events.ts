@@ -107,6 +107,12 @@ export function trackScheduleAdopted(adoptedCount: number, replaced: boolean) {
   });
 }
 
+/** Fired when a student successfully generates a schedule via the AI dialog. */
+export function trackAiScheduleGenerated(courseCount: number, goal: string) {
+  if (!ready()) return;
+  posthog.capture("jadwal_ai_dibuat", { course_count: courseCount, goal });
+}
+
 /** Detach the identity on logout so a shared browser isn't merged. */
 export function resetAnalytics() {
   if (!ready()) return;

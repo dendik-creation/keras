@@ -5,8 +5,8 @@ export default function GuardLoader() {
       <div className="relative w-16 h-16 border-2 border-black">
         <div className="absolute inset-1 bg-[#FF3000] animate-spin" />
       </div>
-      <span className="text-xs font-bold uppercase tracking-widest text-[#555555]">
-        Memuat
+      <span className="text-xs font-bold tracking-widest text-[#555555]">
+        Bentar
       </span>
     </div>
   );

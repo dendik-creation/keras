@@ -140,7 +140,7 @@ export function buildCourseOptions(offeringCourses: OfferingCourse[]): SelectOpt
     byCode.set(course.code, {
       value: course.code,
       label: course.course,
-      sublabel: `${course.code} • ${course.sks} SKS`,
+      sublabel: `${course.code} • ${course.sks} SKS • ${course.category}`,
       group: course.semester,
     });
   }

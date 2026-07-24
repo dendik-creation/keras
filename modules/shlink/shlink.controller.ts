@@ -43,6 +43,7 @@ export async function createShareSchedule(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const longUrl = parseCreateShortUrlBody(body);
+    console.log("[shlink] create: request", { longUrl });
 
     const appHost = getAppHost();
     validateLongUrl(longUrl, appHost);
@@ -52,6 +53,7 @@ export async function createShareSchedule(req: NextRequest) {
       `/share-schedule/${shortCode}`,
       envVariable.APP_URL,
     ).toString();
+    console.log("[shlink] create: success", { shortCode, shortUrl });
 
     return NextResponse.json({ success: true, data: { shortUrl } });
   } catch (error) {
@@ -67,11 +69,17 @@ export async function resolveShareSchedule(
   try {
     const { shortCode } = await params;
     parseShortCode(shortCode);
+    console.log("[shlink] resolve: request", { shortCode });
 
     const longUrl = await getLongUrlByShortCode(shortCode);
 
     const appHost = getAppHost();
-    extractIdsFromLongUrl(longUrl, appHost);
+    const ids = extractIdsFromLongUrl(longUrl, appHost);
+    console.log("[shlink] resolve: success", {
+      shortCode,
+      longUrl,
+      idCount: ids.split(",").filter(Boolean).length,
+    });
 
     return NextResponse.json({ success: true, data: { longUrl } });
   } catch (error) {

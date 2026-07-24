@@ -16,7 +16,7 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
     if (sessionIssue?.reason === "questionnaire_required") {
       gooeyToast.warning("Isi Kuesioner Dulu Wok", {
         description:
-          "Harus ngisi dulu baru bisa akses KRS😹",
+          "Wajib isi kuisoner dari kanal untuk akses KRS😹",
         action: {
           label: "Isi Kuesioner",
           onClick: () => window.open(sessionIssue.questionnaireUrl, "_blank"),

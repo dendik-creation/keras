@@ -44,6 +44,7 @@ export default function AdoptSchedulePage() {
   const [missingCount, setMissingCount] = useState(0);
   const [hasExisting, setHasExisting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [usingFreshFetch, setUsingFreshFetch] = useState(false);
   const resolvedRef = useRef(false);
 
   // Rule 1: guests must log in first — preserve where to return afterwards.
@@ -74,6 +75,7 @@ export default function AdoptSchedulePage() {
 
       // Fresh device (or the offering has changed): pull the latest data.
       if (courses.length < share.ids.length) {
+        setUsingFreshFetch(true);
         try {
           const res = await axios.get("/api/schedule");
           const fresh: OfferingCourse[] = res.data?.data || [];
@@ -159,7 +161,9 @@ export default function AdoptSchedulePage() {
           <p className="text-sm text-[#555555] font-medium max-w-md">
             {isValidating || !isAuthenticated
               ? "Memeriksa sesi login kamu..."
-              : "Menyiapkan jadwal yang dibagikan..."}
+              : usingFreshFetch
+                ? "Menyiapkan ketersediaan jadwal & jadwal yang dibagikan... (Cukup lama, hehe)"
+                : "Menyiapkan jadwal yang dibagikan..."}
           </p>
         </div>
       )}

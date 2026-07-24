@@ -6,7 +6,7 @@ export default function GuardLoader() {
         <div className="absolute inset-1 bg-[#FF3000] animate-spin" />
       </div>
       <span className="text-xs font-bold tracking-widest text-[#555555]">
-        Bentar
+        BentaR
       </span>
     </div>
   );

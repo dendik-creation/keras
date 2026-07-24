@@ -22,6 +22,7 @@ import StepCourse from "@/components/custom/schedule-ai/StepCourse";
 import StepLecturer from "@/components/custom/schedule-ai/StepLecturer";
 import StepGoal from "@/components/custom/schedule-ai/StepGoal";
 import StepReview from "@/components/custom/schedule-ai/StepReview";
+import StepGenerating from "@/components/custom/schedule-ai/StepGenerating";
 
 type GenerateScheduleDialogProps = {
   open: boolean;
@@ -75,40 +76,51 @@ export default function GenerateScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-none border-2 border-black bg-white max-w-[calc(100%-1.5rem)] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl">
+      <DialogContent className="rounded-none border-2 border-black bg-white max-w-[calc(100%-1.5rem)] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-7xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
             <DialogTitle className="font-black tracking-tight text-black">
-              Buat Jadwal Dengan AI
+              Buat Jadwal Dengan AI <br />
+              <span className="font-normal text-xs">Jadwal yang dihasilkan mungkin tidak cocok dan perlu disesuaikan manual</span>
             </DialogTitle>
           </div>
           <div className="w-full h-0.5 bg-[#FF3000]" />
           <DialogDescription className="text-[#555555] leading-relaxed pt-2 font-medium">
-            {STEP_TITLES[step]} {"(Step "} {step + 1} / {AI_STEP_COUNT} {")"}
+            {loading
+              ? "Jadwalmu sedang diracik..."
+              : `${STEP_TITLES[step]} (Step ${step + 1} / ${AI_STEP_COUNT})`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="w-full h-1 bg-[#F2F2F2]">
           <div
             className="h-full bg-black transition-all duration-200"
-            style={{ width: `${((step + 1) / AI_STEP_COUNT) * 100}%` }}
+            style={{
+              width: loading ? "100%" : `${((step + 1) / AI_STEP_COUNT) * 100}%`,
+            }}
           />
         </div>
 
         <ScrollArea className="max-h-[50vh] pr-2">
           <div className="py-1">
-            {step === 0 && (
-              <StepBasic form={form} offeringCourses={offeringCourses} />
+            {loading ? (
+              <StepGenerating />
+            ) : (
+              <>
+                {step === 0 && (
+                  <StepBasic form={form} offeringCourses={offeringCourses} />
+                )}
+                {step === 1 && <StepTime form={form} />}
+                {step === 2 && (
+                  <StepCourse form={form} offeringCourses={offeringCourses} />
+                )}
+                {step === 3 && (
+                  <StepLecturer form={form} offeringCourses={offeringCourses} />
+                )}
+                {step === 4 && <StepGoal form={form} />}
+                {step === 5 && <StepReview form={form} />}
+              </>
             )}
-            {step === 1 && <StepTime form={form} />}
-            {step === 2 && (
-              <StepCourse form={form} offeringCourses={offeringCourses} />
-            )}
-            {step === 3 && (
-              <StepLecturer form={form} offeringCourses={offeringCourses} />
-            )}
-            {step === 4 && <StepGoal form={form} />}
-            {step === 5 && <StepReview form={form} />}
           </div>
         </ScrollArea>
 

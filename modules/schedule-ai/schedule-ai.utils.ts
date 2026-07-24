@@ -125,9 +125,14 @@ export function mapSelectedIdsToCourses(
   return matchCoursesByIds(ids, offeringCourses);
 }
 
-export type SelectOption = { value: string; label: string; sublabel?: string };
+export type SelectOption = {
+  value: string;
+  label: string;
+  sublabel?: string;
+  group?: string;
+};
 
-/** Unique course options (by code) for the course-preference step. */
+/** Unique course options (by code), tagged with their semester for grouped display. */
 export function buildCourseOptions(offeringCourses: OfferingCourse[]): SelectOption[] {
   const byCode = new Map<string, SelectOption>();
   for (const course of flattenOfferingCourses(offeringCourses)) {
@@ -136,6 +141,7 @@ export function buildCourseOptions(offeringCourses: OfferingCourse[]): SelectOpt
       value: course.code,
       label: course.course,
       sublabel: `${course.code} • ${course.sks} SKS`,
+      group: course.semester,
     });
   }
   return Array.from(byCode.values());

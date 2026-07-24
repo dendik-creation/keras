@@ -175,8 +175,8 @@ export default function AdoptSchedulePage() {
             {isValidating || !isAuthenticated
               ? "Memeriksa sesi login kamu..."
               : usingFreshFetch
-                ? "Menyiapkan ketersediaan jadwal & jadwal yang dibagikan... (Pertama kali akan lama😁)"
-                : "Menyiapkan jadwal yang dibagikan..."}
+                ? "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"
+                : "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"}
           </p>
         </div>
       )}

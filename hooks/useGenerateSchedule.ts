@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { aiPreferenceSchema } from "@/modules/schedule-ai/schedule-ai.validator";
 import type { AiPreference } from "@/modules/schedule-ai/schedule-ai.types";
-import type { CourseSchedule } from "@/types/course_schedule";
+import type { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { saveScheduleToStorage } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackAiScheduleGenerated } from "@/lib/analytics/events";
@@ -15,6 +15,7 @@ export const AI_STEP_COUNT = 6;
 
 const DEFAULT_PREFERENCE: AiPreference = {
   target_sks: { mode: "max", value: null },
+  preferred_semester: null,
   preferred_days: [],
   earliest_start: "08:00",
   latest_end: "15:00",
@@ -33,7 +34,10 @@ const DEFAULT_PREFERENCE: AiPreference = {
  * writing the validated result to local storage on success. No business
  * logic lives in the dialog components themselves.
  */
-export function useGenerateSchedule(onGenerated: (courses: CourseSchedule[]) => void) {
+export function useGenerateSchedule(
+  offeringCourses: OfferingCourse[],
+  onGenerated: (courses: CourseSchedule[]) => void,
+) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,11 +70,22 @@ export function useGenerateSchedule(onGenerated: (courses: CourseSchedule[]) => 
     const valid = await form.trigger();
     if (!valid) return false;
 
+    if (offeringCourses.length === 0) {
+      const message =
+        "Data mata kuliah tidak tersedia. Perbarui ketersediaan jadwal dulu, lalu coba lagi.";
+      setError(message);
+      gooeyToast.error("Gagal Membuat Jadwal", { description: message });
+      return false;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const values = form.getValues();
-      const response = await axios.post("/api/schedule-ai", values);
+      const response = await axios.post("/api/schedule-ai", {
+        ...values,
+        offeringCourses,
+      });
       const courses: CourseSchedule[] = response.data?.data?.courses || [];
 
       if (courses.length === 0) {

@@ -55,7 +55,7 @@ export default function GenerateScheduleDialog({
   onGenerated,
 }: GenerateScheduleDialogProps) {
   const { form, step, goNext, goBack, reset, generate, loading, error } =
-    useGenerateSchedule(onGenerated);
+    useGenerateSchedule(offeringCourses, onGenerated);
 
   useEffect(() => {
     if (!open) reset();
@@ -97,7 +97,9 @@ export default function GenerateScheduleDialog({
 
         <ScrollArea className="max-h-[50vh] pr-2">
           <div className="py-1">
-            {step === 0 && <StepBasic form={form} />}
+            {step === 0 && (
+              <StepBasic form={form} offeringCourses={offeringCourses} />
+            )}
             {step === 1 && <StepTime form={form} />}
             {step === 2 && (
               <StepCourse form={form} offeringCourses={offeringCourses} />

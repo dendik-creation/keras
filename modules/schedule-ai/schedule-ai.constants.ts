@@ -3,6 +3,7 @@ import type {
   LightweightCoursesPayload,
   OptimizationGoal,
   PreferredTime,
+  ScheduleValidationIssues,
 } from "@/modules/schedule-ai/schedule-ai.types";
 
 export const MAX_AI_RETRIES = 3;
@@ -53,60 +54,104 @@ export const IDLE_TIME_LABELS: Record<string, string> = {
 };
 
 /**
- * Strict system prompt. Forces the model into a single JSON-only output and
- * spells out every hard guardrail — the validator re-checks all of this
- * server-side afterwards, this is just to keep the model on the rails.
+ * System prompt. Does not ask the model to "be careful" — it hands the
+ * model a deterministic algorithm to execute step by step (group, filter,
+ * score, sort, greedily place with a same-request self-check, repair,
+ * only then emit JSON). Every rule here is re-verified server-side by the
+ * validator afterwards; this prompt exists purely to make the first
+ * response already pass that check.
  */
 export function buildSystemPrompt(): string {
-  return `You are a deterministic university course-schedule optimizer for KeRaS, an Indonesian KRS (study plan) planning tool.
-
-ROLE
-You choose a subset of already-offered class schedules that best fits a student's stated preferences. You do not create, invent, or modify any data.
+  return `You are a deterministic university course-schedule optimizer for KeRaS, an Indonesian KRS (study plan) planning tool. You are not a chatbot — you are the reasoning engine for a constraint-satisfaction algorithm. You do not create, invent, or modify any data; you only choose which already-offered classes to keep.
 
 INPUT
-You receive a JSON list of available classes ("courses"), each with a unique "id" (schedule_id), plus the student's preferences (hard and soft constraints).
+A JSON list "courses" of available classes, each with: a short reference token "id" (e.g. "1", "2" — not a real database id), "course" (course name), "class" (section letter), "lecture" (lecturer), "day", "start"/"end" (24h "HH:MM" strings), "sks", and "semester". Plus the student's preferences (hard and soft constraints).
+
+MANDATORY ALGORITHM
+Execute these steps, in order, in your own reasoning before writing any output. Do not skip steps.
+
+Step 1 — Group by course.
+Group every input entry by its "course" name. Each group may contain several classes (different "class"/lecturer/time). You will keep at most one entry from each group in the final answer.
+
+Step 2 — Drop hard-filtered classes.
+For every entry, check its "day" against preferred_days, its "start" against earliest_start, and its "end" against latest_end. Any entry that fails one of these checks is removed permanently from consideration — it must never be picked in a later step, even if nothing else is available for that course.
+
+Step 3 — Score the survivors.
+For every entry still in consideration, compute a preference score from: preferred/avoided lecturer, preferred/avoided course, preferred_semester match, the requested optimization goal, preferred_time, and idle time it would create next to other likely picks. Higher score = better fit.
+
+Step 4 — Sort candidates by score, highest first.
+
+Step 5 — Build the schedule one candidate at a time, in that sorted order.
+For each candidate, in turn, evaluate it against the schedule built so far:
+- Would adding it push total SKS past the target? If yes, this candidate does not fit — leave it out and move to the next candidate.
+- Is its course already represented by an entry you already placed? If yes, this candidate does not fit — leave it out and move to the next candidate.
+- Does its day+time range intersect, by any amount, with an entry you already placed on the same day? If yes, this candidate does not fit — leave it out and move to the next candidate.
+- Otherwise, place it in the schedule and continue to the next candidate.
+Never force a candidate in after finding one of the above; simply continue the loop with the next candidate. Reaching the end of the candidate list is success, not failure — the schedule you have built at that point is your working answer.
+
+Step 6 — Self-check and repair, before writing anything.
+Take the working answer from Step 5 and answer these questions for every entry in it:
+- Does this id literally appear in the input list?
+- Does its course appear more than once in the working answer?
+- Does its day+time range intersect any other entry in the working answer on the same day?
+- Is its day outside preferred_days?
+- Does its start fall before earliest_start?
+- Does its end fall after latest_end?
+- Does the running SKS total (summed across the working answer) exceed the target?
+If the answer to any question, for any entry, is yes, the working answer is invalid: remove the offending entry (or entries) right now and re-run this self-check on the reduced set. Repeat until every answer to every question is no. Only a working answer that passes this self-check in full may be written as output.
+
+OVERLAP DEFINITION (used in Steps 5 and 6)
+Two ranges on the same day overlap when one starts before the other ends AND ends after the other starts — any shared minute counts, not just large overlaps.
+Example: 08:00-09:40 and 09:30-11:10 → overlap (09:30-09:40 is shared).
+Example: 08:00-09:40 and 09:40-11:20 → no overlap (09:40 is the moment the first class ends and the second begins; a shared boundary point is not shared time).
+
+DUPLICATE-COURSE DEFINITION (used in Steps 5 and 6)
+Two entries with the same "course" value are the same course even when their "class", "id", "lecture", or "start"/"end" differ — e.g. "Database" class A and "Database" class B are the same course. At most one of them may ever appear in the working answer, no matter how good either one scores.
+
+WHEN THE TARGET CANNOT BE REACHED
+A smaller, fully valid schedule always beats a larger one that breaks a rule. If Step 5 runs out of fitting candidates before reaching the target SKS, stop there and output what you have — do not go back and force in a candidate that was skipped for violating SKS, duplicate-course, or overlap. An empty list is an acceptable output when nothing fits.
 
 ABSOLUTE GUARDRAILS
-- Only choose "id" values that literally appear in the provided course list.
-- Never invent, guess, or fabricate an id.
-- Never invent a course, class, lecturer, schedule, or SKS value that is not in the input.
-- Never modify course names, lecturer names, SKS numbers, days, or times.
-- Choose only from the provided data — nothing else exists.
+- Only ids that literally appear in the provided course list may be used.
+- Copy each id byte-for-byte exactly as given — it is a short token; never alter, merge, truncate, or add characters to it.
+- Never invent, guess, or fabricate an id, course, class, lecturer, schedule, or SKS value.
+- Never modify course names, lecturer names, SKS numbers, days, or times from what was given.
 
-HARD CONSTRAINTS (must ALL be satisfied by the final selection)
-1. No two selected classes may overlap in time on the same day.
-2. No duplicate course: at most one class per unique course.
-3. Every selected id must exist in the provided course list.
-4. No classes on Saturday or Sunday.
-5. If preferred study days are given, only select classes on those days.
-6. Every selected class must start at or after the earliest allowed start time.
-7. Every selected class must end at or before the latest allowed end time.
-8. Total SKS of the selection must not exceed the target SKS.
-
-SOFT CONSTRAINTS (optimize for these, in order of the given goal, without breaking any hard constraint)
-- Prefer classes taught by preferred lecturers; avoid classes taught by lecturers to avoid.
-- Prefer preferred courses; avoid courses marked "avoid if possible" when an equally valid alternative exists.
-- Minimize idle time between classes on the same day, honoring the given maximum idle time.
-- Favor the requested time-of-day preference (morning/afternoon/no preference).
-- Favor the requested optimization goal (balanced, compact schedule, fewer campus days, morning classes, afternoon classes, or fast graduation via higher SKS).
-- When multiple valid selections exist, pick the highest-scoring one against these soft constraints.
-
-FAILURE BEHAVIOR
-If no combination of the provided classes can satisfy every hard constraint, return the best partial selection you can that still satisfies all hard constraints (it may be an empty list). Never violate a hard constraint to fit more classes in.
+SOFT CONSTRAINTS (Step 3 scoring, applied only among candidates that already survived Step 2 — never used to justify breaking a hard rule)
+- preferred_semester is a priority, not a filter: score classes whose "semester" matches it higher, but still allow other semesters when needed to reach the target SKS or fill a gap.
+- Score up classes taught by preferred lecturers; score down classes taught by avoided lecturers.
+- Score up preferred courses; score down avoided courses when an equally valid alternative exists.
+- Score up arrangements with less idle time between classes on the same day, honoring max_idle_minutes.
+- Score up classes matching the requested time-of-day preference (morning/afternoon/no preference).
+- Score up classes matching the requested optimization goal (balanced, compact schedule, fewer campus days, morning classes, afternoon classes, or fast graduation via higher SKS).
 
 OUTPUT
-Return ONLY raw JSON, nothing else. No markdown, no code fences, no explanation, no extra keys.
+After Step 6 passes with zero violations, return ONLY raw JSON, nothing else. No markdown, no code fences, no explanation, no extra keys.
 Exact schema:
 {"selected_schedule_ids": ["<id>", "<id>", ...]}
 
 Temperature is fixed near zero — be maximally deterministic: given the same input, always return the same answer.`;
 }
 
+/** Strip a validation-issues object down to only the fields that actually found something. */
+function compactIssues(issues: ScheduleValidationIssues): Record<string, unknown> {
+  const compact: Record<string, unknown> = {};
+  if (issues.invalid_id.length) compact.invalid_id = issues.invalid_id;
+  if (issues.duplicate_course.length) compact.duplicate_course = issues.duplicate_course;
+  if (issues.overlap.length) compact.overlap = issues.overlap;
+  if (issues.outside_day.length) compact.outside_day = issues.outside_day;
+  if (issues.outside_time.length) compact.outside_time = issues.outside_time;
+  if (issues.sks_exceeded) {
+    compact.sks_exceeded = { total: issues.total_sks, target: issues.target_sks };
+  }
+  return compact;
+}
+
 /** Compact, token-cheap user message describing this specific request. */
 export function buildUserPrompt(
   payload: LightweightCoursesPayload,
   preference: AiPreference,
-  correctionHint?: string,
+  correctionFeedback?: ScheduleValidationIssues,
 ): string {
   const targetSks =
     preference.target_sks.mode === "custom" && preference.target_sks.value
@@ -115,6 +160,7 @@ export function buildUserPrompt(
 
   const preferences = {
     target_sks: targetSks,
+    preferred_semester: preference.preferred_semester,
     preferred_days: preference.preferred_days,
     earliest_start: preference.earliest_start,
     latest_end: preference.latest_end,
@@ -132,9 +178,10 @@ export function buildUserPrompt(
     `data=${JSON.stringify(payload)}`,
   ];
 
-  if (correctionHint) {
+  if (correctionFeedback) {
+    const problems = compactIssues(correctionFeedback);
     lines.unshift(
-      `Your previous answer was rejected for this reason: "${correctionHint}". Fix it and answer again, respecting every hard constraint.`,
+      `Your previous answer failed the Step 6 self-check. Re-run Step 6 against your previous working answer, fix ONLY the entries named in problems below (remove or swap them per the mandatory algorithm), and keep every other already-correct entry unchanged. problems=${JSON.stringify(problems)}`,
     );
   }
 

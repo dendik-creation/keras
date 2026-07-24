@@ -1,20 +1,37 @@
 "use client";
 
+import { useMemo } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { STUDY_DAYS } from "@/modules/schedule-ai/schedule-ai.types";
 import type { AiPreference } from "@/modules/schedule-ai/schedule-ai.types";
+import { buildSemesterOptions } from "@/modules/schedule-ai/schedule-ai.utils";
+import type { OfferingCourse } from "@/types/course_schedule";
 
 type StepBasicProps = {
   form: UseFormReturn<AiPreference>;
+  offeringCourses: OfferingCourse[];
 };
 
-/** Step 1 — target SKS + preferred study days. */
-export default function StepBasic({ form }: StepBasicProps) {
+const NO_SEMESTER_PRIORITY = "__none__";
+
+/** Step 1 — target SKS, semester priority + preferred study days. */
+export default function StepBasic({ form, offeringCourses }: StepBasicProps) {
   const { control, watch, register, formState } = form;
   const mode = watch("target_sks.mode");
+  const semesterOptions = useMemo(
+    () => buildSemesterOptions(offeringCourses),
+    [offeringCourses],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,6 +84,42 @@ export default function StepBasic({ form }: StepBasicProps) {
             )}
           </div>
         )}
+      </div>
+
+      <div>
+        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+          Prioritas Semester
+        </h4>
+        <p className="text-xs text-muted-foreground mb-2">
+          AI akan memprioritaskan mata kuliah semester ini, tapi tetap boleh
+          mengambil mata kuliah semester lain jika perlu.
+        </p>
+        <Controller
+          control={control}
+          name="preferred_semester"
+          render={({ field }) => (
+            <Select
+              value={field.value ?? NO_SEMESTER_PRIORITY}
+              onValueChange={(value) =>
+                field.onChange(value === NO_SEMESTER_PRIORITY ? null : value)
+              }
+            >
+              <SelectTrigger className="w-full rounded-none border-2 border-black bg-white px-3 py-2 text-sm font-semibold h-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-2 border-black">
+                <SelectItem value={NO_SEMESTER_PRIORITY}>
+                  Tanpa Preferensi
+                </SelectItem>
+                {semesterOptions.map((semester) => (
+                  <SelectItem key={semester} value={semester}>
+                    {semester}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       <div>

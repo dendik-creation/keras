@@ -25,6 +25,9 @@ export default function StepReview({ form }: StepReviewProps) {
       <ul className="text-xs space-y-1 text-[#555555]">
         <li>Target SKS: {targetSksLabel}</li>
         <li>
+          Prioritas semester: {values.preferred_semester ?? "Tanpa preferensi"}
+        </li>
+        <li>
           Hari kuliah:{" "}
           {values.preferred_days.length > 0
             ? values.preferred_days.join(", ")

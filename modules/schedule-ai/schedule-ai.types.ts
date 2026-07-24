@@ -1,5 +1,8 @@
 import type { CourseSchedule } from "@/types/course_schedule";
 
+/** A CourseSchedule tagged with the semester group it was offered under. */
+export type CourseWithSemester = CourseSchedule & { semester: string };
+
 /** Weekday labels the app uses everywhere else (Indonesian, Senin-Jumat only). */
 export const STUDY_DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"] as const;
 export type StudyDay = (typeof STUDY_DAYS)[number];
@@ -23,6 +26,7 @@ export type IdleTimeOption = 0 | 30 | 60 | 90 | null;
 /** Shape collected by the multi-step "Generate with AI" form. */
 export type AiPreference = {
   target_sks: { mode: "max" | "custom"; value: number | null };
+  preferred_semester: string | null;
   preferred_days: StudyDay[];
   earliest_start: string;
   latest_end: string;
@@ -35,15 +39,17 @@ export type AiPreference = {
   goal: OptimizationGoal;
 };
 
-/** Minimal per-class shape sent to the LLM — keeps the prompt cheap. */
+/** Minimal per-class shape sent to the LLM — keeps the prompt cheap. Time is pre-parsed so the model never has to split a "HH:MM-HH:MM" string itself. */
 export type LightweightCourse = {
   id: string;
   course: string;
   class: string;
   lecture: string;
   day: string;
-  time: string;
+  start: string;
+  end: string;
   sks: number;
+  semester: string;
 };
 
 export type LightweightCoursesPayload = {
@@ -57,4 +63,20 @@ export type AiRawResponse = {
 
 export type GeneratedSchedule = {
   courses: CourseSchedule[];
+};
+
+/**
+ * Full structured breakdown of every hard-constraint violation found in a
+ * selection. Collected exhaustively (not short-circuited) so a retry prompt
+ * can tell the model exactly, and only, what to fix.
+ */
+export type ScheduleValidationIssues = {
+  invalid_id: string[];
+  duplicate_course: string[];
+  overlap: { courseA: string; courseB: string }[];
+  outside_day: string[];
+  outside_time: string[];
+  sks_exceeded: boolean;
+  total_sks: number;
+  target_sks: number;
 };

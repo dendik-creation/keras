@@ -80,15 +80,13 @@ export default function SearchMultiSelect({
       </div>
 
       <ScrollArea className="h-64 border-2 border-black bg-[#F2F2F2]">
-        <div className="p-2 space-y-1">
-          {filtered.length === 0 && (
-            <div className="flex flex-col mt-8 gap-3 justify-center items-center">
-              <SearchX className="text-[#FF3000]" />
-              <div className="text-center">
-                {emptyLabel}
-              </div>
-            </div>
-          )}
+        {filtered.length === 0 ? (
+          <div className="flex flex-col mt-8 gap-3 justify-center items-center">
+            <SearchX className="text-[#FF3000]" />
+            <div className="text-center">{emptyLabel}</div>
+          </div>
+        ) : (
+          <div className="p-2 grid grid-cols-1 md:grid-cols-2 gap-2">
           {filtered.map((option) => {
             const isPreferred = preferred.includes(option.value);
             const isAvoided = avoid.includes(option.value);
@@ -138,7 +136,8 @@ export default function SearchMultiSelect({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </ScrollArea>
     </div>
   );

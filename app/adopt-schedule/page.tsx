@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import Image from "next/image";
 import {
   CalendarCheck2,
@@ -21,6 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import LoadingBooks from "@/components/ui/loading-books";
+import RollingNumber from "@/components/ui/rolling-number";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import {
@@ -34,6 +35,52 @@ import { trackScheduleAdopted } from "@/lib/analytics/events";
 
 type Phase = "checking" | "resolving" | "ready" | "empty" | "error";
 
+/**
+ * Fetch the offered courses from the streaming NDJSON endpoint, mirroring the
+ * /schedule page. The scrape takes tens of seconds and the backend keeps the
+ * connection alive by emitting `progress` events; a plain buffered GET (which
+ * this flow used before) reads the raw NDJSON body as a single blob and never
+ * yields the final `{ type: "done", data }` object, which is why fresh-device
+ * adoptions kept failing with "jadwal tidak ditemukan". Returns the offered
+ * courses on success, or throws on a stream-level error.
+ */
+async function fetchOfferingStream(
+  onProgress: (done: number, total: number) => void,
+): Promise<OfferingCourse[] | null> {
+  const response = await fetch("/api/schedule");
+  if (!response.ok || !response.body) return null;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalData: OfferingCourse[] | null = null;
+  let streamError: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      if (event.type === "progress") {
+        onProgress(event.done, event.total);
+      } else if (event.type === "done") {
+        finalData = event.data;
+      } else if (event.type === "error") {
+        streamError = event.message;
+      }
+    }
+  }
+
+  if (streamError) throw new Error(streamError);
+  return finalData;
+}
+
 export default function AdoptSchedulePage() {
   const { isAuthenticated, isValidating } = useSessionCheck();
   const router = useRouter();
@@ -45,6 +92,10 @@ export default function AdoptSchedulePage() {
   const [hasExisting, setHasExisting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [usingFreshFetch, setUsingFreshFetch] = useState(false);
+  const [progress, setProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
   const resolvedRef = useRef(false);
 
   // Rule 1: guests must log in first — preserve where to return afterwards.
@@ -79,16 +130,22 @@ export default function AdoptSchedulePage() {
       });
 
       // Fresh device (or the offering has changed): pull the latest data.
+      // The scrape is streamed (NDJSON) exactly like the /schedule page, so we
+      // must drain the stream to completion to obtain the final data — only
+      // then is it safe to run the match and the adopt action.
       if (courses.length < share.ids.length) {
         setUsingFreshFetch(true);
-        console.log("[adopt-schedule] local match incomplete, fetching /api/schedule");
+        console.log(
+          "[adopt-schedule] local match incomplete, streaming /api/schedule",
+        );
         try {
-          const res = await axios.get("/api/schedule");
-          const fresh: OfferingCourse[] = res.data?.data || [];
-          console.log("[adopt-schedule] /api/schedule response", {
-            freshGroups: fresh.length,
+          const fresh = await fetchOfferingStream((done, total) =>
+            setProgress({ done, total }),
+          );
+          console.log("[adopt-schedule] /api/schedule stream complete", {
+            freshGroups: fresh?.length ?? 0,
           });
-          if (fresh.length > 0) {
+          if (fresh && fresh.length > 0) {
             setLocalStorage("offering_course", fresh);
             offering = fresh;
             courses = matchCoursesByCodeClass(share.ids, fresh);
@@ -97,8 +154,10 @@ export default function AdoptSchedulePage() {
             });
           }
         } catch (err) {
-          console.error("[adopt-schedule] /api/schedule fetch failed", err);
+          console.error("[adopt-schedule] /api/schedule stream failed", err);
           /* keep whatever matched locally */
+        } finally {
+          setProgress(null);
         }
       }
 
@@ -170,14 +229,35 @@ export default function AdoptSchedulePage() {
 
       {showLoader && (
         <div className="flex flex-col items-center gap-3 text-center">
-          <Loader2 className="w-6 h-6 animate-spin text-[#FF3000]" />
-          <p className="text-sm text-[#555555] font-medium max-w-md">
-            {isValidating || !isAuthenticated
-              ? "Memeriksa sesi login kamu..."
-              : usingFreshFetch
-                ? "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"
-                : "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"}
-          </p>
+          {progress ? (
+            <>
+              <LoadingBooks className="h-44 w-44" />
+              <span className="text-sm font-semibold text-[#555555] max-w-md inline-flex items-center gap-1">
+                Sedang melahap
+                <RollingNumber
+                  value={progress.done}
+                  className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
+                />
+                /{" "}
+                <RollingNumber
+                  value={progress.total}
+                  className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
+                />{" "}
+                jadwal mata kuliah
+              </span>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF3000]" />
+              <p className="text-sm text-[#555555] font-medium max-w-md">
+                {isValidating || !isAuthenticated
+                  ? "Memeriksa sesi login kamu..."
+                  : usingFreshFetch
+                    ? "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"
+                    : "Menyiapkan jadwalmu..."}
+              </p>
+            </>
+          )}
         </div>
       )}
 

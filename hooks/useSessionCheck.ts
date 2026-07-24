@@ -9,10 +9,16 @@ type UserData = {
   degree?: string;
 };
 
+type SessionIssue = {
+  reason: "questionnaire_required";
+  questionnaireUrl: string;
+};
+
 export const useSessionCheck = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [sessionIssue, setSessionIssue] = useState<SessionIssue | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -58,7 +64,15 @@ export const useSessionCheck = () => {
         setUser(localUser);
         setIsAuthenticated(true);
       } catch (error) {
-        if (typeof window !== "undefined") {
+        const questionnaireUrl = axios.isAxiosError(error)
+          ? error.response?.data?.questionnaireUrl
+          : undefined;
+        if (questionnaireUrl) {
+          setSessionIssue({
+            reason: "questionnaire_required",
+            questionnaireUrl,
+          });
+        } else if (typeof window !== "undefined") {
           localStorage.removeItem("active_user");
           localStorage.removeItem("session_check_plan_time");
         }
@@ -72,5 +86,5 @@ export const useSessionCheck = () => {
     checkAuth();
   }, []);
 
-  return { user, isAuthenticated, isValidating };
+  return { user, isAuthenticated, isValidating, sessionIssue };
 };

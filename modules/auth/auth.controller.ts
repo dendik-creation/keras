@@ -18,6 +18,17 @@ export async function login(req: Request) {
     const result = await loginToKrs(credentials);
 
     if (!result.ok) {
+      if (result.reason === "questionnaire_required") {
+        return NextResponse.json(
+          {
+            message: "Isi kuesioner kepuasan mahasiswa dulu sebelum akses KRS",
+            error: true,
+            reason: result.reason,
+            questionnaireUrl: result.questionnaireUrl,
+          },
+          { status: 200 },
+        );
+      }
       return NextResponse.json(
         { message: "Username atau password salah", error: true },
         { status: 200 },
@@ -75,15 +86,25 @@ export async function sessionCheck() {
       return NextResponse.json({ message: "No session found" }, { status: 401 });
     }
 
-    const status = await checkSessionStatus(sessionCookie.value);
+    const result = await checkSessionStatus(sessionCookie.value);
 
-    if (status === "expired") {
+    if (result.status === "questionnaire_required") {
+      return NextResponse.json(
+        {
+          message: "Isi kuesioner kepuasan mahasiswa dulu sebelum akses KRS",
+          reason: result.status,
+          questionnaireUrl: result.questionnaireUrl,
+        },
+        { status: 401 },
+      );
+    }
+    if (result.status === "expired") {
       return NextResponse.json(
         { message: "Session expired at server" },
         { status: 401 },
       );
     }
-    if (status === "authenticated") {
+    if (result.status === "authenticated") {
       return NextResponse.json({ authenticated: true }, { status: 200 });
     }
     return NextResponse.json({ message: "Unknown status" }, { status: 401 });

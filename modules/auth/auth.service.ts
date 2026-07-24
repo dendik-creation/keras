@@ -15,12 +15,24 @@ export type KrsUser = {
 
 export type LoginResult =
   | { ok: false; reason: "invalid_credentials" }
+  | { ok: false; reason: "questionnaire_required"; questionnaireUrl: string }
   | {
       ok: true;
       sessionValue: string;
       redirectTarget: string | undefined;
       user: KrsUser;
     };
+
+/**
+ * Kampus intercepts login with this redirect when a student hasn't filled
+ * the per-semester satisfaction questionnaire yet, sending them to the
+ * survey site instead of the KRS dashboard.
+ */
+const QUESTIONNAIRE_HOST = "kuesioner.umk.ac.id";
+
+function isQuestionnaireRedirect(url: string | undefined): url is string {
+  return !!url && url.includes(QUESTIONNAIRE_HOST);
+}
 
 /**
  * Perform the SSO login flow against the KRS site, accumulating the cookie
@@ -69,6 +81,13 @@ export async function loginToKrs({
   if (!firstRedirectUrl) {
     throw new HttpError(500, "Gagal mendapatkan URL Redirect 1");
   }
+  if (isQuestionnaireRedirect(firstRedirectUrl)) {
+    return {
+      ok: false,
+      reason: "questionnaire_required",
+      questionnaireUrl: firstRedirectUrl,
+    };
+  }
 
   // Cookie update from POST login result
   cookieMap = getCookieMap(postResponse.headers["set-cookie"], cookieMap);
@@ -86,6 +105,13 @@ export async function loginToKrs({
 
   // 3. Handle Second Redirect (to Dashboard)
   const finalLocation = redirectResponse.headers["location"];
+  if (isQuestionnaireRedirect(finalLocation)) {
+    return {
+      ok: false,
+      reason: "questionnaire_required",
+      questionnaireUrl: finalLocation,
+    };
+  }
   let finalHtml = redirectResponse.data;
   if (finalLocation == envVariable.KRS_DASHBOARD_URL) {
     const dashboardResponse = await axiosScrapClient.get(
@@ -138,15 +164,20 @@ function scrapeUser(finalHtml: string, username: string): KrsUser {
   return userData;
 }
 
-export type SessionStatus = "authenticated" | "expired" | "unknown";
+export type SessionCheckResult =
+  | { status: "authenticated" }
+  | { status: "expired" }
+  | { status: "questionnaire_required"; questionnaireUrl: string }
+  | { status: "unknown" };
 
 /**
  * Verify the given session cookie is still authenticated by pinging the
- * dashboard. Distinguishes expired (redirect to login) from other states.
+ * dashboard. Distinguishes expired (redirect to login), the campus
+ * questionnaire gate (redirect to kuesioner.umk.ac.id), and other states.
  */
 export async function checkSessionStatus(
   sessionValue: string,
-): Promise<SessionStatus> {
+): Promise<SessionCheckResult> {
   const response = await axiosScrapClient.get(envVariable.KRS_DASHBOARD_URL, {
     headers: {
       Cookie: sessionValue,
@@ -156,14 +187,15 @@ export async function checkSessionStatus(
     validateStatus: (status) => status >= 200 && status < 500,
   });
 
-  if (
-    response.status === 302 ||
-    response.headers["location"]?.includes("login")
-  ) {
-    return "expired";
+  const location = response.headers["location"];
+  if (isQuestionnaireRedirect(location)) {
+    return { status: "questionnaire_required", questionnaireUrl: location };
+  }
+  if (response.status === 302 || location?.includes("login")) {
+    return { status: "expired" };
   }
   if (response.status === 200) {
-    return "authenticated";
+    return { status: "authenticated" };
   }
-  return "unknown";
+  return { status: "unknown" };
 }

@@ -52,6 +52,18 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
       });
       if (response.data?.error === true) {
+        if (response.data?.reason === "questionnaire_required") {
+          const questionnaireUrl = response.data?.questionnaireUrl as string;
+          gooeyToast.warning("Isi Kuesioner Dulu Wok", {
+            description:
+              "Kampus wajibkan pengisian kuesioner kepuasan mahasiswa semester ini sebelum bisa akses KRS.",
+            action: {
+              label: "Isi Kuesioner",
+              onClick: () => window.open(questionnaireUrl, "_blank"),
+            },
+          });
+          return;
+        }
         gooeyToast.error("Login Gagal", {
           description: response.data?.message,
         });

@@ -64,7 +64,13 @@ KeRaS is an open-source tool designed to help university students organize and s
 
 ## Self-Hosting with Docker
 
-KeRaS ships with a `Dockerfile` (multi-stage, Bun + Next.js standalone) and a `docker-compose.yml`. The `keras` service expects an **external** Docker network named `apps` — this lets it sit behind a reverse proxy (e.g. Nginx Proxy Manager) and talk to sibling containers like Shlink by service name, without publishing anything except the app itself.
+KeRaS ships with a `Dockerfile` (multi-stage, Bun + Next.js standalone), a `docker-compose.yml` for **building locally**, and a `docker-compose.prod.yml` for **pulling the prebuilt image** published by [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) to GHCR (`ghcr.io/dendik-creation/keras`) on every push to `dev`/`main` or tag.
+
+Pick one:
+- **Building from source** (dev machine, custom patches): use `docker-compose.yml`, requires `Dockerfile` present in the same directory (i.e. a full repo clone).
+- **Production deploy on a VPS**: use `docker-compose.prod.yml`, only pulls the image — no `Dockerfile` needed, no repo clone needed, just the compose file + `.env`.
+
+> **Common error:** running plain `docker compose up -d` on a VPS that only has `docker-compose.prod.yml` (or a checkout missing `Dockerfile`) makes Compose fall back to `docker-compose.yml`'s `build:` step and fail with `failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory`. Always pass `-f docker-compose.prod.yml` explicitly, or rename the file to `docker-compose.yml` on the VPS.
 
 ### 1. Basic setup (no link-shortening)
 
@@ -127,6 +133,36 @@ Notes:
 - `NEXT_PUBLIC_*` values are inlined at **build time** — rebuild (`--build`) after changing them.
 - `KRS_*`, `AI_*`, `SHLINK_*`, `APP_URL` and other server-side vars are read at **runtime** from `.env` (via `env_file`), so no rebuild is needed when they change.
 - No database is required for KeRaS itself; only Shlink (optional, SQLite) persists any state, and it holds nothing but long-URL ↔ short-code mappings.
+
+### 3. Production deploy (pull prebuilt image from GHCR)
+
+For a VPS/server, skip building entirely and pull the image the [`docker-publish.yml`](.github/workflows/docker-publish.yml) workflow already built and pushed to GHCR.
+
+1. Copy just `docker-compose.prod.yml` and your `.env` to the server (no repo clone, no `Dockerfile` required):
+   ```yaml
+   services:
+     keras:
+       container_name: keras
+       image: ghcr.io/dendik-creation/keras:${IMAGE_TAG:-latest}
+       pull_policy: always
+       ports:
+         - "${PORT:-3000}:${PORT:-3000}"
+       environment:
+         - PORT=${PORT:-3000}
+         - HOSTNAME=0.0.0.0
+       env_file:
+         - .env
+       restart: unless-stopped
+   ```
+2. Set `KRS_*` (and optionally `SHLINK_*`, `AI_*`, `APP_URL`, `PORT`) in `.env`. Pin a specific build with `IMAGE_TAG` (e.g. `IMAGE_TAG=sha-abc1234` or a version tag) — defaults to `latest`.
+3. Pull and start:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d
+   ```
+   `pull_policy: always` means a plain `up -d` re-pulls `latest` on every run — no `--build` flag exists here since there's nothing to build.
+4. To upgrade later: `docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d`.
+
+Note: this compose file has no `apps` network / Shlink wiring — if you need Share Schedule behind the same reverse-proxy network as in section 2, add `networks: [apps]` (external) to the `keras` service and point `SHLINK_BASE_URL` at your Shlink container.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/dendik-creation/keras/).

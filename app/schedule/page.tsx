@@ -315,7 +315,7 @@ export default function Page() {
                         <span className="text-center text-sm font-semibold text-[#555555]">
                           {progress ? (
                             <span className="inline-flex items-center gap-1">
-                              Ekstraksi
+                              Sedang melahap
                               <RollingNumber
                                 value={progress.done}
                                 className="font-black tabular-nums mb-2 mx-1 text-lg text-black"

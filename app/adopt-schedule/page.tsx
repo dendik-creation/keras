@@ -72,19 +72,32 @@ export default function AdoptSchedulePage() {
       let offering =
         (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
       let courses = matchCoursesByCodeClass(share.ids, offering);
+      console.log("[adopt-schedule] local match", {
+        cachedOfferingGroups: offering.length,
+        sharedIds: share.ids.length,
+        matchedLocally: courses.length,
+      });
 
       // Fresh device (or the offering has changed): pull the latest data.
       if (courses.length < share.ids.length) {
         setUsingFreshFetch(true);
+        console.log("[adopt-schedule] local match incomplete, fetching /api/schedule");
         try {
           const res = await axios.get("/api/schedule");
           const fresh: OfferingCourse[] = res.data?.data || [];
+          console.log("[adopt-schedule] /api/schedule response", {
+            freshGroups: fresh.length,
+          });
           if (fresh.length > 0) {
             setLocalStorage("offering_course", fresh);
             offering = fresh;
             courses = matchCoursesByCodeClass(share.ids, fresh);
+            console.log("[adopt-schedule] fresh match", {
+              matchedAfterFetch: courses.length,
+            });
           }
-        } catch {
+        } catch (err) {
+          console.error("[adopt-schedule] /api/schedule fetch failed", err);
           /* keep whatever matched locally */
         }
       }
@@ -162,7 +175,7 @@ export default function AdoptSchedulePage() {
             {isValidating || !isAuthenticated
               ? "Memeriksa sesi login kamu..."
               : usingFreshFetch
-                ? "Menyiapkan ketersediaan jadwal & jadwal yang dibagikan... (Cukup lama, hehe)"
+                ? "Menyiapkan ketersediaan jadwal & jadwal yang dibagikan... (Pertama kali akan lama😁)"
                 : "Menyiapkan jadwal yang dibagikan..."}
           </p>
         </div>

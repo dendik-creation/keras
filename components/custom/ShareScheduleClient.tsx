@@ -105,18 +105,31 @@ export default function ShareScheduleClient({
       let offering =
         (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
       let courses = matchCoursesByCodeClass(share.ids, offering);
+      console.log("[share-schedule] local match", {
+        cachedOfferingGroups: offering.length,
+        sharedIds: share.ids.length,
+        matchedLocally: courses.length,
+      });
 
       // Fresh device (or the offering has changed): pull the latest data.
       if (courses.length < share.ids.length) {
+        console.log("[share-schedule] local match incomplete, fetching /api/schedule");
         try {
           const res = await axios.get("/api/schedule");
           const fresh: OfferingCourse[] = res.data?.data || [];
+          console.log("[share-schedule] /api/schedule response", {
+            freshGroups: fresh.length,
+          });
           if (fresh.length > 0) {
             setLocalStorage("offering_course", fresh);
             offering = fresh;
             courses = matchCoursesByCodeClass(share.ids, fresh);
+            console.log("[share-schedule] fresh match", {
+              matchedAfterFetch: courses.length,
+            });
           }
-        } catch {
+        } catch (err) {
+          console.error("[share-schedule] /api/schedule fetch failed", err);
           /* keep whatever matched locally */
         }
       }

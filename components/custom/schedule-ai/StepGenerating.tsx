@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingBooks from "@/components/ui/loading-books";
+
 /** Step shown in place of the form while the AI request is in flight. */
 export default function StepGenerating() {
   return (
@@ -11,11 +13,7 @@ export default function StepGenerating() {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-2 px-6 py-8">
-        <iframe
-          src="https://lottie.host/embed/e65fda84-9e51-4089-920a-16ee92a6b150/cxVd3uzyLc.lottie"
-          className="h-56 w-56 border-0"
-          title="Membuat jadwal"
-        />
+        <LoadingBooks className="h-40 w-40" />
         <p className="text-xs font-semibold text-[#555555]">
           BentaR, sedang ngeracik jadwalmu...
         </p>

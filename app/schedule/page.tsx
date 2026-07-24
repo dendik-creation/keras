@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import axios from "axios";
 import {
   CalendarClock,
   Clock,
@@ -52,7 +51,8 @@ import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import LoadingBooks from "@/components/ui/loading-books";
+import RollingNumber from "@/components/ui/rolling-number";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -66,6 +66,9 @@ export default function Page() {
   } | null>(null);
   const [data, setData] = useState<OfferingCourse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [openShareSchedule, setOpenShareSchedule] = useState(false);
   const [openGenerateAi, setOpenGenerateAi] = useState(false);
@@ -74,24 +77,65 @@ export default function Page() {
   const isMobile = useIsMobile();
 
   const findAvailableSchedules = async () => {
+    setLoading(true);
+    setProgress(null);
     try {
-      setLoading(true);
-      const response = await axios.get("/api/schedule");
-      if (response.data.data.length == 0) {
+      const response = await fetch("/api/schedule");
+
+      if (!response.ok || !response.body) {
         gooeyToast.error("Terjadi Kesalahan", {
           description: "Gagal mengambil jadwal kuliah",
         });
         return;
-      } else {
-        setData(response.data.data || []);
-        setLocalStorage("offering_course", response.data.data || []);
       }
+
+      // Backend streams NDJSON progress events so the connection stays
+      // active during the long (tens-of-seconds) scrape instead of
+      // holding one silent request/response open, which intermediate
+      // proxies were killing before the scrape finished.
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalData: OfferingCourse[] | null = null;
+      let streamError: string | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (event.type === "progress") {
+            setProgress({ done: event.done, total: event.total });
+          } else if (event.type === "done") {
+            finalData = event.data;
+          } else if (event.type === "error") {
+            streamError = event.message;
+          }
+        }
+      }
+
+      if (streamError || !finalData || finalData.length === 0) {
+        gooeyToast.error("Terjadi Kesalahan", {
+          description: "Gagal mengambil jadwal kuliah",
+        });
+        return;
+      }
+
+      setData(finalData);
+      setLocalStorage("offering_course", finalData);
     } catch (error) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Gagal mengambil jadwal kuliah",
       });
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -265,23 +309,22 @@ export default function Page() {
                       </div>
                     )}
 
-                    {loading && data.length === 0 ? (
+                    {loading ? (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">
-                        <div className="grid grid-cols-1 gap-3 w-1/2">
-                          {[...Array(2)].map((_, idx) => (
-                            <Skeleton
-                              className="w-full h-10"
-                              key={idx}
-                              style={{
-                                animationDelay: `${idx * 0.2}s`,
-                                animationFillMode: "both",
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <span>
-                          Sedang mencari ketersediaan jadwal, tapi agak lama
-                          hehe...
+                        <LoadingBooks className="h-56 w-56" />
+                        <span className="text-center text-sm font-semibold text-[#555555]">
+                          {progress ? (
+                            <span className="inline-flex items-center gap-1">
+                              Ekstraksi
+                              <RollingNumber
+                                value={progress.done}
+                                className="font-black tabular-nums text-black"
+                              />
+                              dari {progress.total} jadwal mata kuliah
+                            </span>
+                          ) : (
+                            "Sedang mencari ketersediaan jadwal, tapi agak lama hehe..."
+                          )}
                         </span>
                       </div>
                     ) : (

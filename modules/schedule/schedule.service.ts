@@ -9,6 +9,8 @@ const DELAY_PER_BATCH = 100;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+type ProgressCallback = (done: number, total: number) => void;
+
 /**
  * Scrape every offered course (grouped per semester) plus each course's
  * day/hour/classroom detail. Detail fetches run in batches to avoid
@@ -16,6 +18,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function getOfferingCourses(
   sessionValue: string,
+  onProgress?: ProgressCallback,
 ): Promise<OfferingCourse[]> {
   const keepAliveAgent = createKeepAliveAgent({ maxSockets: 20 });
 
@@ -45,6 +48,7 @@ export async function getOfferingCourses(
     offeringCourses.flatMap((oc) => oc.courses),
     headers,
     keepAliveAgent,
+    onProgress,
   );
   console.log(`[schedule] hydrated course details in ${Date.now() - hydrateStart}ms`);
 
@@ -108,6 +112,7 @@ async function hydrateCourseDetails(
   courses: CourseSchedule[],
   headers: Record<string, string>,
   keepAliveAgent: ReturnType<typeof createKeepAliveAgent>,
+  onProgress?: ProgressCallback,
 ): Promise<void> {
   for (let i = 0; i < courses.length; i += BATCH_SIZE) {
     const batch = courses.slice(i, i + BATCH_SIZE);
@@ -142,6 +147,7 @@ async function hydrateCourseDetails(
         }
       }),
     );
+    onProgress?.(Math.min(i + BATCH_SIZE, courses.length), courses.length);
     if (i + BATCH_SIZE < courses.length) {
       await delay(DELAY_PER_BATCH);
     }

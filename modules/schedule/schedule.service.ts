@@ -24,18 +24,29 @@ export async function getOfferingCourses(
     Referer: envVariable.KRS_DASHBOARD_URL,
   };
 
+  console.log(`[schedule] fetching ${envVariable.KRS_GET_SCHEDULES}`);
+  const fetchStart = Date.now();
   const mainResponse = await axiosScrapClient.get(
     envVariable.KRS_GET_SCHEDULES,
     { headers, httpsAgent: keepAliveAgent },
   );
+  console.log(
+    `[schedule] main page fetched: status=${mainResponse.status}, ${Date.now() - fetchStart}ms`,
+  );
 
   const offeringCourses = parseOfferingCourses(mainResponse.data);
+  const totalCourses = offeringCourses.reduce((n, oc) => n + oc.courses.length, 0);
+  console.log(
+    `[schedule] parsed ${offeringCourses.length} semester groups, ${totalCourses} courses`,
+  );
 
+  const hydrateStart = Date.now();
   await hydrateCourseDetails(
     offeringCourses.flatMap((oc) => oc.courses),
     headers,
     keepAliveAgent,
   );
+  console.log(`[schedule] hydrated course details in ${Date.now() - hydrateStart}ms`);
 
   return offeringCourses;
 }

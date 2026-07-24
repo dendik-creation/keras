@@ -296,7 +296,7 @@ export default function Page() {
             </div>
             <div className="absolute bottom-10 left-10">
               <span className="text-white/90 font-black tracking-tighter text-5xl leading-none">
-                Kah HaRimu?
+                Kah MatkuLmu?
               </span>
             </div>
           </div>

@@ -2,12 +2,20 @@ import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 
 /**
  * Helpers for the "bagikan jadwal" feature: a schedule is shared as a link
- * carrying the selected `schedule_id`s plus the sharer's NIM and name. The
- * recipient's browser matches those IDs against the offered-course list to
- * rebuild the exact schedule, then adopts it into local storage.
+ * carrying the selected courses' `code`+`class` pairs plus the sharer's NIM
+ * and name. The recipient's browser matches those pairs against the
+ * offered-course list to rebuild the exact schedule, then adopts it into
+ * local storage.
+ *
+ * `code`+`class` is used instead of `schedule_id` because `schedule_id` is
+ * the raw `data-id` scraped from the campus KRS portal per-session — it is
+ * not guaranteed stable across two different students' sessions, even when
+ * both see the exact same offering. `code`+`class` is the visible, stable
+ * identity of a course offering.
  */
 
 const ID_SEP = ",";
+const PAIR_SEP = "::";
 
 export type ShareInfo = {
   ids: string[];
@@ -21,8 +29,8 @@ export function buildAdoptPath(
   user: { nim?: string; name?: string } | null,
 ): string {
   const ids = courses
-    .map((c) => c.schedule_id)
-    .filter((id): id is string => Boolean(id));
+    .filter((c) => c.code && c.class)
+    .map((c) => `${c.code}${PAIR_SEP}${c.class}`);
 
   const params = new URLSearchParams();
   params.set("ids", ids.join(ID_SEP));
@@ -61,6 +69,11 @@ export function parseShareParams(search: string): ShareInfo {
  * Match the shared IDs against the offered-course list and return the matching
  * courses in the order the IDs were shared. Missing IDs (e.g. the offering has
  * since changed) are simply skipped — the caller compares lengths to warn.
+ *
+ * Used for intra-session lookups (e.g. schedule-ai) where the ids and the
+ * offering array come from the same student's own fetch, so `schedule_id` is
+ * a valid stable key. For cross-student sharing, use
+ * `matchCoursesByCodeClass` instead — see the module doc comment above.
  */
 export function matchCoursesByIds(
   ids: string[],
@@ -76,6 +89,33 @@ export function matchCoursesByIds(
   const matched: CourseSchedule[] = [];
   for (const id of ids) {
     const course = byId.get(id);
+    if (course) matched.push(course);
+  }
+  return matched;
+}
+
+/**
+ * Match shared `code::class` pairs (see `ShareInfo.ids`) against the
+ * offered-course list. Used by the adopt-schedule flow so matching survives
+ * across two different students' sessions, where raw `schedule_id`s are not
+ * guaranteed to line up.
+ */
+export function matchCoursesByCodeClass(
+  ids: string[],
+  offering: OfferingCourse[],
+): CourseSchedule[] {
+  const byPair = new Map<string, CourseSchedule>();
+  for (const group of offering) {
+    for (const course of group.courses) {
+      if (course.code && course.class) {
+        byPair.set(`${course.code}${PAIR_SEP}${course.class}`, course);
+      }
+    }
+  }
+
+  const matched: CourseSchedule[] = [];
+  for (const id of ids) {
+    const course = byPair.get(id);
     if (course) matched.push(course);
   }
   return matched;

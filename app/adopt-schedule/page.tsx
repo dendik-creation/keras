@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import {
-  matchCoursesByIds,
+  matchCoursesByCodeClass,
   parseShareParams,
   ShareInfo,
 } from "@/helper/share_schedule";
@@ -71,7 +71,7 @@ export default function AdoptSchedulePage() {
 
       let offering =
         (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
-      let courses = matchCoursesByIds(share.ids, offering);
+      let courses = matchCoursesByCodeClass(share.ids, offering);
 
       // Fresh device (or the offering has changed): pull the latest data.
       if (courses.length < share.ids.length) {
@@ -82,7 +82,7 @@ export default function AdoptSchedulePage() {
           if (fresh.length > 0) {
             setLocalStorage("offering_course", fresh);
             offering = fresh;
-            courses = matchCoursesByIds(share.ids, fresh);
+            courses = matchCoursesByCodeClass(share.ids, fresh);
           }
         } catch {
           /* keep whatever matched locally */

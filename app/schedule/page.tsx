@@ -318,9 +318,12 @@ export default function Page() {
                               Ekstraksi
                               <RollingNumber
                                 value={progress.done}
-                                className="font-black tabular-nums text-black"
+                                className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
                               />
-                              dari {progress.total} jadwal mata kuliah
+                              / <RollingNumber
+                                value={progress.total}
+                                className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
+                              /> jadwal mata kuliah
                             </span>
                           ) : (
                             "Sedang mencari ketersediaan jadwal, tapi agak lama hehe..."

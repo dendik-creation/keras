@@ -1,0 +1,69 @@
+import { NextRequest, NextResponse } from "next/server";
+import { isHttpError } from "@/lib/server/http-error";
+import { envVariable } from "@/lib/utils";
+import {
+  createShortUrl,
+  extractIdsFromLongUrl,
+  getLongUrlByShortCode,
+  validateLongUrl,
+} from "@/modules/shlink/shlink.service";
+import {
+  parseCreateShortUrlBody,
+  parseShortCode,
+} from "@/modules/shlink/shlink.validator";
+
+function errorResponse(error: unknown, fallbackMessage: string) {
+  if (isHttpError(error)) {
+    return NextResponse.json(
+      { message: error.message, ...error.payload },
+      { status: error.status },
+    );
+  }
+  const detail = error instanceof Error ? error.message : String(error);
+  console.error("[shlink]", fallbackMessage, detail);
+  return NextResponse.json(
+    { message: fallbackMessage, detail },
+    { status: 500 },
+  );
+}
+
+/** POST /api/share-schedule  body: { longUrl: string } */
+export async function createShareSchedule(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const longUrl = parseCreateShortUrlBody(body);
+
+    const appHost = new URL(envVariable.APP_URL).host;
+    validateLongUrl(longUrl, appHost);
+
+    const shortCode = await createShortUrl(longUrl);
+    const shortUrl = new URL(
+      `/share-schedule/${shortCode}`,
+      envVariable.APP_URL,
+    ).toString();
+
+    return NextResponse.json({ success: true, data: { shortUrl } });
+  } catch (error) {
+    return errorResponse(error, "Gagal membuat link berbagi.");
+  }
+}
+
+/** GET /api/share-schedule/[shortCode] */
+export async function resolveShareSchedule(
+  _req: NextRequest,
+  { params }: { params: Promise<{ shortCode: string }> },
+) {
+  try {
+    const { shortCode } = await params;
+    parseShortCode(shortCode);
+
+    const longUrl = await getLongUrlByShortCode(shortCode);
+
+    const appHost = new URL(envVariable.APP_URL).host;
+    extractIdsFromLongUrl(longUrl, appHost);
+
+    return NextResponse.json({ success: true, data: { longUrl } });
+  } catch (error) {
+    return errorResponse(error, "Gagal membuka link berbagi.");
+  }
+}

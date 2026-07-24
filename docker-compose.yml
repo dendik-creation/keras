@@ -1,18 +1,34 @@
 services:
   keras:
     container_name: keras
+
     build:
       context: .
       dockerfile: Dockerfile
+
       args:
         NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:-}
         NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-https://us.i.posthog.com}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
+
     environment:
-      - PORT=${PORT:-3000}
-      - HOSTNAME=0.0.0.0
+      PORT: ${PORT:-3000}
+      HOSTNAME: 0.0.0.0
+
+      SHLINK_BASE_URL: http://shlink:8080
+      SHLINK_API_KEY: ${SHLINK_API_KEY}
+
     env_file:
       - .env
+
     restart: unless-stopped
+
+    networks:
+      - apps
+
+networks:
+  apps:
+    external: true

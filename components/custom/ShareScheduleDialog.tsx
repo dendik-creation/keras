@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -37,8 +38,38 @@ export default function ShareScheduleDialog({
   user,
 }: ShareScheduleDialogProps) {
   const [copied, setCopied] = useState(false);
-  // Build only while open so window.location is available on the client.
-  const url = open ? buildShareUrl(courses, user) : "";
+  const [url, setUrl] = useState("");
+  const [shortening, setShortening] = useState(false);
+
+  // Build the long URL only while open (needs window.location), then shorten
+  // it via Shlink so the student never sees or shares the raw long link.
+  useEffect(() => {
+    if (!open) {
+      setUrl("");
+      return;
+    }
+
+    const longUrl = buildShareUrl(courses, user);
+    let cancelled = false;
+
+    const shorten = async () => {
+      setShortening(true);
+      try {
+        const res = await axios.post("/api/share-schedule", { longUrl });
+        const shortUrl = res.data?.data?.shortUrl;
+        if (!cancelled) setUrl(shortUrl || longUrl);
+      } catch {
+        if (!cancelled) setUrl(longUrl);
+      } finally {
+        if (!cancelled) setShortening(false);
+      }
+    };
+
+    shorten();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, courses, user]);
 
   const handleCopy = async () => {
     try {
@@ -95,12 +126,13 @@ export default function ShareScheduleDialog({
         <div className="flex items-center gap-2">
           <Input
             readOnly
-            value={url}
+            value={shortening ? "Membuat link..." : url}
             onFocus={(e) => e.currentTarget.select()}
             className="rounded-none border-2 border-black bg-[#F2F2F2] font-medium text-sm h-11"
           />
           <Button
             onClick={handleCopy}
+            disabled={shortening || !url}
             className="rounded-none bg-black text-white hover:bg-[#FF3000] h-11 w-11 flex-shrink-0"
             aria-label="Salin link"
           >
@@ -115,6 +147,7 @@ export default function ShareScheduleDialog({
         <DialogFooter>
           <Button
             onClick={handleNativeShare}
+            disabled={shortening || !url}
             className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 w-full"
           >
             <Share2 className="w-4 h-4 mr-2" />

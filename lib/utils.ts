@@ -14,6 +14,9 @@ const KRS_SCHEDULES_FORM = process.env.KRS_SCHEDULES_FORM!;
 const KRS_POST_SCHEDULES = process.env.KRS_POST_SCHEDULES!;
 const KRS_RELEASE_SCHEDULES = process.env.KRS_RELEASE_SCHEDULES!;
 const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY!;
+const SHLINK_BASE_URL = process.env.SHLINK_BASE_URL!;
+const SHLINK_API_KEY = process.env.SHLINK_API_KEY!;
+const APP_URL = process.env.APP_URL!;
 export const envVariable = {
   KRS_LOGIN_SSO_URL,
   KRS_DASHBOARD_URL,
@@ -24,4 +27,7 @@ export const envVariable = {
   KRS_POST_SCHEDULES,
   KRS_RELEASE_SCHEDULES,
   TURNSTILE_SECRET_KEY,
+  SHLINK_BASE_URL,
+  SHLINK_API_KEY,
+  APP_URL,
 };

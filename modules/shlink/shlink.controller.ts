@@ -27,13 +27,24 @@ function errorResponse(error: unknown, fallbackMessage: string) {
   );
 }
 
+function getAppHost(): string {
+  if (!envVariable.APP_URL) {
+    throw new Error("APP_URL env var is missing.");
+  }
+  try {
+    return new URL(envVariable.APP_URL).host;
+  } catch {
+    throw new Error(`APP_URL env var is not a valid URL: "${envVariable.APP_URL}"`);
+  }
+}
+
 /** POST /api/share-schedule  body: { longUrl: string } */
 export async function createShareSchedule(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const longUrl = parseCreateShortUrlBody(body);
 
-    const appHost = new URL(envVariable.APP_URL).host;
+    const appHost = getAppHost();
     validateLongUrl(longUrl, appHost);
 
     const shortCode = await createShortUrl(longUrl);
@@ -59,7 +70,7 @@ export async function resolveShareSchedule(
 
     const longUrl = await getLongUrlByShortCode(shortCode);
 
-    const appHost = new URL(envVariable.APP_URL).host;
+    const appHost = getAppHost();
     extractIdsFromLongUrl(longUrl, appHost);
 
     return NextResponse.json({ success: true, data: { longUrl } });

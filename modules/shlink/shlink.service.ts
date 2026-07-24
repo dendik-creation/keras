@@ -7,6 +7,12 @@ import type {
   ShlinkShortUrlDetails,
 } from "@/modules/shlink/shlink.types";
 
+console.log("[shlink] SHLINK_BASE_URL =", envVariable.SHLINK_BASE_URL || "(missing)");
+console.log(
+  "[shlink] SHLINK_API_KEY =",
+  envVariable.SHLINK_API_KEY ? "****** (exists)" : "(missing)",
+);
+
 const shlinkClient = axios.create({
   baseURL: envVariable.SHLINK_BASE_URL,
   headers: {
@@ -17,8 +23,14 @@ const shlinkClient = axios.create({
 });
 
 /** Translate a failed Shlink call into the app's HttpError so controllers stay uniform. */
-function toHttpError(error: unknown, fallbackMessage: string): HttpError {
+function toHttpError(error: unknown, fallbackMessage: string, context: Record<string, unknown>): HttpError {
   if (axios.isAxiosError<ShlinkErrorResponse>(error)) {
+    console.error("[shlink] request failed", {
+      ...context,
+      status: error.response?.status,
+      body: error.response?.data,
+      message: error.message,
+    });
     if (error.response?.status === 404) {
       return new HttpError(404, "Short link tidak ditemukan.");
     }
@@ -30,19 +42,34 @@ function toHttpError(error: unknown, fallbackMessage: string): HttpError {
     }
     return new HttpError(502, "Shlink tidak dapat dihubungi.");
   }
-  return new HttpError(500, fallbackMessage);
+  console.error("[shlink] unexpected error", { ...context, error });
+  return new HttpError(
+    500,
+    fallbackMessage,
+    { detail: error instanceof Error ? error.message : String(error) },
+  );
 }
 
 /** POST /rest/v3/short-urls — store a long URL in Shlink and return its shortCode. */
 export async function createShortUrl(longUrl: string): Promise<string> {
+  console.log("[shlink] createShortUrl longUrl =", longUrl);
   try {
     const response = await shlinkClient.post<ShlinkCreateShortUrlResponse>(
       "/rest/v3/short-urls",
       { longUrl },
     );
-    return response.data.shortCode;
+    const { shortCode } = response.data;
+    if (!shortCode) {
+      throw new Error(
+        `Shlink response missing shortCode: ${JSON.stringify(response.data)}`,
+      );
+    }
+    return shortCode;
   } catch (error) {
-    throw toHttpError(error, "Gagal membuat short link.");
+    throw toHttpError(error, "Gagal membuat short link.", {
+      url: "/rest/v3/short-urls",
+      payload: { longUrl },
+    });
   }
 }
 
@@ -54,7 +81,9 @@ export async function getLongUrlByShortCode(shortCode: string): Promise<string> 
     );
     return response.data.longUrl;
   } catch (error) {
-    throw toHttpError(error, "Gagal mengambil short link.");
+    throw toHttpError(error, "Gagal mengambil short link.", {
+      url: `/rest/v3/short-urls/${shortCode}`,
+    });
   }
 }
 

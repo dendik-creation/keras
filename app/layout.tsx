@@ -4,6 +4,7 @@ import "./globals.css";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
 import TurnstileGuard from "@/components/middleware_wrapper/TurnstileGuard";
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
+import AnalyticsBoot from "@/components/analytics/AnalyticsBoot";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -43,6 +44,7 @@ export default function RootLayout({
           <TurnstileGuard>{children}</TurnstileGuard>
         </LocalStorageProvider>
         <GooeyToaster />
+        <AnalyticsBoot />
       </body>
     </html>
   );

@@ -40,12 +40,17 @@ export default function ShareScheduleDialog({
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
   const [shortening, setShortening] = useState(false);
+  // True only when Shlink itself returned a short link — not when we fell
+  // back to the raw long URL after a failed request. `jadwal_dibagikan`
+  // must only fire once a share link actually exists.
+  const [shlinkSucceeded, setShlinkSucceeded] = useState(false);
 
   // Build the long URL only while open (needs window.location), then shorten
   // it via Shlink so the student never sees or shares the raw long link.
   useEffect(() => {
     if (!open) {
       setUrl("");
+      setShlinkSucceeded(false);
       return;
     }
 
@@ -54,10 +59,17 @@ export default function ShareScheduleDialog({
 
     const shorten = async () => {
       setShortening(true);
+      setShlinkSucceeded(false);
       try {
         const res = await axios.post("/api/share-schedule", { longUrl });
         const shortUrl = res.data?.data?.shortUrl;
-        if (!cancelled) setUrl(shortUrl || longUrl);
+        if (cancelled) return;
+        if (shortUrl) {
+          setUrl(shortUrl);
+          setShlinkSucceeded(true);
+        } else {
+          setUrl(longUrl);
+        }
       } catch {
         if (!cancelled) setUrl(longUrl);
       } finally {
@@ -75,7 +87,7 @@ export default function ShareScheduleDialog({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      trackScheduleShared(courses.length);
+      if (shlinkSucceeded) trackScheduleShared(courses.length, "copy_link");
       gooeyToast.success("Link Disalin", {
         description: "Bagikan link ini ke temanmu untuk adopsi jadwal",
       });
@@ -95,7 +107,7 @@ export default function ShareScheduleDialog({
           text: "Adopsi jadwal KRS-ku di KeRaS",
           url,
         });
-        trackScheduleShared(courses.length);
+        if (shlinkSucceeded) trackScheduleShared(courses.length, "native_share");
       } catch {
         /* user dismissed the share sheet */
       }

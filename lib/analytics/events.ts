@@ -1,65 +1,27 @@
-import posthog from "posthog-js";
+import { capture } from "./client";
+import { maskNim } from "./identity";
+import {
+  applyGuestPersonProperties,
+  identifyStudent,
+  resetAnalytics,
+} from "./person";
+import type { ActiveUser } from "./helpers";
 
-export type ActiveUser = {
-  name: string;
-  nim: string;
-  major: string;
-  degree: string;
-};
+export type { ActiveUser };
+export { identifyStudent, resetAnalytics, applyGuestPersonProperties };
 
-/** Keep the first 6 digits real, mask the rest (e.g. 202451234 -> 202451***). */
-export function maskNim(nim: string): string {
-  if (!nim) return "";
-  const visible = nim.slice(0, 6);
-  const masked = "*".repeat(Math.max(nim.length - 6, 0));
-  return visible + masked;
-}
-
-/**
- * Deterministic, non-reversible id derived from the full NIM.
- * Used as the analytics distinct id so unique-user counts stay accurate
- * while the raw NIM is never sent anywhere.
- */
-async function hashNim(nim: string): Promise<string> {
-  const data = new TextEncoder().encode(nim);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  const hex = Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return "keras_" + hex.slice(0, 16);
-}
-
-/** True once posthog.init has run (i.e. an analytics key was configured). */
-const ready = () => typeof window !== "undefined" && posthog.__loaded;
-
-/** Common identity properties attached to every custom event. */
-function identityProps(user: ActiveUser) {
-  return {
-    nim: maskNim(user.nim),
-    jenjang: user.degree || "",
-    prodi: user.major || "",
-  };
-}
-
-/** Link the anonymous session to a stable (masked) student identity. */
-export async function identifyStudent(user: ActiveUser) {
-  if (!ready() || !user?.nim) return;
-  const uid = await hashNim(user.nim);
-  posthog.identify(uid, identityProps(user));
-}
-
-/** Fired on successful login. */
-export async function trackLogin(user: ActiveUser) {
-  if (!ready() || !user?.nim) return;
+/** Fired on successful login. Uses sendBeacon since a redirect follows immediately. */
+export async function trackLogin(user: ActiveUser): Promise<void> {
+  if (!user?.nim) return;
   await identifyStudent(user);
-  posthog.capture("user_logged_in", identityProps(user));
+  capture("user_logged_in", undefined, { reliable: true });
 }
 
 /** Fired when a student prepares a schedule set for the KRS war. */
-export function trackPrepared(user: ActiveUser, preparedCount: number) {
-  if (!ready() || !user?.nim) return;
-  posthog.capture("jadwal_disiapkan", {
-    ...identityProps(user),
+export function trackPrepared(user: ActiveUser, preparedCount: number): void {
+  if (!user?.nim) return;
+  capture("jadwal_disiapkan", {
+    masked_nim: maskNim(user.nim),
     prepared_count: preparedCount,
   });
 }
@@ -69,10 +31,10 @@ export function trackWarFinished(
   user: ActiveUser,
   preparedCount: number,
   successCount: number,
-) {
-  if (!ready() || !user?.nim) return;
-  posthog.capture("perang_selesai", {
-    ...identityProps(user),
+): void {
+  if (!user?.nim) return;
+  capture("perang_selesai", {
+    masked_nim: maskNim(user.nim),
     prepared_count: preparedCount,
     success_count: successCount,
     failed_count: Math.max(preparedCount - successCount, 0),
@@ -81,40 +43,60 @@ export function trackWarFinished(
   });
 }
 
+export type PwaPlatform = "mobile" | "desktop";
+
+export type PwaInstallProperties = {
+  source: string;
+  platform: PwaPlatform;
+  display_mode: string;
+  isStandalone: boolean;
+};
+
 /**
- * Fired once when KeRaS is installed as a PWA (added to the home screen).
- * Anonymous by design — installs usually happen on the landing page before a
- * student logs in. PostHog attaches device/OS/browser props automatically, so
- * breakdowns by platform work without any extra fields here.
+ * Fired once when KeRaS is installed as a PWA (`appinstalled`). Anonymous by
+ * design — installs usually happen before login. Uses sendBeacon so the
+ * capture isn't dropped if the browser tears the page down right after.
  */
-export function trackPwaInstalled(source: string = "unknown") {
-  if (!ready()) return;
-  posthog.capture("pwa_dipasang", { source });
+export function trackPwaInstalled(props: PwaInstallProperties): void {
+  capture("pwa_dipasang", props, { reliable: true });
 }
 
-/** Fired when a student generates a share link for their schedule. */
-export function trackScheduleShared(sharedCount: number) {
-  if (!ready()) return;
-  posthog.capture("jadwal_dibagikan", { shared_count: sharedCount });
-}
+export type ShareMethod = "copy_link" | "native_share";
 
-/** Fired when a student adopts a schedule opened from a share link. */
-export function trackScheduleAdopted(adoptedCount: number, replaced: boolean) {
-  if (!ready()) return;
-  posthog.capture("jadwal_diadopsi", {
-    adopted_count: adoptedCount,
-    replaced_existing: replaced,
+/** Fired when a student generates a share link for their schedule — only after Shlink succeeds. */
+export function trackScheduleShared(
+  sharedCount: number,
+  method: ShareMethod,
+): void {
+  capture("jadwal_dibagikan", {
+    shared_count: sharedCount,
+    share_method: method,
   });
 }
 
-/** Fired when a student successfully generates a schedule via the AI dialog. */
-export function trackAiScheduleGenerated(courseCount: number, goal: string) {
-  if (!ready()) return;
-  posthog.capture("jadwal_ai_dibuat", { course_count: courseCount, goal });
+/** Fired when a student adopts a schedule opened from a share link. Redirect follows immediately. */
+export function trackScheduleAdopted(
+  adoptedCount: number,
+  replaced: boolean,
+): void {
+  capture(
+    "jadwal_diadopsi",
+    { adopted_count: adoptedCount, replaced_existing: replaced },
+    { reliable: true },
+  );
 }
 
-/** Detach the identity on logout so a shared browser isn't merged. */
-export function resetAnalytics() {
-  if (!ready()) return;
-  posthog.reset();
+/** Fired when a student successfully generates a schedule via the AI dialog. */
+export function trackAiScheduleGenerated(
+  courseCount: number,
+  goal: string,
+  generationTimeMs?: number,
+): void {
+  capture("jadwal_ai_dibuat", {
+    course_count: courseCount,
+    goal,
+    ...(generationTimeMs !== undefined
+      ? { generation_time_ms: generationTimeMs }
+      : {}),
+  });
 }

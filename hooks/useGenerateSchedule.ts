@@ -80,6 +80,7 @@ export function useGenerateSchedule(
 
     setLoading(true);
     setError(null);
+    const startedAt = Date.now();
     try {
       const values = form.getValues();
       const response = await axios.post("/api/schedule-ai", {
@@ -94,7 +95,11 @@ export function useGenerateSchedule(
 
       saveScheduleToStorage(courses);
       onGenerated(courses);
-      trackAiScheduleGenerated(courses.length, values.goal);
+      trackAiScheduleGenerated(
+        courses.length,
+        values.goal,
+        Date.now() - startedAt,
+      );
       gooeyToast.success("Jadwal berhasil dibuat 🍳", {
         description: `${courses.length} mata kuliah dipilihkan AI sesuai preferensimu`,
       });

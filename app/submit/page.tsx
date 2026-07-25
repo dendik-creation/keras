@@ -37,7 +37,6 @@ import { parseTimeRange, ymdToIdDate } from "@/helper/frontend_helper";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import {
   ActiveUser,
-  identifyStudent,
   trackPrepared,
   trackWarFinished,
 } from "@/lib/analytics/events";
@@ -135,9 +134,8 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const activeUser = getLocalStorage("active_user") as ActiveUser | null;
-    if (activeUser) void identifyStudent(activeUser);
-
+    // Identity resync from localStorage now lives in the root layout's
+    // AnalyticsBoot, so it also covers pages other than this one.
     const savedCourses = getLocalStorage("krs_saved_schedule");
     if (savedCourses && Array.isArray(savedCourses)) {
       setSelectedCourses(savedCourses);

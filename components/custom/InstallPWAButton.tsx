@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Check } from "lucide-react";
 import { gooeyToast } from "@/components/ui/goey-toaster";
-import { trackPwaInstalled } from "@/lib/analytics/events";
+import { PWA_SOURCE_KEY } from "@/components/analytics/AnalyticsBoot";
 import { cn } from "@/lib/utils";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -33,12 +33,13 @@ export default function InstallPWAButton({
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
     };
+    // UI-only: hide the button once installed. The actual `pwa_dipasang`
+    // capture lives in AnalyticsBoot (mounted in the root layout) so it
+    // still fires even if this button unmounts before the browser
+    // finishes the install and dispatches `appinstalled`.
     const onInstalled = () => {
       setInstalled(true);
       setDeferred(null);
-      // Authoritative install signal (fires once per install on Android /
-      // desktop) — record it as the new `pwa_dipasang` analytics event.
-      trackPwaInstalled(source);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -46,10 +47,13 @@ export default function InstallPWAButton({
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, [source]);
+  }, []);
 
   const handleClick = async () => {
     if (deferred) {
+      // AnalyticsBoot reads this back when `appinstalled` fires, even if
+      // that happens after navigating away from this button.
+      sessionStorage.setItem(PWA_SOURCE_KEY, source);
       await deferred.prompt();
       const { outcome } = await deferred.userChoice;
       if (outcome === "accepted") setInstalled(true);

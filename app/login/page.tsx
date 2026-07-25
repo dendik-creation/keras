@@ -169,17 +169,6 @@ export default function Page() {
               {/* Form */}
               <div className="flex flex-1 items-center py-12">
                 <div className="w-full max-w-md">
-                  {/* Section label */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className="text-[#FF3000] font-black text-sm tracking-widest">
-                      00
-                    </span>
-                    <div className="w-8 h-0.5 bg-[#FF3000]" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-black">
-                      Autentikasi
-                    </span>
-                  </div>
-
                   {/* Form heading */}
                   <div className="mb-10">
                     <h1 className="text-5xl md:text-6xl mb-3 font-black uppercase tracking-tighter text-black leading-[0.85]">

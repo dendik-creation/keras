@@ -93,7 +93,8 @@ const changelogHistories = [
     date: "8 Jul 2026",
     title: "Docker Self-Hosting",
     changes: [
-      "Dukungan Docker Compose untuk self-hosting (Bun + Next.js standalone)",
+      "Ada docker compose untuk yang mau setup di local",
+      "Bisa memakai image ghcr di registry KeRaS."
     ],
   },
   {

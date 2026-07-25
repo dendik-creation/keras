@@ -14,14 +14,70 @@ const inter = Inter({
   display: "swap",
 });
 
+const siteUrl = process.env.APP_URL ?? "https://keras.dendikcreation.dev";
+const siteTitle = "KeRaS";
+const siteDescription =
+  "Siapkan jadwal KRS-mu dengan mudah — objektif, cepat, tanpa drama. Perang KRS satu klik, tanpa simpan data pribadi.";
+
 export const metadata: Metadata = {
-  title: "KeRaS",
-  description: "Siapkan Jadwal KRS-mu dengan Mudah",
-  applicationName: "KeRaS",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
+    template: `%s — ${siteTitle}`,
+  },
+  description: siteDescription,
+  applicationName: siteTitle,
+  keywords: [
+    "KRS",
+    "jadwal kuliah",
+    "perang KRS",
+    "KRS mahasiswa",
+    "penjadwalan mata kuliah",
+    "KeRaS",
+  ],
+  authors: [{ name: "dendik-creation", url: "https://dendikcreation.dev" }],
+  creator: "dendik-creation",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "KeRaS",
+    title: siteTitle,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: siteUrl,
+    siteName: siteTitle,
+    title: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
+    description: siteDescription,
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "KeRaS — Siapkan Jadwal KRS-mu dengan Mudah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
+    description: siteDescription,
+    images: ["/og-image.svg"],
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icon-192.png",
   },
 };
 

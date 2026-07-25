@@ -1,9 +1,53 @@
-import { CourseSchedule } from "@/types/course_schedule";
+import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { setLocalStorage } from "@/helper/local_storage";
 
 export const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
+
+/**
+ * Get scheduling: read the /api/schedule NDJSON stream to completion.
+ * Backend keeps the connection alive with `progress` events during the
+ * tens-of-seconds scrape; a plain buffered read never yields the final
+ * `{ type: "done", data }` object. Shared by /schedule and /adopt-schedule
+ * so both pages run the exact same get-schedule action.
+ */
+export async function fetchOfferingCourses(
+  onProgress: (done: number, total: number) => void,
+): Promise<OfferingCourse[] | null> {
+  const response = await fetch("/api/schedule");
+  if (!response.ok || !response.body) return null;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalData: OfferingCourse[] | null = null;
+  let streamError: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      if (event.type === "progress") {
+        onProgress(event.done, event.total);
+      } else if (event.type === "done") {
+        finalData = event.data;
+      } else if (event.type === "error") {
+        streamError = event.message;
+      }
+    }
+  }
+
+  if (streamError) throw new Error(streamError);
+  return finalData;
+}
 
 /** Persist the selected courses under the app's single saved-schedule key. */
 export const saveScheduleToStorage = (courses: CourseSchedule[]): void => {

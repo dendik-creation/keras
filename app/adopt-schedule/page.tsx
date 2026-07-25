@@ -24,6 +24,7 @@ import LoadingBooks from "@/components/ui/loading-books";
 import RollingNumber from "@/components/ui/rolling-number";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import { fetchOfferingCourses } from "@/helper/frontend_helper";
 import {
   matchCoursesByCodeClass,
   parseShareParams,
@@ -34,52 +35,6 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackScheduleAdopted } from "@/lib/analytics/events";
 
 type Phase = "checking" | "resolving" | "ready" | "empty" | "error";
-
-/**
- * Fetch the offered courses from the streaming NDJSON endpoint, mirroring the
- * /schedule page. The scrape takes tens of seconds and the backend keeps the
- * connection alive by emitting `progress` events; a plain buffered GET (which
- * this flow used before) reads the raw NDJSON body as a single blob and never
- * yields the final `{ type: "done", data }` object, which is why fresh-device
- * adoptions kept failing with "jadwal tidak ditemukan". Returns the offered
- * courses on success, or throws on a stream-level error.
- */
-async function fetchOfferingStream(
-  onProgress: (done: number, total: number) => void,
-): Promise<OfferingCourse[] | null> {
-  const response = await fetch("/api/schedule");
-  if (!response.ok || !response.body) return null;
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let finalData: OfferingCourse[] | null = null;
-  let streamError: string | null = null;
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const event = JSON.parse(line);
-      if (event.type === "progress") {
-        onProgress(event.done, event.total);
-      } else if (event.type === "done") {
-        finalData = event.data;
-      } else if (event.type === "error") {
-        streamError = event.message;
-      }
-    }
-  }
-
-  if (streamError) throw new Error(streamError);
-  return finalData;
-}
 
 export default function AdoptSchedulePage() {
   const { isAuthenticated, isValidating } = useSessionCheck();
@@ -139,7 +94,7 @@ export default function AdoptSchedulePage() {
           "[adopt-schedule] local match incomplete, streaming /api/schedule",
         );
         try {
-          const fresh = await fetchOfferingStream((done, total) =>
+          const fresh = await fetchOfferingCourses((done, total) =>
             setProgress({ done, total }),
           );
           console.log("[adopt-schedule] /api/schedule stream complete", {
@@ -229,21 +184,27 @@ export default function AdoptSchedulePage() {
 
       {showLoader && (
         <div className="flex flex-col items-center gap-3 text-center">
-          {progress ? (
+          {usingFreshFetch ? (
             <>
               <LoadingBooks className="h-44 w-44" />
-              <span className="text-sm font-semibold text-[#555555] max-w-md inline-flex items-center gap-1">
-                Sedang melahap
-                <RollingNumber
-                  value={progress.done}
-                  className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
-                />
-                /{" "}
-                <RollingNumber
-                  value={progress.total}
-                  className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
-                />{" "}
-                jadwal mata kuliah
+              <span className="text-sm font-semibold text-[#555555] max-w-md">
+                {progress ? (
+                  <span className="inline-flex items-center gap-1">
+                    Sedang melahap
+                    <RollingNumber
+                      value={progress.done}
+                      className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
+                    />
+                    /{" "}
+                    <RollingNumber
+                      value={progress.total}
+                      className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
+                    />{" "}
+                    jadwal mata kuliah
+                  </span>
+                ) : (
+                  "Sedang mencari ketersediaan jadwal, tapi agak lama hehe..."
+                )}
               </span>
             </>
           ) : (
@@ -252,9 +213,7 @@ export default function AdoptSchedulePage() {
               <p className="text-sm text-[#555555] font-medium max-w-md">
                 {isValidating || !isAuthenticated
                   ? "Memeriksa sesi login kamu..."
-                  : usingFreshFetch
-                    ? "Menyiapkan jadwalmu (Kalau pertama kali akan lama😁)"
-                    : "Menyiapkan jadwalmu..."}
+                  : "Menyiapkan jadwalmu..."}
               </p>
             </>
           )}

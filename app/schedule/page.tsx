@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import {
   checkConflict,
+  fetchOfferingCourses,
   parseTimeRange,
   saveScheduleToStorage,
   ymdToIdDate,
@@ -80,47 +81,11 @@ export default function Page() {
     setLoading(true);
     setProgress(null);
     try {
-      const response = await fetch("/api/schedule");
+      const finalData = await fetchOfferingCourses((done, total) =>
+        setProgress({ done, total }),
+      );
 
-      if (!response.ok || !response.body) {
-        gooeyToast.error("Terjadi Kesalahan", {
-          description: "Gagal mengambil jadwal kuliah",
-        });
-        return;
-      }
-
-      // Backend streams NDJSON progress events so the connection stays
-      // active during the long (tens-of-seconds) scrape instead of
-      // holding one silent request/response open, which intermediate
-      // proxies were killing before the scrape finished.
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let finalData: OfferingCourse[] | null = null;
-      let streamError: string | null = null;
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const event = JSON.parse(line);
-          if (event.type === "progress") {
-            setProgress({ done: event.done, total: event.total });
-          } else if (event.type === "done") {
-            finalData = event.data;
-          } else if (event.type === "error") {
-            streamError = event.message;
-          }
-        }
-      }
-
-      if (streamError || !finalData || finalData.length === 0) {
+      if (!finalData || finalData.length === 0) {
         gooeyToast.error("Terjadi Kesalahan", {
           description: "Gagal mengambil jadwal kuliah",
         });

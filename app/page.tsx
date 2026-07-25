@@ -722,6 +722,13 @@ export default function Page() {
               terbaru.
             </small>
           </div>
+          <div className="w-full flex flex-col items-start gap-2">
+            <small
+              className="text-sm text-white/50 font-medium leading-tight"
+            >
+              Part of <a href="https://dendikcreation.dev?utm_source=keras?utm_medium=page?utm_campaign=page_load" target="_blank" className="text-white hover:text-[#FF3000]">dendik-creation</a>
+            </small>
+          </div>
         </div>
       </footer>
     </div>

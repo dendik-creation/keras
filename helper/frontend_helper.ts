@@ -49,6 +49,64 @@ export async function fetchOfferingCourses(
   return finalData;
 }
 
+export type GenerateScheduleStage = "filtering" | "generating" | "repairing" | "fallback";
+
+/**
+ * POST /api/schedule-ai and read its NDJSON stream to completion — mirrors
+ * fetchOfferingCourses above. The AI/repair/fallback pipeline streams
+ * status events for the same reason the schedule scrape does: keep the
+ * connection "active" past a reverse proxy's idle-read timeout instead of
+ * risking a 504 on an already-successful backend result.
+ */
+export async function generateScheduleStream(
+  body: Record<string, unknown>,
+  onStage?: (stage: GenerateScheduleStage) => void,
+): Promise<CourseSchedule[]> {
+  const response = await fetch("/api/schedule-ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok || !response.body) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message || "Gagal menghasilkan jadwal. Silakan coba lagi.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalCourses: CourseSchedule[] | null = null;
+  let streamError: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      if (event.type === "status") {
+        onStage?.(event.stage);
+      } else if (event.type === "done") {
+        finalCourses = event.data?.courses ?? [];
+      } else if (event.type === "error") {
+        streamError = event.message;
+      }
+    }
+  }
+
+  if (streamError) throw new Error(streamError);
+  if (finalCourses === null) {
+    throw new Error("Tidak ada jadwal yang cocok dengan preferensimu.");
+  }
+  return finalCourses;
+}
+
 /** Reset submit-tracking fields on courses about to become the saved schedule. */
 export const stampForAdoption = (courses: CourseSchedule[]): CourseSchedule[] =>
   courses.map((course) => ({

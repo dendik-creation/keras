@@ -115,7 +115,7 @@ export function parseAiRawResponse(raw: unknown): string[] {
 }
 
 export type ScheduleValidationResult =
-  | { valid: true; courses: CourseSchedule[] }
+  | { valid: true; courses: CourseSchedule[]; issues: ScheduleValidationIssues }
   | { valid: false; reason: string; issues: ScheduleValidationIssues };
 
 /** Zeroed issue set — start from this and only fill in what's actually broken. */
@@ -230,5 +230,5 @@ export function validateGeneratedSchedule(
     return { valid: false, reason: describeIssues(issues), issues };
   }
 
-  return { valid: true, courses };
+  return { valid: true, courses, issues };
 }

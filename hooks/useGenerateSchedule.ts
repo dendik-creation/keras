@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useForm, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import { aiPreferenceSchema } from "@/modules/schedule-ai/schedule-ai.validator";
 import type { AiPreference } from "@/modules/schedule-ai/schedule-ai.types";
 import type { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
-import { saveScheduleToStorage } from "@/helper/frontend_helper";
+import { generateScheduleStream, saveScheduleToStorage } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackAiScheduleGenerated } from "@/lib/analytics/events";
 
@@ -83,11 +82,7 @@ export function useGenerateSchedule(
     const startedAt = Date.now();
     try {
       const values = form.getValues();
-      const response = await axios.post("/api/schedule-ai", {
-        ...values,
-        offeringCourses,
-      });
-      const courses: CourseSchedule[] = response.data?.data?.courses || [];
+      const courses = await generateScheduleStream({ ...values, offeringCourses });
 
       if (courses.length === 0) {
         throw new Error("Tidak ada jadwal yang cocok dengan preferensimu.");
@@ -106,7 +101,6 @@ export function useGenerateSchedule(
       return true;
     } catch (err) {
       const message: string =
-        (axios.isAxiosError(err) && err.response?.data?.message) ||
         (err instanceof Error ? err.message : "") ||
         "Tidak ada jadwal yang cocok dengan preferensimu. Coba ubah preferensi.";
       setError(message);

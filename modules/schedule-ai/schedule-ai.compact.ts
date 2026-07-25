@@ -34,17 +34,23 @@ function tokenizer(prefix: string): (value: string) => string {
 export function buildCompactPayload(
   courses: CourseWithSemester[],
   preference: AiPreference,
-): { payload: CompactPayload; idMap: Map<string, string> } {
+): {
+  payload: CompactPayload;
+  idMap: Map<string, string>;
+  courseByShortId: Map<string, CourseWithSemester>;
+} {
   const lecturerToken = tokenizer("L");
   const courseToken = tokenizer("C");
   const semesterToken = tokenizer("S");
   const idMap = new Map<string, string>();
+  const courseByShortId = new Map<string, CourseWithSemester>();
 
   const rows: CompactRow[] = [];
   for (const course of courses) {
     if (!course.schedule_id) continue;
     const shortId = String(idMap.size + 1);
     idMap.set(shortId, course.schedule_id);
+    courseByShortId.set(shortId, course);
 
     const { start, end } = timeRangeToMinutes(course.hour);
     rows.push([
@@ -79,5 +85,5 @@ export function buildCompactPayload(
     rows,
   };
 
-  return { payload, idMap };
+  return { payload, idMap, courseByShortId };
 }

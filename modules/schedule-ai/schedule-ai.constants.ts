@@ -5,8 +5,6 @@ import type {
   ScheduleValidationIssues,
 } from "@/modules/schedule-ai/schedule-ai.types";
 
-export const MAX_AI_RETRIES = 3;
-
 /** Standard Indonesian semester SKS ceiling — used when the student picks "Maximum available". */
 export const MAX_SKS_CAP = 24;
 
@@ -52,29 +50,22 @@ export const IDLE_TIME_LABELS: Record<string, string> = {
   unlimited: "Tanpa batas",
 };
 
+/**
+ * The whole pipeline now makes at most two AI calls: one full "generate"
+ * and, only if that's close but not valid, one tiny "repair". Neither may
+ * block the deterministic fallback for long — a reverse proxy's idle-read
+ * timeout is the real ceiling here, not how thorough the model wants to be.
+ */
+export const GENERATE_TIMEOUT_MS = 15_000;
+export const REPAIR_TIMEOUT_MS = 10_000;
+
 type PromptTier = "full" | "compact" | "ultra";
 
-const TIER_ORDER: PromptTier[] = ["full", "compact", "ultra"];
-
-/** Phase 9 — dynamic prompt size: more candidates means a terser, less explanatory system prompt. */
+/** More candidates means a terser, less explanatory system prompt for the one generate call. */
 export function pickPromptTier(candidateRows: number): PromptTier {
   if (candidateRows < 20) return "full";
   if (candidateRows < 40) return "compact";
   return "ultra";
-}
-
-/** Phase 11 — each retry gets a terser prompt than the last instead of resending the same one. */
-export function escalateTier(base: PromptTier, attempt: number): PromptTier {
-  const index = Math.min(TIER_ORDER.indexOf(base) + attempt, TIER_ORDER.length - 1);
-  return TIER_ORDER[index];
-}
-
-/** Phase 10 — adaptive timeout: bigger prompts get more time instead of one fixed 25s budget for everyone. */
-export function timeoutForCandidates(candidateRows: number): number {
-  if (candidateRows < 20) return 20_000;
-  if (candidateRows < 40) return 35_000;
-  if (candidateRows < 60) return 50_000;
-  return 85_000;
 }
 
 const SCHEMA_LINE =
@@ -94,9 +85,8 @@ const OUTPUT_LINE =
  * The candidates you receive are already deterministically filtered and
  * ranked server-side — every row is already a legal option for at least
  * one course. Your only job is preference reasoning: which combination
- * best fits prefs. The server re-validates every hard rule below and will
- * retry you with the exact problems if you break one, so there's no
- * separate self-check/repair step to perform here.
+ * best fits prefs. The server re-validates every hard rule below; a minor
+ * violation gets a tiny follow-up repair request instead of you seeing it.
  */
 export function buildSystemPrompt(tier: PromptTier = "full"): string {
   if (tier === "ultra") {
@@ -112,7 +102,7 @@ export function buildSystemPrompt(tier: PromptTier = "full"): string {
     return [
       "You pick the best course schedule for a student from already-filtered, already-ranked candidates.",
       SCHEMA_LINE,
-      `Hard rules (server re-checks these, a violation just costs you a retry): ${HARD_RULES.join("; ")}.`,
+      `Hard rules (server re-checks these): ${HARD_RULES.join("; ")}.`,
       "Among rows that satisfy the hard rules, prefer the combination that best matches prefs: semester, preferred lecturer/course, preferred_time, and the requested goal.",
       OUTPUT_LINE,
     ].join("\n\n");
@@ -121,14 +111,14 @@ export function buildSystemPrompt(tier: PromptTier = "full"): string {
   return [
     "You are the schedule-selection engine for KeRaS, a course-planning tool. The candidates you receive are already deterministically filtered and ranked by the server — every row is a legal option for at least one course. Your job is preference reasoning, not constraint solving.",
     `Data encoding: ${SCHEMA_LINE}`,
-    `Hard rules the server re-checks after you answer, so a violation just costs you a retry, not a failure: ${HARD_RULES.join("; ")}.`,
+    `Hard rules the server re-checks after you answer: ${HARD_RULES.join("; ")}.`,
     "Among the rows that satisfy the hard rules, prefer the combination that best matches prefs: matching preferred semester, preferred lecturer, preferred course, the requested preferred_time, and the requested optimization goal (balanced, compact schedule, fewer campus days, morning classes, afternoon classes, or maximizing sks for fast_graduation).",
     OUTPUT_LINE,
   ].join("\n\n");
 }
 
 /** Strip a validation-issues object down to only the fields that actually found something. */
-function compactIssues(issues: ScheduleValidationIssues): Record<string, unknown> {
+export function compactIssues(issues: ScheduleValidationIssues): Record<string, unknown> {
   const compact: Record<string, unknown> = {};
   if (issues.invalid_id.length) compact.invalid_id = issues.invalid_id;
   if (issues.duplicate_course.length) compact.duplicate_course = issues.duplicate_course;
@@ -142,19 +132,35 @@ function compactIssues(issues: ScheduleValidationIssues): Record<string, unknown
 }
 
 /** Compact, token-cheap user message: preferences + candidate rows, no repeated keys. */
-export function buildUserPrompt(
-  payload: CompactPayload,
-  correctionFeedback?: ScheduleValidationIssues,
-): string {
-  const lines = [`prefs=${JSON.stringify(payload.prefs)}`, `data=${JSON.stringify(payload.rows)}`];
-
-  if (correctionFeedback) {
-    const problems = compactIssues(correctionFeedback);
-    lines.unshift(
-      `Previous answer failed server validation, problems=${JSON.stringify(problems)}. Fix only the named entries, keep the rest unchanged.`,
-    );
-  }
-
-  return lines.join("\n");
+export function buildUserPrompt(payload: CompactPayload): string {
+  return [`prefs=${JSON.stringify(payload.prefs)}`, `data=${JSON.stringify(payload.rows)}`].join(
+    "\n",
+  );
 }
 
+const REPAIR_OUTPUT_LINE =
+  'Reply with raw JSON only: {"selected_schedule_ids": ["<id>", ...]} — the repaired list, nothing else.';
+
+/**
+ * Fixed, tiny system prompt for the repair call — deliberately not tiered
+ * or dataset-size-dependent, since a repair request never carries the
+ * candidate rows in the first place.
+ */
+export function buildRepairSystemPrompt(): string {
+  return [
+    "You repair an already-selected course schedule for KeRaS. You are given the ids you selected last time and the problems the server found with them.",
+    "Remove ONLY the entries responsible for a listed problem. Do not add ids that weren't already selected, do not reconsider other candidates, do not regenerate from scratch — just return the previous list minus the offending entries.",
+    REPAIR_OUTPUT_LINE,
+  ].join("\n\n");
+}
+
+/** <300-token repair request: previously selected short ids + the problems found, nothing else. */
+export function buildRepairUserPrompt(
+  selectedShortIds: string[],
+  issues: ScheduleValidationIssues,
+): string {
+  return [
+    `selected=${JSON.stringify(selectedShortIds)}`,
+    `problems=${JSON.stringify(compactIssues(issues))}`,
+  ].join("\n");
+}

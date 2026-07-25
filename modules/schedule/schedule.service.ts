@@ -3,6 +3,7 @@ import { envVariable } from "@/lib/utils";
 import { axiosScrapClient } from "@/helper/axios_client";
 import { createKeepAliveAgent } from "@/lib/server/https-agent";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { logger } from "@/lib/logger";
 
 const BATCH_SIZE = 15;
 const DELAY_PER_BATCH = 100;
@@ -27,19 +28,19 @@ export async function getOfferingCourses(
     Referer: envVariable.KRS_DASHBOARD_URL,
   };
 
-  console.log(`[schedule] fetching ${envVariable.KRS_GET_SCHEDULES}`);
+  logger.log(`[schedule] fetching ${envVariable.KRS_GET_SCHEDULES}`);
   const fetchStart = Date.now();
   const mainResponse = await axiosScrapClient.get(
     envVariable.KRS_GET_SCHEDULES,
     { headers, httpsAgent: keepAliveAgent },
   );
-  console.log(
+  logger.log(
     `[schedule] main page fetched: status=${mainResponse.status}, ${Date.now() - fetchStart}ms`,
   );
 
   const offeringCourses = parseOfferingCourses(mainResponse.data);
   const totalCourses = offeringCourses.reduce((n, oc) => n + oc.courses.length, 0);
-  console.log(
+  logger.log(
     `[schedule] parsed ${offeringCourses.length} semester groups, ${totalCourses} courses`,
   );
 
@@ -50,7 +51,7 @@ export async function getOfferingCourses(
     keepAliveAgent,
     onProgress,
   );
-  console.log(`[schedule] hydrated course details in ${Date.now() - hydrateStart}ms`);
+  logger.log(`[schedule] hydrated course details in ${Date.now() - hydrateStart}ms`);
 
   return offeringCourses;
 }
@@ -116,7 +117,7 @@ async function hydrateCourseDetails(
 ): Promise<void> {
   for (let i = 0; i < courses.length; i += BATCH_SIZE) {
     const batch = courses.slice(i, i + BATCH_SIZE);
-    console.log(`Get Batch ${i / BATCH_SIZE + 1} (${batch.length} items)`);
+    logger.log(`Get Batch ${i / BATCH_SIZE + 1} (${batch.length} items)`);
 
     await Promise.all(
       batch.map(async (course) => {
@@ -143,7 +144,7 @@ async function hydrateCourseDetails(
             course.classroom = $tds.eq(3).find("center").text().trim();
           }
         } catch (err) {
-          console.error(`Gagal fetch: ${course.course}`);
+          logger.error(`Gagal fetch: ${course.course}`);
         }
       }),
     );

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 const REPO = "dendik-creation/keras";
 
@@ -19,7 +20,7 @@ export async function GET() {
     });
 
     if (!res.ok) {
-      console.error(`github-stars: GitHub API ${res.status} ${res.statusText}`);
+      logger.error(`github-stars: GitHub API ${res.status} ${res.statusText}`);
       return NextResponse.json({ stars: null }, { status: 200 });
     }
 
@@ -29,7 +30,7 @@ export async function GET() {
       { status: 200 },
     );
   } catch (err) {
-    console.error("github-stars: fetch failed", err);
+    logger.error("github-stars: fetch failed", err);
     return NextResponse.json({ stars: null }, { status: 200 });
   }
 }

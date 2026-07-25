@@ -11,6 +11,7 @@ import {
   parseCreateShortUrlBody,
   parseShortCode,
 } from "@/modules/shlink/shlink.validator";
+import { logger } from "@/lib/logger";
 
 function errorResponse(error: unknown, fallbackMessage: string) {
   if (isHttpError(error)) {
@@ -20,7 +21,7 @@ function errorResponse(error: unknown, fallbackMessage: string) {
     );
   }
   const detail = error instanceof Error ? error.message : String(error);
-  console.error("[shlink]", fallbackMessage, detail);
+  logger.error("[shlink]", fallbackMessage, detail);
   return NextResponse.json(
     { message: fallbackMessage, detail },
     { status: 500 },
@@ -43,7 +44,7 @@ export async function createShareSchedule(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const longUrl = parseCreateShortUrlBody(body);
-    console.log("[shlink] create: request", { longUrl });
+    logger.log("[shlink] create: request", { longUrl });
 
     const appHost = getAppHost();
     validateLongUrl(longUrl, appHost);
@@ -53,7 +54,7 @@ export async function createShareSchedule(req: NextRequest) {
       `/share-schedule/${shortCode}`,
       envVariable.APP_URL,
     ).toString();
-    console.log("[shlink] create: success", { shortCode, shortUrl });
+    logger.log("[shlink] create: success", { shortCode, shortUrl });
 
     return NextResponse.json({ success: true, data: { shortUrl } });
   } catch (error) {
@@ -69,13 +70,13 @@ export async function resolveShareSchedule(
   try {
     const { shortCode } = await params;
     parseShortCode(shortCode);
-    console.log("[shlink] resolve: request", { shortCode });
+    logger.log("[shlink] resolve: request", { shortCode });
 
     const longUrl = await getLongUrlByShortCode(shortCode);
 
     const appHost = getAppHost();
     const ids = extractIdsFromLongUrl(longUrl, appHost);
-    console.log("[shlink] resolve: success", {
+    logger.log("[shlink] resolve: success", {
       shortCode,
       longUrl,
       idCount: ids.split(",").filter(Boolean).length,

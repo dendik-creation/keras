@@ -22,6 +22,7 @@ import { prefilterCourses } from "@/modules/schedule-ai/schedule-ai.utils";
 import { reduceCandidates } from "@/modules/schedule-ai/schedule-ai.reduce";
 import { buildCompactPayload } from "@/modules/schedule-ai/schedule-ai.compact";
 import { runGreedyBacktrackOptimizer } from "@/modules/schedule-ai/schedule-ai.optimizer";
+import { logger } from "@/lib/logger";
 
 const AI_API_KEY = process.env.AI_API_KEY;
 const AI_BASE_URL = process.env.AI_BASE_URL || "https://api.openai.com/v1";
@@ -35,14 +36,14 @@ async function callAiModel(
   timeoutMs: number,
 ): Promise<string> {
   if (!AI_API_KEY) {
-    console.error("[schedule-ai] AI_API_KEY not configured");
+    logger.error("[schedule-ai] AI_API_KEY not configured");
     throw new HttpError(500, "Fitur AI belum dikonfigurasi di server.");
   }
 
   const payloadBytes =
     Buffer.byteLength(systemPrompt, "utf8") + Buffer.byteLength(userPrompt, "utf8");
 
-  console.log("[schedule-ai] calling AI provider", {
+  logger.log("[schedule-ai] calling AI provider", {
     baseUrl: AI_BASE_URL,
     model: AI_MODEL,
     temperature,
@@ -119,7 +120,7 @@ export async function generateScheduleWithAI(
     preference,
   );
 
-  console.log("[schedule-ai] payload built", {
+  logger.log("[schedule-ai] payload built", {
     rawCourses: availableCourses.length,
     prefilteredCourses: candidateCourses.length,
     courseGroups: groupCount,
@@ -127,7 +128,7 @@ export async function generateScheduleWithAI(
   });
 
   if (reducedCourses.length === 0) {
-    console.error("[schedule-ai] no candidates — nothing to schedule", {
+    logger.error("[schedule-ai] no candidates — nothing to schedule", {
       rawCourses: availableCourses.length,
       hint: "check that offeringCourses' courses have both day and hour filled in, and that preferred_days/earliest_start/latest_end/avoid_* aren't excluding everything",
     });
@@ -139,7 +140,7 @@ export async function generateScheduleWithAI(
   // LLM to reason about — skip the network call entirely.
   if (allSingleChoice) {
     const heuristicCourses = runGreedyBacktrackOptimizer(candidateCourses, preference);
-    console.log("[schedule-ai] deterministic heuristic — skipping AI", {
+    logger.log("[schedule-ai] deterministic heuristic — skipping AI", {
       courses: heuristicCourses.length,
     });
     if (heuristicCourses.length > 0) {
@@ -163,7 +164,7 @@ export async function generateScheduleWithAI(
     // attempt doesn't just repeat itself.
     const temperature = attempt === 0 ? 0 : Math.min(0.2 * attempt, 0.4);
 
-    console.log(`[schedule-ai] attempt ${attempt + 1}/${MAX_AI_RETRIES} — calling AI`, {
+    logger.log(`[schedule-ai] attempt ${attempt + 1}/${MAX_AI_RETRIES} — calling AI`, {
       tier,
       temperature,
       correctionIssues: attempt > 0 ? lastIssues : undefined,
@@ -173,13 +174,13 @@ export async function generateScheduleWithAI(
     try {
       const startedAt = Date.now();
       const raw = await callAiModel(systemPrompt, userPrompt, temperature, timeoutMs);
-      console.log(`[schedule-ai] attempt ${attempt + 1} — AI responded`, {
+      logger.log(`[schedule-ai] attempt ${attempt + 1} — AI responded`, {
         ms: Date.now() - startedAt,
         rawPreview: raw.slice(0, 1500),
       });
       const parsedJson = extractJson(raw);
       const shortIds = parseAiRawResponse(parsedJson);
-      console.log(`[schedule-ai] attempt ${attempt + 1} — parsed selection`, {
+      logger.log(`[schedule-ai] attempt ${attempt + 1} — parsed selection`, {
         selectedCount: shortIds.length,
         shortIds,
       });
@@ -200,7 +201,7 @@ export async function generateScheduleWithAI(
       if (unknownTokens.length > 0) {
         lastReason = `AI mengembalikan id yang tidak dikenal: ${unknownTokens.join(", ")}`;
         lastIssues = emptyValidationIssues({ invalid_id: unknownTokens });
-        console.warn(`[schedule-ai] attempt ${attempt + 1} — unknown id token(s)`, {
+        logger.warn(`[schedule-ai] attempt ${attempt + 1} — unknown id token(s)`, {
           unknownTokens,
         });
         attemptHistory.push({ attempt: attempt + 1, reason: lastReason });
@@ -210,7 +211,7 @@ export async function generateScheduleWithAI(
       const detail = err instanceof Error ? err.message : "unknown error";
       lastReason = `Output AI tidak valid: ${detail}`;
       lastIssues = undefined;
-      console.error(`[schedule-ai] attempt ${attempt + 1} — AI call/parse failed`, {
+      logger.error(`[schedule-ai] attempt ${attempt + 1} — AI call/parse failed`, {
         detail,
       });
       attemptHistory.push({ attempt: attempt + 1, reason: lastReason });
@@ -219,12 +220,12 @@ export async function generateScheduleWithAI(
 
     const validationStartedAt = Date.now();
     const result = validateGeneratedSchedule(selectedIds, candidateCourses, preference);
-    console.log(`[schedule-ai] attempt ${attempt + 1} — validation`, {
+    logger.log(`[schedule-ai] attempt ${attempt + 1} — validation`, {
       valid: result.valid,
       ms: Date.now() - validationStartedAt,
     });
     if (result.valid && result.courses.length > 0) {
-      console.log(`[schedule-ai] attempt ${attempt + 1} — validation passed`, {
+      logger.log(`[schedule-ai] attempt ${attempt + 1} — validation passed`, {
         courses: result.courses.length,
       });
       return { courses: result.courses };
@@ -236,14 +237,14 @@ export async function generateScheduleWithAI(
       lastReason = result.reason;
       lastIssues = result.issues;
     }
-    console.warn(`[schedule-ai] attempt ${attempt + 1} — validation failed`, {
+    logger.warn(`[schedule-ai] attempt ${attempt + 1} — validation failed`, {
       reason: lastReason,
       selectedIds,
     });
     attemptHistory.push({ attempt: attempt + 1, reason: lastReason });
   }
 
-  console.warn("[schedule-ai] AI attempts exhausted — running deterministic fallback optimizer", {
+  logger.warn("[schedule-ai] AI attempts exhausted — running deterministic fallback optimizer", {
     attemptHistory,
   });
 
@@ -255,14 +256,14 @@ export async function generateScheduleWithAI(
   // practice.
   const fallbackCourses = runGreedyBacktrackOptimizer(candidateCourses, preference);
   if (fallbackCourses.length > 0) {
-    console.log("[schedule-ai] fallback optimizer produced a schedule", {
+    logger.log("[schedule-ai] fallback optimizer produced a schedule", {
       courses: fallbackCourses.length,
       fallbackTriggered: true,
     });
     return { courses: fallbackCourses };
   }
 
-  console.error("[schedule-ai] all attempts and fallback exhausted", {
+  logger.error("[schedule-ai] all attempts and fallback exhausted", {
     attemptHistory,
     fallbackTriggered: true,
   });

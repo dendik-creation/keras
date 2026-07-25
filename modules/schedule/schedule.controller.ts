@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionCookie } from "@/lib/server/session";
 import { getOfferingCourses } from "@/modules/schedule/schedule.service";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/schedule
@@ -15,18 +16,18 @@ import { getOfferingCourses } from "@/modules/schedule/schedule.service";
  */
 export async function getSchedule() {
   const start = Date.now();
-  console.log("[schedule] GET /api/schedule: request received");
+  logger.log("[schedule] GET /api/schedule: request received");
 
   const sessionCookie = await getSessionCookie();
   if (!sessionCookie) {
-    console.log("[schedule] GET /api/schedule: no session cookie, 401");
+    logger.log("[schedule] GET /api/schedule: no session cookie, 401");
     return NextResponse.json(
       { message: "Unauthorized: Silakan login terlebih dahulu" },
       { status: 401 },
     );
   }
 
-  console.log("[schedule] GET /api/schedule: session found, scraping offering courses");
+  logger.log("[schedule] GET /api/schedule: session found, scraping offering courses");
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -38,12 +39,12 @@ export async function getSchedule() {
         const data = await getOfferingCourses(sessionCookie.value, (done, total) =>
           send({ type: "progress", done, total }),
         );
-        console.log(
+        logger.log(
           `[schedule] GET /api/schedule: success, ${data.length} semester groups, ${Date.now() - start}ms`,
         );
         send({ type: "done", data });
       } catch (error: any) {
-        console.error(
+        logger.error(
           `[schedule] GET /api/schedule: ERROR after ${Date.now() - start}ms —`,
           error.message,
         );

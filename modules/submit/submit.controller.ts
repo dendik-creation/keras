@@ -11,6 +11,7 @@ import {
   submitSchedules,
   syncSchedules,
 } from "@/modules/submit/submit.service";
+import { logger } from "@/lib/logger";
 
 const httpErrorResponse = (error: unknown) => {
   if (isHttpError(error)) {
@@ -85,7 +86,7 @@ export async function postSubmit(req: Request) {
     const mapped = httpErrorResponse(error);
     if (mapped) return mapped;
 
-    console.error("SUBMIT ERROR:", error.message);
+    logger.error("SUBMIT ERROR:", error.message);
     return NextResponse.json(
       {
         success: false,
@@ -126,7 +127,7 @@ export async function deleteSubmit(req: Request) {
     const mapped = httpErrorResponse(error);
     if (mapped) return mapped;
 
-    console.error("DELETE ERROR:", error.message);
+    logger.error("DELETE ERROR:", error.message);
     return NextResponse.json(
       {
         success: false,

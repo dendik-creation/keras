@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { removeLocalStorage } from "@/helper/local_storage";
 import { resetAnalytics } from "@/lib/analytics/events";
+import { logger } from "@/lib/logger";
 
 const LogoutMenu = () => {
   const [open, setOpen] = useState(false);
@@ -28,7 +29,7 @@ const LogoutMenu = () => {
         window.location.href = "/login";
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      logger.error("Logout failed:", error);
     }
     setOpen(false);
   };

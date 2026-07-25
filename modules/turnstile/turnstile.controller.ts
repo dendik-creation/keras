@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTurnstileToken } from "@/modules/turnstile/turnstile.service";
+import { logger } from "@/lib/logger";
 
 /** POST /api/turnstile-verify  body: { token: string } */
 export async function turnstileVerify(req: NextRequest) {
@@ -26,7 +27,7 @@ export async function turnstileVerify(req: NextRequest) {
       { status: result.success ? 200 : 403 },
     );
   } catch (err) {
-    console.error("Error verifying turnstile:", err);
+    logger.error("Error verifying turnstile:", err);
     return NextResponse.json(
       { success: false, message: "Gagal verifikasi Turnstile" },
       { status: 500 },

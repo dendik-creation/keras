@@ -6,9 +6,10 @@ import type {
   ShlinkErrorResponse,
   ShlinkShortUrlDetails,
 } from "@/modules/shlink/shlink.types";
+import { logger } from "@/lib/logger";
 
-console.log("[shlink] SHLINK_BASE_URL =", envVariable.SHLINK_BASE_URL || "(missing)");
-console.log(
+logger.log("[shlink] SHLINK_BASE_URL =", envVariable.SHLINK_BASE_URL || "(missing)");
+logger.log(
   "[shlink] SHLINK_API_KEY =",
   envVariable.SHLINK_API_KEY ? "****** (exists)" : "(missing)",
 );
@@ -25,7 +26,7 @@ const shlinkClient = axios.create({
 /** Translate a failed Shlink call into the app's HttpError so controllers stay uniform. */
 function toHttpError(error: unknown, fallbackMessage: string, context: Record<string, unknown>): HttpError {
   if (axios.isAxiosError<ShlinkErrorResponse>(error)) {
-    console.error("[shlink] request failed", {
+    logger.error("[shlink] request failed", {
       ...context,
       status: error.response?.status,
       body: error.response?.data,
@@ -42,7 +43,7 @@ function toHttpError(error: unknown, fallbackMessage: string, context: Record<st
     }
     return new HttpError(502, "Shlink tidak dapat dihubungi.");
   }
-  console.error("[shlink] unexpected error", { ...context, error });
+  logger.error("[shlink] unexpected error", { ...context, error });
   return new HttpError(
     500,
     fallbackMessage,
@@ -52,7 +53,7 @@ function toHttpError(error: unknown, fallbackMessage: string, context: Record<st
 
 /** POST /rest/v3/short-urls — store a long URL in Shlink and return its shortCode. */
 export async function createShortUrl(longUrl: string): Promise<string> {
-  console.log("[shlink] createShortUrl longUrl =", longUrl);
+  logger.log("[shlink] createShortUrl longUrl =", longUrl);
   try {
     const response = await shlinkClient.post<ShlinkCreateShortUrlResponse>(
       "/rest/v3/short-urls",

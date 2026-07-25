@@ -1,4 +1,5 @@
 import type { Properties } from "posthog-js";
+import { logger } from "@/lib/logger";
 
 /**
  * Opt-in verbose logging for local development. Gated on NODE_ENV so setting
@@ -14,10 +15,9 @@ export function logCapture(
   properties?: Properties | null,
 ): void {
   if (!isDebugEnabled()) return;
-  console.log("[analytics]", {
+  logger.log("[analytics]", {
     event,
     distinctId,
     properties: properties ?? {},
-    timestamp: new Date().toISOString(),
   });
 }

@@ -7,6 +7,7 @@ import {
 } from "@/modules/schedule-ai/schedule-ai.validator";
 import { generateScheduleWithAI } from "@/modules/schedule-ai/schedule-ai.service";
 import { flattenOfferingCourses } from "@/modules/schedule-ai/schedule-ai.utils";
+import { logger } from "@/lib/logger";
 
 const unauthorized = () =>
   NextResponse.json(
@@ -26,7 +27,7 @@ export async function postGenerateSchedule(req: Request) {
     const offeringCourses = parseOfferingCourses(body.offeringCourses);
     const availableCourses = flattenOfferingCourses(offeringCourses);
 
-    console.log("[schedule-ai] request received", {
+    logger.log("[schedule-ai] request received", {
       semesterGroups: offeringCourses.length,
       totalCourses: availableCourses.length,
       preference,
@@ -34,7 +35,7 @@ export async function postGenerateSchedule(req: Request) {
 
     const { courses } = await generateScheduleWithAI(availableCourses, preference);
 
-    console.log("[schedule-ai] request succeeded", {
+    logger.log("[schedule-ai] request succeeded", {
       selectedCourses: courses.length,
       totalMs: Date.now() - startedAt,
     });
@@ -42,7 +43,7 @@ export async function postGenerateSchedule(req: Request) {
     return NextResponse.json({ success: true, data: { courses } });
   } catch (error) {
     if (isHttpError(error)) {
-      console.error("[schedule-ai] request failed", {
+      logger.error("[schedule-ai] request failed", {
         status: error.status,
         message: error.message,
         payload: error.payload,
@@ -55,7 +56,7 @@ export async function postGenerateSchedule(req: Request) {
     }
 
     const detail = error instanceof Error ? error.message : String(error);
-    console.error("[schedule-ai] request crashed", {
+    logger.error("[schedule-ai] request crashed", {
       detail,
       totalMs: Date.now() - startedAt,
     });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isHttpError } from "@/lib/server/http-error";
+import { logger } from "@/lib/logger";
 import {
   clearSessionCookie,
   getSessionCookie,
@@ -52,7 +53,7 @@ export async function login(req: Request) {
         { status: error.status },
       );
     }
-    console.error("FLOW ERROR:", error.message);
+    logger.error("FLOW ERROR:", error.message);
     return NextResponse.json(
       { message: "Server Error", detail: error.message },
       { status: 500 },
@@ -69,7 +70,7 @@ export async function logout() {
       message: "Logout sukses",
     });
   } catch (error) {
-    console.error("Logout error:", error);
+    logger.error("Logout error:", error);
     return NextResponse.json(
       { success: false, message: "Gagal melakukan logout" },
       { status: 500 },

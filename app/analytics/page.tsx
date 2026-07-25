@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
       </section>
 
       {/* DASHBOARD EMBED */}
-      <section className="px-6 pb-24 max-w-7xl mx-auto">
+      <section className="px-6 pb-24 max-w-[1600px] mx-auto">
         <div className="border-2 border-black bg-white">
           <div className="">
             <iframe

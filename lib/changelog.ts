@@ -104,6 +104,24 @@ const changelogHistories = [
       "Menambahkan deteksi robot menggunakan cloudflare ketika website di load",
     ],
   },
+  {
+    version: "2.3.1",
+    date: "24 Jul 2026",
+    title: "Berbagi Jadwal",
+    changes: [
+      "Menambahkan fitur berbagi jadwal antar mahasiswa sesama prodi",
+      "Mendukung short URL untuk berbagi jadwal"
+    ],
+  },
+  {
+    version: "2.3.2",
+    date: "25 Jul 2026",
+    title: "Buat Jadwal dengan AI",
+    changes: [
+      "Buat jadwal dengan AI dengan formulir yang menyenangkan",
+      "Membantu mahasiswa membentuk jadwal berdasarkan preferensi"
+    ],
+  },
 ];
 
 export default changelogHistories.reverse();

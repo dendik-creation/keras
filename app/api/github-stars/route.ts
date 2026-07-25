@@ -11,11 +11,15 @@ export async function GET() {
       headers: {
         Accept: "application/vnd.github+json",
         "User-Agent": "keras-app",
+        ...(process.env.GITHUB_TOKEN
+          ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+          : {}),
       },
       next: { revalidate: 3600 },
     });
 
     if (!res.ok) {
+      console.error(`github-stars: GitHub API ${res.status} ${res.statusText}`);
       return NextResponse.json({ stars: null }, { status: 200 });
     }
 
@@ -24,7 +28,8 @@ export async function GET() {
       { stars: typeof data.stargazers_count === "number" ? data.stargazers_count : null },
       { status: 200 },
     );
-  } catch {
+  } catch (err) {
+    console.error("github-stars: fetch failed", err);
     return NextResponse.json({ stars: null }, { status: 200 });
   }
 }

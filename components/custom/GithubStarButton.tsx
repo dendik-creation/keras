@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Github } from "lucide-react";
+import { Github, Star } from "lucide-react";
 
 /** Nav CTA showing the live GitHub star count for the repository. */
 export default function GithubStarButton() {
@@ -31,7 +31,7 @@ export default function GithubStarButton() {
         variant="outline"
         className="rounded-none capitalize border-2 border-black bg-white text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] font-bold tracking-widest transition-colors duration-200"
       >
-        <Github className="w-4 h-4 mr-2" /> {stars === null ? "…" : stars} Star
+        <Github className="w-4 h-4" /> {stars === null ? "…" : stars} <Star/>
       </Button>
     </a>
   );

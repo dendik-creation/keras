@@ -39,21 +39,41 @@ export type AiPreference = {
   goal: OptimizationGoal;
 };
 
-/** Minimal per-class shape sent to the LLM — keeps the prompt cheap. Time is pre-parsed so the model never has to split a "HH:MM-HH:MM" string itself. */
-export type LightweightCourse = {
-  id: string;
-  course: string;
-  class: string;
-  lecture: string;
-  day: string;
-  start: string;
-  end: string;
-  sks: number;
-  semester: string;
+/**
+ * One class as sent to the LLM: [id, courseId, classId, lecturerId,
+ * semesterId, day, start, end, sks]. courseId/lecturerId/semesterId are
+ * opaque per-request tokens (see schedule-ai.compact.ts) — the model never
+ * needs the real names, only token equality against prefs.pref_c/pref_l.
+ * day is 1-5 (Senin..Jumat), start/end are minutes-since-midnight.
+ */
+export type CompactRow = [
+  id: string,
+  courseId: string,
+  classId: string,
+  lecturerId: string,
+  semesterId: string,
+  day: number,
+  start: number,
+  end: number,
+  sks: number,
+];
+
+export type CompactPreferences = {
+  sks: number | "max";
+  semester: string | null;
+  days: number[];
+  start: number;
+  end: number;
+  time: PreferredTime;
+  idle: IdleTimeOption;
+  pref_c: string[];
+  pref_l: string[];
+  goal: OptimizationGoal;
 };
 
-export type LightweightCoursesPayload = {
-  courses: LightweightCourse[];
+export type CompactPayload = {
+  prefs: CompactPreferences;
+  rows: CompactRow[];
 };
 
 /** Raw, untrusted shape the model is instructed to return. */

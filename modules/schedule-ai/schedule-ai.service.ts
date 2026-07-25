@@ -3,7 +3,10 @@ import type { CourseSchedule } from "@/types/course_schedule";
 import {
   buildSystemPrompt,
   buildUserPrompt,
+  escalateTier,
   MAX_AI_RETRIES,
+  pickPromptTier,
+  timeoutForCandidates,
 } from "@/modules/schedule-ai/schedule-ai.constants";
 import type {
   AiPreference,
@@ -15,30 +18,38 @@ import {
   parseAiRawResponse,
   validateGeneratedSchedule,
 } from "@/modules/schedule-ai/schedule-ai.validator";
-import { prefilterCourses, toLightweightPayload } from "@/modules/schedule-ai/schedule-ai.utils";
+import { prefilterCourses } from "@/modules/schedule-ai/schedule-ai.utils";
+import { reduceCandidates } from "@/modules/schedule-ai/schedule-ai.reduce";
+import { buildCompactPayload } from "@/modules/schedule-ai/schedule-ai.compact";
 import { runGreedyBacktrackOptimizer } from "@/modules/schedule-ai/schedule-ai.optimizer";
 
 const AI_API_KEY = process.env.AI_API_KEY;
 const AI_BASE_URL = process.env.AI_BASE_URL || "https://api.openai.com/v1";
 const AI_MODEL = process.env.AI_MODEL || "gpt-4o-mini";
-const REQUEST_TIMEOUT_MS = 25_000;
 
 /** Call an OpenAI-compatible chat completions endpoint and return the raw text reply. */
 async function callAiModel(
   systemPrompt: string,
   userPrompt: string,
   temperature: number,
+  timeoutMs: number,
 ): Promise<string> {
   if (!AI_API_KEY) {
     console.error("[schedule-ai] AI_API_KEY not configured");
     throw new HttpError(500, "Fitur AI belum dikonfigurasi di server.");
   }
 
+  const payloadBytes =
+    Buffer.byteLength(systemPrompt, "utf8") + Buffer.byteLength(userPrompt, "utf8");
+
   console.log("[schedule-ai] calling AI provider", {
     baseUrl: AI_BASE_URL,
     model: AI_MODEL,
     temperature,
+    timeoutMs,
     userPromptChars: userPrompt.length,
+    payloadBytes,
+    estimatedTokens: Math.ceil(payloadBytes / 4),
   });
 
   const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
@@ -56,7 +67,7 @@ async function callAiModel(
         { role: "user", content: userPrompt },
       ],
     }),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!response.ok) {
@@ -81,51 +92,79 @@ function extractJson(raw: string): unknown {
 }
 
 /**
- * Generate a schedule for the given offering + preferences. Retries up to
- * MAX_AI_RETRIES times, feeding the previous failure reason back into the
- * prompt each time so a retry has a real chance of converging.
+ * Generate a schedule for the given offering + preferences.
+ *
+ * Pipeline: deterministic hard-filter -> deterministic candidate reduction
+ * (top-N per course, ranked by the same scoring engine the fallback
+ * optimizer uses) -> either skip the AI entirely when there's no real
+ * choice left to make, or call it with a compact, dictionary-free, tiered
+ * prompt and validate its answer server-side. Retries up to MAX_AI_RETRIES
+ * times, escalating to a terser prompt tier and feeding the previous
+ * failure back in each time. Falls back to the same deterministic
+ * optimizer if every attempt fails.
  */
 export async function generateScheduleWithAI(
   availableCourses: CourseWithSemester[],
   preference: AiPreference,
 ): Promise<{ courses: CourseSchedule[] }> {
   // Deterministic pre-filter: drop every class that's hard-impossible for
-  // this request (wrong day, outside the allowed time window) before the
-  // AI or the fallback optimizer ever sees it. Smaller, conflict-reduced
-  // search space for both.
+  // this request (wrong day, outside the allowed time window, avoided
+  // lecturer/course) before the AI or the fallback optimizer ever sees it.
   const candidateCourses = prefilterCourses(availableCourses, preference);
-  const { payload, idMap } = toLightweightPayload(candidateCourses);
-  const systemPrompt = buildSystemPrompt();
+
+  // Deterministic candidate reduction: rank classes within each course and
+  // keep only the top few — the AI never needs to weigh every section.
+  const { courses: reducedCourses, groupCount, allSingleChoice } = reduceCandidates(
+    candidateCourses,
+    preference,
+  );
 
   console.log("[schedule-ai] payload built", {
     rawCourses: availableCourses.length,
     prefilteredCourses: candidateCourses.length,
-    lightweightCourses: payload.courses.length,
+    courseGroups: groupCount,
+    reducedCandidates: reducedCourses.length,
   });
 
-  if (payload.courses.length === 0) {
-    console.error("[schedule-ai] no lightweight courses — nothing to schedule", {
+  if (reducedCourses.length === 0) {
+    console.error("[schedule-ai] no candidates — nothing to schedule", {
       rawCourses: availableCourses.length,
-      hint: "check that offeringCourses' courses have both day and hour filled in, and that preferred_days/earliest_start/latest_end aren't excluding everything",
+      hint: "check that offeringCourses' courses have both day and hour filled in, and that preferred_days/earliest_start/latest_end/avoid_* aren't excluding everything",
     });
     throw new HttpError(422, "Tidak ada jadwal yang tersedia untuk dijadwalkan.");
   }
+
+  // Phase 12 local heuristic: every course already has at most one
+  // surviving candidate, so there's no preference trade-off left for an
+  // LLM to reason about — skip the network call entirely.
+  if (allSingleChoice) {
+    const heuristicCourses = runGreedyBacktrackOptimizer(candidateCourses, preference);
+    console.log("[schedule-ai] deterministic heuristic — skipping AI", {
+      courses: heuristicCourses.length,
+    });
+    if (heuristicCourses.length > 0) {
+      return { courses: heuristicCourses };
+    }
+  }
+
+  const { payload, idMap } = buildCompactPayload(reducedCourses, preference);
+  const baseTier = pickPromptTier(reducedCourses.length);
+  const timeoutMs = timeoutForCandidates(reducedCourses.length);
 
   let lastReason = "";
   let lastIssues: ScheduleValidationIssues | undefined;
   const attemptHistory: { attempt: number; reason: string }[] = [];
 
   for (let attempt = 0; attempt < MAX_AI_RETRIES; attempt++) {
-    const userPrompt = buildUserPrompt(
-      payload,
-      preference,
-      attempt > 0 ? lastIssues : undefined,
-    );
+    const tier = escalateTier(baseTier, attempt);
+    const systemPrompt = buildSystemPrompt(tier);
+    const userPrompt = buildUserPrompt(payload, attempt > 0 ? lastIssues : undefined);
     // Keep near-zero for determinism; nudge slightly on retries so a failed
     // attempt doesn't just repeat itself.
     const temperature = attempt === 0 ? 0 : Math.min(0.2 * attempt, 0.4);
 
     console.log(`[schedule-ai] attempt ${attempt + 1}/${MAX_AI_RETRIES} — calling AI`, {
+      tier,
       temperature,
       correctionIssues: attempt > 0 ? lastIssues : undefined,
     });
@@ -133,7 +172,7 @@ export async function generateScheduleWithAI(
     let selectedIds: string[];
     try {
       const startedAt = Date.now();
-      const raw = await callAiModel(systemPrompt, userPrompt, temperature);
+      const raw = await callAiModel(systemPrompt, userPrompt, temperature, timeoutMs);
       console.log(`[schedule-ai] attempt ${attempt + 1} — AI responded`, {
         ms: Date.now() - startedAt,
         rawPreview: raw.slice(0, 1500),
@@ -178,7 +217,12 @@ export async function generateScheduleWithAI(
       continue;
     }
 
+    const validationStartedAt = Date.now();
     const result = validateGeneratedSchedule(selectedIds, candidateCourses, preference);
+    console.log(`[schedule-ai] attempt ${attempt + 1} — validation`, {
+      valid: result.valid,
+      ms: Date.now() - validationStartedAt,
+    });
     if (result.valid && result.courses.length > 0) {
       console.log(`[schedule-ai] attempt ${attempt + 1} — validation passed`, {
         courses: result.courses.length,
@@ -205,18 +249,23 @@ export async function generateScheduleWithAI(
 
   // Deterministic fallback: AI preference-optimization gave up, but a valid
   // schedule can still be built without it. Greedy + backtracking over the
-  // same pre-filtered candidates, never violating a hard constraint by
+  // full pre-filtered candidate set (not just the reduced top-N, to
+  // preserve schedule quality), never violating a hard constraint by
   // construction — this is what keeps the user from seeing an error in
   // practice.
   const fallbackCourses = runGreedyBacktrackOptimizer(candidateCourses, preference);
   if (fallbackCourses.length > 0) {
     console.log("[schedule-ai] fallback optimizer produced a schedule", {
       courses: fallbackCourses.length,
+      fallbackTriggered: true,
     });
     return { courses: fallbackCourses };
   }
 
-  console.error("[schedule-ai] all attempts and fallback exhausted", { attemptHistory });
+  console.error("[schedule-ai] all attempts and fallback exhausted", {
+    attemptHistory,
+    fallbackTriggered: true,
+  });
 
   throw new HttpError(422, "Tidak ada jadwal yang cocok dengan preferensimu.", {
     detail: lastReason,

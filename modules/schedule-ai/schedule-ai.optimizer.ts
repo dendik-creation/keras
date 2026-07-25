@@ -1,52 +1,17 @@
 import type { CourseSchedule } from "@/types/course_schedule";
-import { MAX_SKS_CAP } from "@/modules/schedule-ai/schedule-ai.constants";
 import type { AiPreference, CourseWithSemester } from "@/modules/schedule-ai/schedule-ai.types";
-import { timeRangeToMinutes } from "@/modules/schedule-ai/schedule-ai.utils";
+import { coursesOverlap, scoreClass, targetSksFor } from "@/modules/schedule-ai/schedule-ai.scoring";
 
 /**
  * Last-resort deterministic scheduler. Runs only when the AI exhausts its
  * retries — it never talks to the LLM and can never violate a hard
  * constraint by construction, so it exists to guarantee the user almost
  * never sees an outright failure. It optimizes the same soft-preference
- * score the prompt asks the model for, just with a plain greedy +
- * backtracking search instead of an LLM call.
+ * score (schedule-ai.scoring.ts) the AI prompt asks the model for, just
+ * with a plain greedy + backtracking search instead of an LLM call.
  */
 
 const CALL_BUDGET = 200_000;
-
-function targetSksFor(preference: AiPreference): number {
-  return preference.target_sks.mode === "custom" && preference.target_sks.value
-    ? preference.target_sks.value
-    : MAX_SKS_CAP;
-}
-
-function scoreClass(course: CourseWithSemester, preference: AiPreference): number {
-  let score = 0;
-  if (preference.preferred_lecturers.includes(course.lecture)) score += 5;
-  if (preference.avoid_lecturers.includes(course.lecture)) score -= 5;
-  if (preference.preferred_courses.includes(course.code)) score += 5;
-  if (preference.avoid_courses.includes(course.code)) score -= 5;
-  if (preference.preferred_semester && course.semester === preference.preferred_semester) {
-    score += 3;
-  }
-
-  const { start } = timeRangeToMinutes(course.hour);
-  const isMorning = start < 12 * 60;
-  if (preference.preferred_time === "morning" && isMorning) score += 2;
-  if (preference.preferred_time === "afternoon" && !isMorning) score += 2;
-  if (preference.goal === "morning" && isMorning) score += 2;
-  if (preference.goal === "afternoon" && !isMorning) score += 2;
-  if (preference.goal === "fast_graduation") score += Number(course.sks) || 0;
-
-  return score;
-}
-
-function overlaps(a: CourseWithSemester, b: CourseWithSemester): boolean {
-  if (a.day !== b.day) return false;
-  const ra = timeRangeToMinutes(a.hour);
-  const rb = timeRangeToMinutes(b.hour);
-  return ra.start < rb.end && ra.end > rb.start;
-}
 
 function groupByCourse(courses: CourseWithSemester[]): CourseWithSemester[][] {
   const map = new Map<string, CourseWithSemester[]>();
@@ -95,7 +60,12 @@ export function runGreedyBacktrackOptimizer(
     score: number,
   ) {
     if (callBudget-- <= 0) return;
-    if (chosen.length > 0 && score > bestScore) {
+    // On a tie, prefer the fuller schedule — otherwise the very first
+    // single-course branch "wins" forever whenever nothing has a
+    // preference score (a common case: no lecturer/course/time
+    // preferences set), and every later, more-complete combination gets
+    // skipped just for not scoring strictly higher.
+    if (chosen.length > 0 && (score > bestScore || (score === bestScore && chosen.length > best.length))) {
       bestScore = score;
       best = [...chosen];
     }
@@ -104,7 +74,7 @@ export function runGreedyBacktrackOptimizer(
     for (const { course, score: classScore } of groups[index].classes) {
       const sks = Number(course.sks) || 0;
       if (usedSks + sks > targetSks) continue;
-      if (chosen.some((c) => overlaps(c, course))) continue;
+      if (chosen.some((c) => coursesOverlap(c, course))) continue;
 
       chosen.push(course);
       backtrack(index + 1, chosen, usedSks + sks, score + classScore);

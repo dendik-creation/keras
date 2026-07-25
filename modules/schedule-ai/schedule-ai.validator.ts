@@ -10,6 +10,7 @@ import {
   type ScheduleValidationIssues,
 } from "@/modules/schedule-ai/schedule-ai.types";
 import { timeRangeToMinutes, timeToMinutes } from "@/modules/schedule-ai/schedule-ai.utils";
+import { coursesOverlap, targetSksFor } from "@/modules/schedule-ai/schedule-ai.scoring";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -134,12 +135,6 @@ export function emptyValidationIssues(
   };
 }
 
-function targetSksFor(preference: AiPreference): number {
-  return preference.target_sks.mode === "custom" && preference.target_sks.value
-    ? preference.target_sks.value
-    : MAX_SKS_CAP;
-}
-
 /** Human-readable summary of an issue set — for logs and the final error message, not for the model. */
 function describeIssues(issues: ScheduleValidationIssues): string {
   const parts: string[] = [];
@@ -213,11 +208,8 @@ export function validateGeneratedSchedule(
   }
 
   for (let i = 0; i < courses.length; i++) {
-    const a = timeRangeToMinutes(courses[i].hour);
     for (let j = i + 1; j < courses.length; j++) {
-      if (courses[i].day !== courses[j].day) continue;
-      const b = timeRangeToMinutes(courses[j].hour);
-      if (a.start < b.end && a.end > b.start) {
+      if (coursesOverlap(courses[i], courses[j])) {
         issues.overlap.push({ courseA: courses[i].course, courseB: courses[j].course });
       }
     }

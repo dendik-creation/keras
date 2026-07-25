@@ -1,10 +1,7 @@
-import type { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
-import { matchCoursesByIds } from "@/helper/share_schedule";
+import type { OfferingCourse } from "@/types/course_schedule";
 import {
   STUDY_DAYS,
   type AiPreference,
-  type LightweightCoursesPayload,
-  type LightweightCourse,
   type CourseWithSemester,
 } from "@/modules/schedule-ai/schedule-ai.types";
 
@@ -45,11 +42,12 @@ export function buildSemesterOptions(offeringCourses: OfferingCourse[]): string[
 /**
  * Deterministic hard-constraint pre-filter. Drops every class that can
  * never be legal under the student's request — wrong weekday, starts too
- * early, ends too late, or a dead duplicate schedule_id — before the AI or
- * the fallback optimizer ever sees it. Fewer, only-possible candidates
- * means a smaller prompt and a search space where every remaining pick is
- * already day/time-legal, so the model only has to reason about overlap,
- * duplicate-course, and SKS.
+ * early, ends too late, an explicitly avoided lecturer/course, or a dead
+ * duplicate schedule_id — before the AI or the fallback optimizer ever
+ * sees it. Fewer, only-possible candidates means a smaller prompt and a
+ * search space where every remaining pick is already day/time/avoid-legal,
+ * so the model only has to reason about preference and the remaining
+ * combination constraints (overlap, duplicate-course, SKS).
  */
 export function prefilterCourses(
   courses: CourseWithSemester[],
@@ -60,13 +58,17 @@ export function prefilterCourses(
   );
   const earliestMinutes = timeToMinutes(preference.earliest_start);
   const latestMinutes = timeToMinutes(preference.latest_end);
+  const avoidLecturers = new Set(preference.avoid_lecturers);
+  const avoidCourses = new Set(preference.avoid_courses);
 
   const seen = new Set<string>();
   const filtered: CourseWithSemester[] = [];
   for (const course of courses) {
     if (!course.schedule_id || seen.has(course.schedule_id)) continue;
-    if (!course.day || !course.hour) continue;
+    if (!course.day || !course.hour || !course.code || !course.lecture) continue;
     if (!allowedDays.has(course.day)) continue;
+    if (avoidLecturers.has(course.lecture)) continue;
+    if (avoidCourses.has(course.code)) continue;
 
     const { start, end } = timeRangeToMinutes(course.hour);
     if (start < earliestMinutes || end > latestMinutes) continue;
@@ -75,54 +77,6 @@ export function prefilterCourses(
     filtered.push(course);
   }
   return filtered;
-}
-
-/**
- * Strip an offering down to only the fields the model needs to schedule.
- * Real schedule_id values are long opaque hashes (100+ chars) — asking an
- * LLM to transcribe those verbatim in JSON is unreliable (models garble
- * long strings under json mode). So each course gets a short sequential
- * token as its "id" instead; idMap translates that token back to the real
- * schedule_id after the model responds.
- */
-export function toLightweightPayload(
-  courses: CourseWithSemester[],
-): { payload: LightweightCoursesPayload; idMap: Map<string, string> } {
-  const seen = new Set<string>();
-  const lightweight: LightweightCourse[] = [];
-  const idMap = new Map<string, string>();
-
-  for (const course of courses) {
-    if (!course.schedule_id || seen.has(course.schedule_id)) continue;
-    if (!course.day || !course.hour) continue;
-    seen.add(course.schedule_id);
-
-    const shortId = String(idMap.size + 1);
-    idMap.set(shortId, course.schedule_id);
-
-    const [start, end] = course.hour.split(" - ");
-    lightweight.push({
-      id: shortId,
-      course: course.course,
-      class: course.class,
-      lecture: course.lecture,
-      day: course.day,
-      start: start || "",
-      end: end || "",
-      sks: Number(course.sks) || 0,
-      semester: course.semester,
-    });
-  }
-
-  return { payload: { courses: lightweight }, idMap };
-}
-
-/** Rebuild full CourseSchedule records from the ids the model selected. */
-export function mapSelectedIdsToCourses(
-  ids: string[],
-  offeringCourses: OfferingCourse[],
-): CourseSchedule[] {
-  return matchCoursesByIds(ids, offeringCourses);
 }
 
 export type SelectOption = {

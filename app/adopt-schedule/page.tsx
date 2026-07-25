@@ -20,11 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import LoadingBooks from "@/components/ui/loading-books";
-import RollingNumber from "@/components/ui/rolling-number";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
-import { fetchOfferingCourses } from "@/helper/frontend_helper";
 import {
   matchCoursesByCodeClass,
   parseShareParams,
@@ -46,11 +43,6 @@ export default function AdoptSchedulePage() {
   const [missingCount, setMissingCount] = useState(0);
   const [hasExisting, setHasExisting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [usingFreshFetch, setUsingFreshFetch] = useState(false);
-  const [progress, setProgress] = useState<{
-    done: number;
-    total: number;
-  } | null>(null);
   const resolvedRef = useRef(false);
 
   // Rule 1: guests must log in first — preserve where to return afterwards.
@@ -75,60 +67,33 @@ export default function AdoptSchedulePage() {
         return;
       }
 
-      let offering =
+      const offering =
         (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
-      let courses = matchCoursesByCodeClass(share.ids, offering);
+
+      // Get-schedule (the tens-of-seconds NDJSON scrape) only runs on
+      // /schedule now — that's the one place proven to survive proxy
+      // timeouts on the long scrape. Without a cached offering there's
+      // nothing to match here, so send the user there first and bring
+      // them straight back once it's fetched.
+      if (offering.length === 0) {
+        console.log(
+          "[adopt-schedule] no cached offering_course, redirecting to /schedule",
+        );
+        router.replace(
+          `/schedule?resumeAdopt=${encodeURIComponent(window.location.search)}`,
+        );
+        return;
+      }
+
+      const courses = matchCoursesByCodeClass(share.ids, offering);
       console.log("[adopt-schedule] local match", {
         cachedOfferingGroups: offering.length,
         sharedIds: share.ids.length,
         matchedLocally: courses.length,
       });
 
-      // Fresh device (or the offering has changed): pull the latest data.
-      // The scrape is streamed (NDJSON) exactly like the /schedule page, so we
-      // must drain the stream to completion to obtain the final data — only
-      // then is it safe to run the match and the adopt action.
-      let fetchFailed = false;
-
-      if (courses.length < share.ids.length) {
-        setUsingFreshFetch(true);
-        console.log(
-          "[adopt-schedule] local match incomplete, streaming /api/schedule",
-        );
-        try {
-          const fresh = await fetchOfferingCourses((done, total) =>
-            setProgress({ done, total }),
-          );
-          console.log("[adopt-schedule] /api/schedule stream complete", {
-            freshGroups: fresh?.length ?? 0,
-          });
-          if (fresh && fresh.length > 0) {
-            setLocalStorage("offering_course", fresh);
-            offering = fresh;
-            courses = matchCoursesByCodeClass(share.ids, fresh);
-            console.log("[adopt-schedule] fresh match", {
-              matchedAfterFetch: courses.length,
-            });
-          } else {
-            fetchFailed = true;
-          }
-        } catch (err) {
-          console.error("[adopt-schedule] /api/schedule stream failed", err);
-          fetchFailed = true;
-          /* keep whatever matched locally */
-        } finally {
-          setProgress(null);
-        }
-      }
-
-      // A stream/network failure mid-scrape is not the same as "this
-      // offering genuinely doesn't have these courses" — the long-running
-      // /api/schedule read is prone to connection drops (proxy timeouts,
-      // flaky mobile network) at ~90s+. Mislabeling that as "Jadwal Tidak
-      // Ditemukan" tells the user their share link is stale when it isn't;
-      // route it to the error phase (retry) instead.
       if (courses.length === 0) {
-        setPhase(fetchFailed ? "error" : "empty");
+        setPhase("empty");
         return;
       }
 
@@ -195,39 +160,12 @@ export default function AdoptSchedulePage() {
 
       {showLoader && (
         <div className="flex flex-col items-center gap-3 text-center">
-          {usingFreshFetch ? (
-            <>
-              <LoadingBooks className="h-44 w-44" />
-              <span className="text-sm font-semibold text-[#555555] max-w-md">
-                {progress ? (
-                  <span className="inline-flex items-center gap-1">
-                    Sedang melahap
-                    <RollingNumber
-                      value={progress.done}
-                      className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
-                    />
-                    /{" "}
-                    <RollingNumber
-                      value={progress.total}
-                      className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
-                    />{" "}
-                    jadwal mata kuliah
-                  </span>
-                ) : (
-                  "Sedang mencari ketersediaan jadwal, tapi agak lama hehe..."
-                )}
-              </span>
-            </>
-          ) : (
-            <>
-              <Loader2 className="w-6 h-6 animate-spin text-[#FF3000]" />
-              <p className="text-sm text-[#555555] font-medium max-w-md">
-                {isValidating || !isAuthenticated
-                  ? "Memeriksa sesi login kamu..."
-                  : "Menyiapkan jadwalmu..."}
-              </p>
-            </>
-          )}
+          <Loader2 className="w-6 h-6 animate-spin text-[#FF3000]" />
+          <p className="text-sm text-[#555555] font-medium max-w-md">
+            {isValidating || !isAuthenticated
+              ? "Memeriksa sesi login kamu..."
+              : "Menyiapkan jadwalmu..."}
+          </p>
         </div>
       )}
 

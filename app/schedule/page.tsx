@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
+  CalendarCheck2,
   CalendarClock,
   Clock,
   Building2,
@@ -59,6 +61,7 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Page() {
+  const router = useRouter();
   const [activeUser, setActiveUser] = useState<{
     nim: string;
     major: string;
@@ -75,6 +78,7 @@ export default function Page() {
   const [openGenerateAi, setOpenGenerateAi] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [resumeAdopt, setResumeAdopt] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const findAvailableSchedules = async () => {
@@ -125,6 +129,11 @@ export default function Page() {
       setData(offeringCourses);
     }
     setIsHydrated(true);
+
+    // Sent here from /adopt-schedule because offering_course wasn't cached
+    // yet — get-schedule only runs on this page now.
+    const params = new URLSearchParams(window.location.search);
+    setResumeAdopt(params.get("resumeAdopt"));
   }, []);
 
   const handleSelectCourse = (course: CourseSchedule) => {
@@ -263,6 +272,37 @@ export default function Page() {
                         <span>Perbarui ketersediaan jadwal</span>
                       </Button>
                     </div>
+
+                    {resumeAdopt && (
+                      <div className="flex flex-col gap-2 border-2 border-black bg-white p-3 text-xs font-medium text-[#555555]">
+                        {data.length > 0 ? (
+                          <>
+                            <span>
+                              Jadwal siap. Lanjutkan proses adopsi jadwal yang
+                              dibagikan ke kamu.
+                            </span>
+                            <Button
+                              onClick={() =>
+                                router.push(`/adopt-schedule${decodeURIComponent(resumeAdopt)}`)
+                              }
+                              size="sm"
+                              className="bg-[#FF3000] text-white hover:bg-black rounded-none uppercase font-black tracking-widest"
+                            >
+                              <CalendarCheck2 className="w-4 h-4" />
+                              <span>Lanjutkan Adopsi Jadwal</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <span>
+                            Kamu diarahkan dari link adopsi jadwal. Klik{" "}
+                            <span className="font-bold text-black">
+                              &quot;Perbarui ketersediaan jadwal&quot;
+                            </span>{" "}
+                            dulu untuk melanjutkan adopsi.
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {!loading && data.length === 0 && isHydrated && (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">

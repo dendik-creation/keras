@@ -12,6 +12,8 @@ import {
 import {
   ArrowBigRightDash,
   CalendarCog,
+  ChartNoAxesCombined,
+  House,
   LucideProps,
   Sword,
 } from "lucide-react";
@@ -41,6 +43,23 @@ const sidebarNavs: NavItems = [
     title: "Perang KRS",
     url: "/submit",
     icon: Sword,
+  },
+  {
+    type: "splitter",
+    title: "Lainnya",
+    url: "#",
+  },
+  {
+    type: "item",
+    title: "Beranda",
+    url: "/",
+    icon: House,
+  },
+  {
+    type: "item",
+    title: "Analitik",
+    url: "/analytics",
+    icon: ChartNoAxesCombined,
   },
 ];
 

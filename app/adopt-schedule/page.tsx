@@ -88,6 +88,8 @@ export default function AdoptSchedulePage() {
       // The scrape is streamed (NDJSON) exactly like the /schedule page, so we
       // must drain the stream to completion to obtain the final data — only
       // then is it safe to run the match and the adopt action.
+      let fetchFailed = false;
+
       if (courses.length < share.ids.length) {
         setUsingFreshFetch(true);
         console.log(
@@ -107,17 +109,26 @@ export default function AdoptSchedulePage() {
             console.log("[adopt-schedule] fresh match", {
               matchedAfterFetch: courses.length,
             });
+          } else {
+            fetchFailed = true;
           }
         } catch (err) {
           console.error("[adopt-schedule] /api/schedule stream failed", err);
+          fetchFailed = true;
           /* keep whatever matched locally */
         } finally {
           setProgress(null);
         }
       }
 
+      // A stream/network failure mid-scrape is not the same as "this
+      // offering genuinely doesn't have these courses" — the long-running
+      // /api/schedule read is prone to connection drops (proxy timeouts,
+      // flaky mobile network) at ~90s+. Mislabeling that as "Jadwal Tidak
+      // Ditemukan" tells the user their share link is stale when it isn't;
+      // route it to the error phase (retry) instead.
       if (courses.length === 0) {
-        setPhase("empty");
+        setPhase(fetchFailed ? "error" : "empty");
         return;
       }
 

@@ -1,19 +1,15 @@
 "use client";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import {
   ArrowBigRightDash,
   CalendarCog,
-  ChartNoAxesCombined,
-  House,
   LucideProps,
   Sword,
 } from "lucide-react";
@@ -44,33 +40,29 @@ const sidebarNavs: NavItems = [
     url: "/submit",
     icon: Sword,
   },
-  {
-    type: "splitter",
-    title: "Lainnya",
-    url: "#",
-  },
-  {
-    type: "item",
-    title: "Beranda",
-    url: "/",
-    icon: House,
-  },
-  {
-    type: "item",
-    title: "Analitik",
-    url: "/analytics",
-    icon: ChartNoAxesCombined,
-  },
 ];
 
-export default function AppSidebar() {
+interface AppSidebarProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
   const pathname = usePathname();
   const items = sidebarNavs;
   return (
-    <Sidebar>
-      <SidebarContent className="bg-white border-r-2 border-black min-h-full relative h-full flex flex-col">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="left"
+        className="bg-white border-r-2 border-black p-0 gap-0 w-72 sm:max-w-none"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>Navigasi utama KeRaS</SheetDescription>
+        </SheetHeader>
+
         {/* Brand mark */}
-        <SidebarHeader className="mt-0 p-0 gap-0 border-b-2 border-black">
+        <div className="mt-0 border-b-2 border-black">
           <div className="flex items-center gap-3 px-4 py-4">
             <Image
               src="/logo.png"
@@ -91,69 +83,54 @@ export default function AppSidebar() {
           </div>
           {/* Swiss accent strip */}
           <div className="w-full h-1.5 bg-[#FF3000]" />
-        </SidebarHeader>
+        </div>
 
-        <SidebarGroup className="pt-4">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => {
-                if (item.type === "splitter") {
-                  return (
-                    <SidebarMenuItem
-                      className="border-b-2 border-black mt-2 mx-2"
-                      key={item.title}
-                    >
-                      <SidebarMenuButton
-                        disabled
-                        className="text-black uppercase text-xs font-black tracking-widest"
-                      >
-                        <ArrowBigRightDash />
-                        {item.title}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                } else {
-                  const isActive =
-                    pathname === item.url || pathname.includes(item.url);
-                  const Icon = item.icon;
-                  return (
-                    <SidebarMenuItem className="mx-2 mb-1" key={item.title}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        className={`
-                          rounded-none transition-colors duration-200 border-2 font-bold uppercase tracking-widest text-sm
-                          ${
-                            isActive
-                              ? "bg-black text-black! border-black hover:bg-black"
-                              : "bg-transparent text-black border-transparent hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]"
-                          }
-                        `}
-                        asChild
-                      >
-                        <Link
-                          href={item.url === pathname ? "#" : item.url}
-                          className="flex items-center gap-2 px-3 py-2"
-                        >
-                          {Icon && (
-                            <div
-                              className={`w-6 h-6 flex items-center justify-center ${
-                                isActive ? "" : ""
-                              }`}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </div>
-                          )}
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                }
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+        <ul className="flex w-full min-w-0 flex-col gap-1 pt-4">
+          {items.map((item) => {
+            if (item.type === "splitter") {
+              return (
+                <li
+                  className="border-b-2 border-black mt-2 mx-2"
+                  key={item.title}
+                >
+                  <button
+                    disabled
+                    className="flex w-full items-center gap-2 p-2 text-black uppercase text-xs font-black tracking-widest"
+                  >
+                    <ArrowBigRightDash />
+                    {item.title}
+                  </button>
+                </li>
+              );
+            } else {
+              const isActive =
+                pathname === item.url || pathname.includes(item.url);
+              const Icon = item.icon;
+              return (
+                <li className="mx-2 mb-1" key={item.title}>
+                  <Link
+                    href={item.url === pathname ? "#" : item.url}
+                    onClick={() => onOpenChange(false)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-none transition-colors duration-200 border-2 font-bold uppercase tracking-widest text-sm",
+                      isActive
+                        ? "bg-accent text-white border-black hover:border-black"
+                        : "bg-transparent border-black text-black  hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]",
+                    )}
+                  >
+                    {Icon && (
+                      <div className="w-6 h-6 flex items-center justify-center">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                    )}
+                    <span>{item.title}</span>
+                  </Link>
+                </li>
+              );
+            }
+          })}
+        </ul>
+      </SheetContent>
+    </Sheet>
   );
 }

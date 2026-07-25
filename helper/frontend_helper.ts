@@ -49,14 +49,17 @@ export async function fetchOfferingCourses(
   return finalData;
 }
 
-/** Persist the selected courses under the app's single saved-schedule key. */
-export const saveScheduleToStorage = (courses: CourseSchedule[]): void => {
-  const withSubmitPlaceholder = courses.map((course) => ({
+/** Reset submit-tracking fields on courses about to become the saved schedule. */
+export const stampForAdoption = (courses: CourseSchedule[]): CourseSchedule[] =>
+  courses.map((course) => ({
     ...course,
     schedule_submit_id: "",
     saved_in_submit: false,
   }));
-  setLocalStorage(SAVED_SCHEDULE_KEY, withSubmitPlaceholder);
+
+/** Persist the selected courses under the app's single saved-schedule key. */
+export const saveScheduleToStorage = (courses: CourseSchedule[]): void => {
+  setLocalStorage(SAVED_SCHEDULE_KEY, stampForAdoption(courses));
 };
 
 export const parseTimeRange = (timeStr: string) => {

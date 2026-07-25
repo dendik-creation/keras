@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import {
-  CalendarCheck2,
   CalendarClock,
   Clock,
   Building2,
@@ -36,12 +34,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { CourseSchedule } from "@/types/course_schedule";
 import {
   checkConflict,
   fetchOfferingCourses,
   parseTimeRange,
-  saveScheduleToStorage,
+  stampForAdoption,
   ymdToIdDate,
 } from "@/helper/frontend_helper";
 import {
@@ -50,7 +48,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import { getLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
@@ -59,16 +57,24 @@ import RollingNumber from "@/components/ui/rolling-number";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
+import { useResumeAdoptToast } from "@/hooks/useResumeAdoptToast";
 
 export default function Page() {
-  const router = useRouter();
   const [activeUser, setActiveUser] = useState<{
     nim: string;
     major: string;
     name: string;
     degree: string;
   } | null>(null);
-  const [data, setData] = useState<OfferingCourse[]>([]);
+  const {
+    offeringCourse,
+    savedSchedule,
+    isHydrated,
+    setOfferingCourse,
+    setSavedSchedule,
+  } = useLocalStorageContext();
+  const data = useMemo(() => offeringCourse ?? [], [offeringCourse]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(
     null,
@@ -77,9 +83,10 @@ export default function Page() {
   const [openShareSchedule, setOpenShareSchedule] = useState(false);
   const [openGenerateAi, setOpenGenerateAi] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
   const [resumeAdopt, setResumeAdopt] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  useResumeAdoptToast({ resumeAdopt, isHydrated, offeringCourse });
 
   const findAvailableSchedules = async () => {
     setLoading(true);
@@ -96,8 +103,7 @@ export default function Page() {
         return;
       }
 
-      setData(finalData);
-      setLocalStorage("offering_course", finalData);
+      setOfferingCourse(finalData);
     } catch (error) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Gagal mengambil jadwal kuliah",
@@ -119,19 +125,18 @@ export default function Page() {
     }
   }, [activeUser]);
 
+  // Draft selection seeded from the persisted saved schedule once hydrated —
+  // stays a local draft until the user explicitly clicks "Simpan Jadwal".
   useEffect(() => {
-    const savedCourses = getLocalStorage("krs_saved_schedule");
-    const offeringCourses = getLocalStorage("offering_course");
-    if (savedCourses && Array.isArray(savedCourses)) {
-      setSelectedCourses(savedCourses);
+    if (!isHydrated) return;
+    if (Array.isArray(savedSchedule) && savedSchedule.length > 0) {
+      setSelectedCourses(savedSchedule);
     }
-    if (offeringCourses) {
-      setData(offeringCourses);
-    }
-    setIsHydrated(true);
+  }, [isHydrated, savedSchedule]);
 
-    // Sent here from /adopt-schedule because offering_course wasn't cached
-    // yet — get-schedule only runs on this page now.
+  useEffect(() => {
+    // Sent here from /adopt-schedule or /share-schedule because
+    // offering_course wasn't cached yet — get-schedule only runs on this page.
     const params = new URLSearchParams(window.location.search);
     setResumeAdopt(params.get("resumeAdopt"));
   }, []);
@@ -199,7 +204,7 @@ export default function Page() {
       return;
     }
 
-    saveScheduleToStorage(selectedCourses);
+    setSavedSchedule(stampForAdoption(selectedCourses));
     gooeyToast.success("Jadwal Berhasil Disimpan", {
       description: "Jadwal berhasil disimpan, siap untuk perang",
     });
@@ -207,7 +212,7 @@ export default function Page() {
 
   const handleClearKRS = () => {
     setSelectedCourses([]);
-    setLocalStorage("krs_saved_schedule", []);
+    setSavedSchedule([]);
     gooeyToast.success("Jadwal dikosongkan", {
       description: "Kamu bisa mulai menyusun jadwal lagi",
     });
@@ -272,37 +277,6 @@ export default function Page() {
                         <span>Perbarui ketersediaan jadwal</span>
                       </Button>
                     </div>
-
-                    {resumeAdopt && (
-                      <div className="flex flex-col gap-2 border-2 border-black bg-white p-3 text-xs font-medium text-[#555555]">
-                        {data.length > 0 ? (
-                          <>
-                            <span>
-                              Jadwal siap. Lanjutkan proses adopsi jadwal yang
-                              dibagikan ke kamu.
-                            </span>
-                            <Button
-                              onClick={() =>
-                                router.push(`/adopt-schedule${decodeURIComponent(resumeAdopt)}`)
-                              }
-                              size="sm"
-                              className="bg-[#FF3000] text-white hover:bg-black rounded-none uppercase font-black tracking-widest"
-                            >
-                              <CalendarCheck2 className="w-4 h-4" />
-                              <span>Lanjutkan Adopsi Jadwal</span>
-                            </Button>
-                          </>
-                        ) : (
-                          <span>
-                            Kamu diarahkan dari link adopsi jadwal. Klik{" "}
-                            <span className="font-bold text-black">
-                              &quot;Perbarui ketersediaan jadwal&quot;
-                            </span>{" "}
-                            dulu untuk melanjutkan adopsi.
-                          </span>
-                        )}
-                      </div>
-                    )}
 
                     {!loading && data.length === 0 && isHydrated && (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">

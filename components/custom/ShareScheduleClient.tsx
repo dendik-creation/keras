@@ -4,57 +4,49 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
-import {
-  CalendarCheck2,
-  CalendarX2,
-  Loader2,
-  TriangleAlert,
-  User,
-} from "lucide-react";
+import { CalendarCheck2, CalendarX2, Loader2, TriangleAlert, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
-import {
-  matchCoursesByCodeClass,
-  parseShareParams,
-  ShareInfo,
-} from "@/helper/share_schedule";
-import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { parseShareParams, ShareInfo } from "@/helper/share_schedule";
+import { stampForAdoption } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackScheduleAdopted } from "@/lib/analytics/events";
+import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
+import { useAdoptScheduleFlow } from "@/hooks/useAdoptScheduleFlow";
+import AdoptConfirmDialog from "@/components/custom/AdoptConfirmDialog";
 
-type Phase = "checking" | "resolving" | "ready" | "empty" | "error";
+type ResolvePhase = "checking" | "resolving" | "resolved" | "error";
 
 type ShareScheduleClientProps = {
   shortCode: string;
 };
 
+const BLOCK_MESSAGES = {
+  "program-mismatch":
+    "Jadwal ini hanya bisa diadopsi sesama mahasiswa program studi yang sama, karena tiap program studi punya penawaran mata kuliah yang berbeda.",
+  "codes-not-found":
+    "Mata kuliah pada link ini tidak ditemukan sama sekali di penawaranmu. Jadwal yang dibagikan kemungkinan berasal dari program studi lain.",
+} as const;
+
 /**
  * Same adoption flow as /adopt-schedule, but the share IDs come from resolving
  * a Shlink shortCode server-side instead of the browser's own query string —
- * so the URL stays /share-schedule/[shortCode] with no redirect.
+ * so the URL stays /share-schedule/[shortCode] with no redirect. Resolution
+ * is the only thing unique to this page; everything after (offering check,
+ * validation, matching, adoption) is the shared `useAdoptScheduleFlow`.
  */
 export default function ShareScheduleClient({
   shortCode,
 }: ShareScheduleClientProps) {
-  const { isAuthenticated, isValidating } = useSessionCheck();
+  const { user, isAuthenticated, isValidating } = useSessionCheck();
   const router = useRouter();
+  const { offeringCourse, savedSchedule, isHydrated, setSavedSchedule } =
+    useLocalStorageContext();
 
-  const [sharer, setSharer] = useState<ShareInfo | null>(null);
-  const [phase, setPhase] = useState<Phase>("checking");
+  const [share, setShare] = useState<ShareInfo | null>(null);
+  const [resolvePhase, setResolvePhase] = useState<ResolvePhase>("checking");
   const [errorMessage, setErrorMessage] = useState("");
-  const [matched, setMatched] = useState<CourseSchedule[]>([]);
-  const [missingCount, setMissingCount] = useState(0);
-  const [hasExisting, setHasExisting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const resolvedRef = useRef(false);
 
@@ -65,14 +57,14 @@ export default function ShareScheduleClient({
     router.replace(`/login?callbackUrl=${encodeURIComponent(callback)}`);
   }, [isValidating, isAuthenticated, router]);
 
-  // Once authenticated, resolve the shortCode into share params via Shlink,
-  // then reuse the exact same matching flow as /adopt-schedule.
+  // Resolve the shortCode into share params via Shlink. This is the ONLY
+  // network call this page makes — no offering fetch, no /api/schedule.
   useEffect(() => {
     if (!isAuthenticated || resolvedRef.current) return;
     resolvedRef.current = true;
 
     const resolve = async () => {
-      setPhase("resolving");
+      setResolvePhase("resolving");
 
       let longUrl: string;
       try {
@@ -90,87 +82,56 @@ export default function ShareScheduleClient({
               ? "Link berbagi ini tidak valid."
               : "Gagal membuka link berbagi. Silakan coba lagi.",
         );
-        setPhase("error");
+        setResolvePhase("error");
         return;
       }
 
-      const share = parseShareParams(new URL(longUrl).search);
-      setSharer(share);
-
-      if (share.ids.length === 0) {
-        setPhase("empty");
-        return;
-      }
-
-      let offering =
-        (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
-      let courses = matchCoursesByCodeClass(share.ids, offering);
-      console.log("[share-schedule] local match", {
-        cachedOfferingGroups: offering.length,
-        sharedIds: share.ids.length,
-        matchedLocally: courses.length,
-      });
-
-      // Fresh device (or the offering has changed): pull the latest data.
-      if (courses.length < share.ids.length) {
-        console.log("[share-schedule] local match incomplete, fetching /api/schedule");
-        try {
-          const res = await axios.get("/api/schedule");
-          const fresh: OfferingCourse[] = res.data?.data || [];
-          console.log("[share-schedule] /api/schedule response", {
-            freshGroups: fresh.length,
-          });
-          if (fresh.length > 0) {
-            setLocalStorage("offering_course", fresh);
-            offering = fresh;
-            courses = matchCoursesByCodeClass(share.ids, fresh);
-            console.log("[share-schedule] fresh match", {
-              matchedAfterFetch: courses.length,
-            });
-          }
-        } catch (err) {
-          console.error("[share-schedule] /api/schedule fetch failed", err);
-          /* keep whatever matched locally */
-        }
-      }
-
-      if (courses.length === 0) {
-        setPhase("empty");
-        return;
-      }
-
-      const existing = getLocalStorage("krs_saved_schedule");
-      setHasExisting(Array.isArray(existing) && existing.length > 0);
-      setMatched(courses);
-      setMissingCount(share.ids.length - courses.length);
-      setPhase("ready");
-      setDialogOpen(true); // Rule 2: confirm adoption
+      setShare(parseShareParams(new URL(longUrl).search));
+      setResolvePhase("resolved");
     };
 
     resolve().catch(() => {
       setErrorMessage(
         "Gagal memproses jadwal yang dibagikan. Silakan coba buka link lagi.",
       );
-      setPhase("error");
+      setResolvePhase("error");
     });
   }, [isAuthenticated, shortCode]);
 
+  const flow = useAdoptScheduleFlow({
+    share: resolvePhase === "resolved" ? share : null,
+    resumeRedirectPath: `/share-schedule/${shortCode}`,
+    offeringCourse,
+    savedSchedule,
+    receiverNim: user?.nim ?? null,
+    isHydrated: isHydrated && isAuthenticated,
+  });
+
+  useEffect(() => {
+    if (flow.redirectTo) router.replace(flow.redirectTo);
+  }, [flow.redirectTo, router]);
+
+  useEffect(() => {
+    if (flow.phase === "ready") setDialogOpen(true);
+  }, [flow.phase]);
+
   const handleAdopt = () => {
-    const toSave = matched.map((course) => ({
-      ...course,
-      schedule_submit_id: "",
-      saved_in_submit: false,
-    }));
-    setLocalStorage("krs_saved_schedule", toSave);
-    trackScheduleAdopted(toSave.length, hasExisting);
+    const toSave = stampForAdoption(flow.matched);
+    setSavedSchedule(toSave);
+    trackScheduleAdopted(toSave.length, flow.hasExisting);
     gooeyToast.success("Jadwal Diadopsi", {
       description: `${toSave.length} mata kuliah berhasil disalin ke jadwalmu`,
     });
     router.push("/schedule");
   };
 
-  const totalSks = matched.reduce((acc, c) => acc + Number(c.sks || 0), 0);
-  const showLoader = isValidating || !isAuthenticated || phase === "resolving";
+  const showLoader =
+    isValidating ||
+    !isAuthenticated ||
+    resolvePhase === "checking" ||
+    resolvePhase === "resolving" ||
+    flow.phase === "waiting" ||
+    flow.phase === "redirecting";
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-white swiss-grid-pattern px-6 py-16 text-black">
@@ -194,13 +155,13 @@ export default function ShareScheduleClient({
       </div>
 
       {/* Sharer identity (from the share link) */}
-      {sharer && (sharer.nama || sharer.nim) && (
+      {share && (share.nama || share.nim) && (
         <div className="flex items-center gap-2 border-2 border-black bg-[#F2F2F2] px-4 py-2 text-sm font-medium">
           <User className="w-4 h-4 text-[#FF3000]" />
           <span>
             Dibagikan oleh{" "}
-            <span className="font-black">{sharer.nama || "Mahasiswa"}</span>
-            {sharer.nim ? ` • ${sharer.nim}` : ""}
+            <span className="font-black">{share.nama || "Mahasiswa"}</span>
+            {share.nim ? ` • ${share.nim}` : ""}
           </span>
         </div>
       )}
@@ -216,7 +177,23 @@ export default function ShareScheduleClient({
         </div>
       )}
 
-      {!showLoader && phase === "empty" && (
+      {resolvePhase === "error" && (
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <TriangleAlert className="w-8 h-8 text-[#FF3000]" />
+          <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-[0.95]">
+            Terjadi Kesalahan
+          </h1>
+          <p className="text-sm text-[#555555] font-medium">{errorMessage}</p>
+          <Button
+            onClick={() => router.push("/schedule")}
+            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8"
+          >
+            Ke Jadwalku
+          </Button>
+        </div>
+      )}
+
+      {!showLoader && flow.phase === "empty" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <CalendarX2 className="w-8 h-8 text-[#FF3000]" />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-[0.95]">
@@ -235,13 +212,15 @@ export default function ShareScheduleClient({
         </div>
       )}
 
-      {!showLoader && phase === "error" && (
+      {!showLoader && flow.phase === "blocked" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <TriangleAlert className="w-8 h-8 text-[#FF3000]" />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-[0.95]">
-            Terjadi Kesalahan
+            Tidak Bisa Diadopsi
           </h1>
-          <p className="text-sm text-[#555555] font-medium">{errorMessage}</p>
+          <p className="text-sm text-[#555555] font-medium">
+            {BLOCK_MESSAGES[flow.blockReason ?? "codes-not-found"]}
+          </p>
           <Button
             onClick={() => router.push("/schedule")}
             className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8"
@@ -251,7 +230,7 @@ export default function ShareScheduleClient({
         </div>
       )}
 
-      {!showLoader && phase === "ready" && (
+      {!showLoader && flow.phase === "ready" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-[0.9]">
             Siap <span className="text-[#FF3000]">Adopsi</span>
@@ -259,12 +238,14 @@ export default function ShareScheduleClient({
           <p className="text-sm text-[#555555] font-medium">
             Jadwal ini berisi{" "}
             <span className="text-black font-bold">
-              {matched.length} mata kuliah
+              {flow.matched.length} mata kuliah
             </span>{" "}
-            ({totalSks} SKS).
+            (
+            {flow.matched.reduce((acc, c) => acc + Number(c.sks || 0), 0)}{" "}
+            SKS).
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {matched.map((c) => (
+            {flow.matched.map((c) => (
               <Badge
                 key={c.schedule_id}
                 variant="outline"
@@ -286,73 +267,15 @@ export default function ShareScheduleClient({
 
       <div className="w-full h-2 bg-[#FF3000] absolute bottom-0 left-0" />
 
-      {/* Rule 2 & 3: confirmation dialog with a replace warning when needed */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="rounded-none border-2 border-black bg-white max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
-                <CalendarCheck2 className="text-white w-4 h-4" />
-              </div>
-              <DialogTitle className="font-black uppercase tracking-tight text-black">
-                Adopsi Jadwal Ini?
-              </DialogTitle>
-            </div>
-            <div className="w-full h-0.5 bg-[#FF3000]" />
-            <DialogDescription className="text-[#555555] leading-relaxed pt-3 font-medium">
-              {sharer?.nama ? (
-                <>
-                  Jadwal dari{" "}
-                  <span className="text-black font-bold">{sharer.nama}</span>
-                  {sharer?.nim ? ` (${sharer.nim})` : ""} berisi{" "}
-                </>
-              ) : (
-                "Jadwal ini berisi "
-              )}
-              <span className="text-black font-bold">
-                {matched.length} mata kuliah
-              </span>{" "}
-              ({totalSks} SKS) dan akan disimpan sebagai jadwal KRS-mu.
-            </DialogDescription>
-          </DialogHeader>
-
-          {missingCount > 0 && (
-            <div className="flex items-start gap-2 border-2 border-black bg-[#F2F2F2] p-3 text-xs font-medium text-[#555555]">
-              <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0 mt-0.5" />
-              <span>
-                {missingCount} mata kuliah tidak ditemukan pada data terbaru dan
-                dilewati.
-              </span>
-            </div>
-          )}
-
-          {hasExisting && (
-            <div className="flex items-start gap-2 border-2 border-[#FF3000] bg-[#FF3000]/5 p-3 text-xs font-bold text-black">
-              <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0 mt-0.5" />
-              <span>
-                Kamu sudah punya jadwal tersimpan. Mengadopsi jadwal ini akan
-                MENGGANTI jadwal lamamu.
-              </span>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-              className="rounded-none border-2 border-black uppercase font-black tracking-widest"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleAdopt}
-              className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
-            >
-              {hasExisting ? "Ganti & Adopsi" : "Adopsi Jadwal"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdoptConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        sharer={share}
+        matched={flow.matched}
+        missingCount={flow.missingCount}
+        hasExisting={flow.hasExisting}
+        onConfirm={handleAdopt}
+      />
     </div>
   );
 }

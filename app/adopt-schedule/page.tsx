@@ -1,49 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  CalendarCheck2,
-  CalendarX2,
-  Loader2,
-  TriangleAlert,
-  User,
-} from "lucide-react";
+import { CalendarCheck2, CalendarX2, Loader2, TriangleAlert, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
-import {
-  matchCoursesByCodeClass,
-  parseShareParams,
-  ShareInfo,
-} from "@/helper/share_schedule";
-import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { parseShareParams } from "@/helper/share_schedule";
+import { stampForAdoption } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackScheduleAdopted } from "@/lib/analytics/events";
+import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
+import { useAdoptScheduleFlow } from "@/hooks/useAdoptScheduleFlow";
+import AdoptConfirmDialog from "@/components/custom/AdoptConfirmDialog";
 
-type Phase = "checking" | "resolving" | "ready" | "empty" | "error";
+const BLOCK_MESSAGES = {
+  "program-mismatch":
+    "Jadwal ini hanya bisa diadopsi sesama mahasiswa program studi yang sama, karena tiap program studi punya penawaran mata kuliah yang berbeda.",
+  "codes-not-found":
+    "Mata kuliah pada link ini tidak ditemukan sama sekali di penawaranmu. Jadwal yang dibagikan kemungkinan berasal dari program studi lain.",
+} as const;
 
 export default function AdoptSchedulePage() {
-  const { isAuthenticated, isValidating } = useSessionCheck();
+  const { user, isAuthenticated, isValidating } = useSessionCheck();
   const router = useRouter();
+  const { offeringCourse, savedSchedule, isHydrated, setSavedSchedule } =
+    useLocalStorageContext();
 
-  const [sharer, setSharer] = useState<ShareInfo | null>(null);
-  const [phase, setPhase] = useState<Phase>("checking");
-  const [matched, setMatched] = useState<CourseSchedule[]>([]);
-  const [missingCount, setMissingCount] = useState(0);
-  const [hasExisting, setHasExisting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const resolvedRef = useRef(false);
+  const [search, setSearch] = useState<string | null>(null);
 
   // Rule 1: guests must log in first — preserve where to return afterwards.
   useEffect(() => {
@@ -52,78 +38,47 @@ export default function AdoptSchedulePage() {
     router.replace(`/login?callbackUrl=${encodeURIComponent(callback)}`);
   }, [isValidating, isAuthenticated, router]);
 
-  // Once authenticated, parse the share link and resolve its IDs into courses.
   useEffect(() => {
-    if (!isAuthenticated || resolvedRef.current) return;
-    resolvedRef.current = true;
+    setSearch(window.location.search);
+  }, []);
 
-    const resolve = async () => {
-      const share = parseShareParams(window.location.search);
-      setSharer(share);
-      setPhase("resolving");
+  const share = useMemo(
+    () => (search !== null ? parseShareParams(search) : null),
+    [search],
+  );
 
-      if (share.ids.length === 0) {
-        setPhase("empty");
-        return;
-      }
+  const flow = useAdoptScheduleFlow({
+    share,
+    resumeRedirectPath: `/adopt-schedule${search ?? ""}`,
+    offeringCourse,
+    savedSchedule,
+    receiverNim: user?.nim ?? null,
+    isHydrated: isHydrated && isAuthenticated,
+  });
 
-      const offering =
-        (getLocalStorage("offering_course") as OfferingCourse[] | null) || [];
+  useEffect(() => {
+    if (flow.redirectTo) router.replace(flow.redirectTo);
+  }, [flow.redirectTo, router]);
 
-      // Get-schedule (the tens-of-seconds NDJSON scrape) only runs on
-      // /schedule now — that's the one place proven to survive proxy
-      // timeouts on the long scrape. Without a cached offering there's
-      // nothing to match here, so send the user there first and bring
-      // them straight back once it's fetched.
-      if (offering.length === 0) {
-        console.log(
-          "[adopt-schedule] no cached offering_course, redirecting to /schedule",
-        );
-        router.replace(
-          `/schedule?resumeAdopt=${encodeURIComponent(window.location.search)}`,
-        );
-        return;
-      }
-
-      const courses = matchCoursesByCodeClass(share.ids, offering);
-      console.log("[adopt-schedule] local match", {
-        cachedOfferingGroups: offering.length,
-        sharedIds: share.ids.length,
-        matchedLocally: courses.length,
-      });
-
-      if (courses.length === 0) {
-        setPhase("empty");
-        return;
-      }
-
-      const existing = getLocalStorage("krs_saved_schedule");
-      setHasExisting(Array.isArray(existing) && existing.length > 0);
-      setMatched(courses);
-      setMissingCount(share.ids.length - courses.length);
-      setPhase("ready");
-      setDialogOpen(true); // Rule 2: confirm adoption
-    };
-
-    resolve().catch(() => setPhase("error"));
-  }, [isAuthenticated]);
+  useEffect(() => {
+    if (flow.phase === "ready") setDialogOpen(true);
+  }, [flow.phase]);
 
   const handleAdopt = () => {
-    const toSave = matched.map((course) => ({
-      ...course,
-      schedule_submit_id: "",
-      saved_in_submit: false,
-    }));
-    setLocalStorage("krs_saved_schedule", toSave);
-    trackScheduleAdopted(toSave.length, hasExisting);
+    const toSave = stampForAdoption(flow.matched);
+    setSavedSchedule(toSave);
+    trackScheduleAdopted(toSave.length, flow.hasExisting);
     gooeyToast.success("Jadwal Diadopsi", {
       description: `${toSave.length} mata kuliah berhasil disalin ke jadwalmu`,
     });
     router.push("/schedule");
   };
 
-  const totalSks = matched.reduce((acc, c) => acc + Number(c.sks || 0), 0);
-  const showLoader = isValidating || !isAuthenticated || phase === "resolving";
+  const showLoader =
+    isValidating ||
+    !isAuthenticated ||
+    flow.phase === "waiting" ||
+    flow.phase === "redirecting";
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-white swiss-grid-pattern px-6 py-16 text-black">
@@ -147,13 +102,13 @@ export default function AdoptSchedulePage() {
       </div>
 
       {/* Sharer identity (from the share link) */}
-      {sharer && (sharer.nama || sharer.nim) && (
+      {share && (share.nama || share.nim) && (
         <div className="flex items-center gap-2 border-2 border-black bg-[#F2F2F2] px-4 py-2 text-sm font-medium">
           <User className="w-4 h-4 text-[#FF3000]" />
           <span>
             Dibagikan oleh{" "}
-            <span className="font-black">{sharer.nama || "Mahasiswa"}</span>
-            {sharer.nim ? ` • ${sharer.nim}` : ""}
+            <span className="font-black">{share.nama || "Mahasiswa"}</span>
+            {share.nim ? ` • ${share.nim}` : ""}
           </span>
         </div>
       )}
@@ -169,7 +124,7 @@ export default function AdoptSchedulePage() {
         </div>
       )}
 
-      {!showLoader && phase === "empty" && (
+      {!showLoader && flow.phase === "empty" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <CalendarX2 className="w-8 h-8 text-[#FF3000]" />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-[0.95]">
@@ -188,14 +143,14 @@ export default function AdoptSchedulePage() {
         </div>
       )}
 
-      {!showLoader && phase === "error" && (
+      {!showLoader && flow.phase === "blocked" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <TriangleAlert className="w-8 h-8 text-[#FF3000]" />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase leading-[0.95]">
-            Terjadi Kesalahan
+            Tidak Bisa Diadopsi
           </h1>
           <p className="text-sm text-[#555555] font-medium">
-            Gagal memproses jadwal yang dibagikan. Silakan coba buka link lagi.
+            {BLOCK_MESSAGES[flow.blockReason ?? "codes-not-found"]}
           </p>
           <Button
             onClick={() => router.push("/schedule")}
@@ -206,7 +161,7 @@ export default function AdoptSchedulePage() {
         </div>
       )}
 
-      {!showLoader && phase === "ready" && (
+      {!showLoader && flow.phase === "ready" && (
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-[0.9]">
             Siap <span className="text-[#FF3000]">Adopsi</span>
@@ -214,12 +169,14 @@ export default function AdoptSchedulePage() {
           <p className="text-sm text-[#555555] font-medium">
             Jadwal ini berisi{" "}
             <span className="text-black font-bold">
-              {matched.length} mata kuliah
+              {flow.matched.length} mata kuliah
             </span>{" "}
-            ({totalSks} SKS).
+            (
+            {flow.matched.reduce((acc, c) => acc + Number(c.sks || 0), 0)}{" "}
+            SKS).
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {matched.map((c) => (
+            {flow.matched.map((c) => (
               <Badge
                 key={c.schedule_id}
                 variant="outline"
@@ -241,73 +198,15 @@ export default function AdoptSchedulePage() {
 
       <div className="w-full h-2 bg-[#FF3000] absolute bottom-0 left-0" />
 
-      {/* Rule 2 & 3: confirmation dialog with a replace warning when needed */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="rounded-none border-2 border-black bg-white max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
-                <CalendarCheck2 className="text-white w-4 h-4" />
-              </div>
-              <DialogTitle className="font-black uppercase tracking-tight text-black">
-                Adopsi Jadwal Ini?
-              </DialogTitle>
-            </div>
-            <div className="w-full h-0.5 bg-[#FF3000]" />
-            <DialogDescription className="text-[#555555] leading-relaxed pt-3 font-medium">
-              {sharer?.nama ? (
-                <>
-                  Jadwal dari{" "}
-                  <span className="text-black font-bold">{sharer.nama}</span>
-                  {sharer?.nim ? ` (${sharer.nim})` : ""} berisi{" "}
-                </>
-              ) : (
-                "Jadwal ini berisi "
-              )}
-              <span className="text-black font-bold">
-                {matched.length} mata kuliah
-              </span>{" "}
-              ({totalSks} SKS) dan akan disimpan sebagai jadwal KRS-mu.
-            </DialogDescription>
-          </DialogHeader>
-
-          {missingCount > 0 && (
-            <div className="flex items-start gap-2 border-2 border-black bg-[#F2F2F2] p-3 text-xs font-medium text-[#555555]">
-              <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0 mt-0.5" />
-              <span>
-                {missingCount} mata kuliah tidak ditemukan pada data terbaru dan
-                dilewati.
-              </span>
-            </div>
-          )}
-
-          {hasExisting && (
-            <div className="flex items-start gap-2 border-2 border-[#FF3000] bg-[#FF3000]/5 p-3 text-xs font-bold text-black">
-              <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0 mt-0.5" />
-              <span>
-                Kamu sudah punya jadwal tersimpan. Mengadopsi jadwal ini akan
-                MENGGANTI jadwal lamamu.
-              </span>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-              className="rounded-none border-2 border-black uppercase font-black tracking-widest"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleAdopt}
-              className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
-            >
-              {hasExisting ? "Ganti & Adopsi" : "Adopsi Jadwal"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdoptConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        sharer={share}
+        matched={flow.matched}
+        missingCount={flow.missingCount}
+        hasExisting={flow.hasExisting}
+        onConfirm={handleAdopt}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
 import TurnstileGuard from "@/components/middleware_wrapper/TurnstileGuard";
+import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} swiss-noise antialiased`}>
-        <TurnstileGuard>{children}</TurnstileGuard>
+        <LocalStorageProvider>
+          <TurnstileGuard>{children}</TurnstileGuard>
+        </LocalStorageProvider>
         <GooeyToaster />
       </body>
     </html>

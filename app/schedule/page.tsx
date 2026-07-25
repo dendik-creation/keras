@@ -70,6 +70,7 @@ export default function Page() {
   const {
     offeringCourse,
     savedSchedule,
+    isWarInProgress,
     isHydrated,
     setOfferingCourse,
     setSavedSchedule,
@@ -172,9 +173,19 @@ export default function Page() {
     setSelectedCourses(newSelection);
   };
 
+  const warLockToast = () =>
+    gooeyToast.warning("Perang KRS sedang berlangsung", {
+      description:
+        "Aksi ini dikunci sementara supaya tidak mengganggu jadwal yang sedang diperjuangkan.",
+    });
+
   const openRemoveScheduleDialog = (event: Event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (isWarInProgress) {
+      warLockToast();
+      return;
+    }
     setOpenRemoveSchedule(true);
   };
 
@@ -193,10 +204,18 @@ export default function Page() {
   const openGenerateAiDialog = (event: Event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (isWarInProgress) {
+      warLockToast();
+      return;
+    }
     setOpenGenerateAi(true);
   };
 
   const handleSaveKRS = () => {
+    if (isWarInProgress) {
+      warLockToast();
+      return;
+    }
     if (selectedCourses.length === 0) {
       gooeyToast.warning("Jadwal Gagal Disimpan", {
         description: "Belum ada jadwal yang dipilih",
@@ -211,6 +230,10 @@ export default function Page() {
   };
 
   const handleClearKRS = () => {
+    if (isWarInProgress) {
+      warLockToast();
+      return;
+    }
     setSelectedCourses([]);
     setSavedSchedule([]);
     gooeyToast.success("Jadwal dikosongkan", {
@@ -476,6 +499,7 @@ export default function Page() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={handleSaveKRS}
+                            disabled={isWarInProgress}
                             className="flex items-center gap-2"
                           >
                             <Save className="w-4 h-4" />
@@ -483,6 +507,7 @@ export default function Page() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={openGenerateAiDialog}
+                            disabled={isWarInProgress}
                             className="flex items-center gap-2"
                           >
                             <Sparkles className="w-4 h-4" />
@@ -504,6 +529,7 @@ export default function Page() {
                             triggerNode={
                               <DropdownMenuItem
                                 onSelect={openRemoveScheduleDialog}
+                                disabled={isWarInProgress}
                                 className="flex items-center gap-2 text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="w-4 h-4" />

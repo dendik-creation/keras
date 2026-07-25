@@ -25,8 +25,13 @@ const BLOCK_MESSAGES = {
 export default function AdoptSchedulePage() {
   const { user, isAuthenticated, isValidating } = useSessionCheck();
   const router = useRouter();
-  const { offeringCourse, savedSchedule, isHydrated, setSavedSchedule } =
-    useLocalStorageContext();
+  const {
+    offeringCourse,
+    savedSchedule,
+    isWarInProgress,
+    isHydrated,
+    setSavedSchedule,
+  } = useLocalStorageContext();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
@@ -65,6 +70,13 @@ export default function AdoptSchedulePage() {
   }, [flow.phase]);
 
   const handleAdopt = () => {
+    if (isWarInProgress) {
+      gooeyToast.warning("Perang KRS sedang berlangsung", {
+        description:
+          "Adopsi jadwal dikunci sementara supaya tidak mengganggu jadwal yang sedang diperjuangkan.",
+      });
+      return;
+    }
     const toSave = stampForAdoption(flow.matched);
     setSavedSchedule(toSave);
     trackScheduleAdopted(toSave.length, flow.hasExisting);
@@ -188,11 +200,17 @@ export default function AdoptSchedulePage() {
           </div>
           <Button
             onClick={() => setDialogOpen(true)}
+            disabled={isWarInProgress}
             className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8 mt-2"
           >
             <CalendarCheck2 className="w-4 h-4 mr-2" />
             Adopsi Jadwal
           </Button>
+          {isWarInProgress && (
+            <p className="text-xs text-[#555555] font-medium max-w-md">
+              Adopsi jadwal dikunci sementara — perang KRS sedang berlangsung.
+            </p>
+          )}
         </div>
       )}
 

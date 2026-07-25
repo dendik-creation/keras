@@ -7,4 +7,14 @@ export type SubmitLog = {
   }[];
   timestamp: string;
   statusCode?: number;
+  startedAt?: string;
+  finishedAt?: string;
+  durationMs?: number;
+  successCount?: number;
+  failureCount?: number;
+  affectedCourses?: {
+    code: string;
+    class: string;
+    result: "success" | "error";
+  }[];
 };

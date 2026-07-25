@@ -43,6 +43,81 @@ export function trackWarFinished(
   });
 }
 
+/** Fired once per war run, right before the first attempt goes out. */
+export function trackWarStarted(user: ActiveUser, preparedCount: number): void {
+  if (!user?.nim) return;
+  capture("war_started", {
+    masked_nim: maskNim(user.nim),
+    prepared_count: preparedCount,
+  });
+}
+
+/** Fired when a submit attempt (1 of TOTAL_ATTEMPTS) kicks off. */
+export function trackAttemptStarted(user: ActiveUser, attempt: number): void {
+  if (!user?.nim) return;
+  capture("attempt_started", {
+    masked_nim: maskNim(user.nim),
+    attempt,
+  });
+}
+
+/** Fired when a submit attempt settles (success or failure response received). */
+export function trackAttemptFinished(
+  user: ActiveUser,
+  props: {
+    attempt: number;
+    durationMs: number;
+    successCount: number;
+    failedCount: number;
+  },
+): void {
+  if (!user?.nim) return;
+  capture("attempt_finished", {
+    masked_nim: maskNim(user.nim),
+    attempt: props.attempt,
+    duration_ms: props.durationMs,
+    success_count: props.successCount,
+    failed_count: props.failedCount,
+  });
+}
+
+/** Fired every time an individual course gets secured during a war run. */
+export function trackCourseSecured(user: ActiveUser, attempt: number): void {
+  if (!user?.nim) return;
+  capture("course_secured", {
+    masked_nim: maskNim(user.nim),
+    attempt,
+  });
+}
+
+/** Fired every time an individual course submit fails during a war run. */
+export function trackCourseFailed(user: ActiveUser, attempt: number): void {
+  if (!user?.nim) return;
+  capture("course_failed", {
+    masked_nim: maskNim(user.nim),
+    attempt,
+  });
+}
+
+/** Fired once when the entire war run (all attempts + final sync) is done. */
+export function trackWarCompleted(
+  user: ActiveUser,
+  props: { preparedCount: number; successCount: number },
+): void {
+  if (!user?.nim) return;
+  const failedCount = Math.max(props.preparedCount - props.successCount, 0);
+  capture("war_completed", {
+    masked_nim: maskNim(user.nim),
+    prepared_count: props.preparedCount,
+    success_count: props.successCount,
+    failed_count: failedCount,
+    success_rate:
+      props.preparedCount > 0
+        ? Math.round((props.successCount / props.preparedCount) * 100)
+        : 0,
+  });
+}
+
 export type PwaPlatform = "mobile" | "desktop";
 
 export type PwaInstallProperties = {

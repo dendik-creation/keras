@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import axios from "axios";
+import { useMemo, useState } from "react";
 import {
   Clock,
   Building2,
@@ -32,32 +31,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { CourseSchedule } from "@/types/course_schedule";
 import { parseTimeRange, ymdToIdDate } from "@/helper/frontend_helper";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
-import {
-  ActiveUser,
-  trackPrepared,
-  trackWarFinished,
-} from "@/lib/analytics/events";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { SubmitLog } from "@/types/submit_log";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubmitWarEngine, TOTAL_ATTEMPTS } from "@/hooks/useSubmitWarEngine";
+import WarTestDebugPanel from "@/components/custom/WarTestDebugPanel";
+import { cn } from "@/lib/utils";
 
-const TOTAL_ATTEMPTS = 3;
-const DELAY_MS = 300;
+const isWarTestModeClient = process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true";
 
 export default function Page() {
-  const [isWarStarted, setWarStarted] = useState(false);
-  const [isFindActualSchedule, setFindActualSchedule] = useState(false);
-  const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
-  const [submitLogs, setSubmitLogs] = useState<SubmitLog[]>([]);
+  const war = useSubmitWarEngine();
   const [readyReleases, setReadyReleases] = useState<
     {
       course_code: string;
@@ -65,277 +53,15 @@ export default function Page() {
     }[]
   >([]);
 
-  const findActualScheduleIds = async (courses_info?: CourseSchedule[]) => {
-    const courses = courses_info || selectedCourses;
-    const allHaveSubmitId = courses.every(
-      (course) => course?.schedule_submit_id && course?.saved_in_submit,
-    );
-    if (allHaveSubmitId) {
-      return courses;
-    }
-
-    try {
-      setFindActualSchedule(true);
-      const params = courses.map((course) => ({
-        code: course.code,
-        class: course.class,
-      }));
-
-      const response = await axios.get("/api/submit", {
-        params: {
-          courses: JSON.stringify(params),
-        },
-      });
-
-      if (!response.data.success) {
-        gooeyToast.error("Terjadi kesalahan", {
-          description: response.data.message,
-        });
-        setWarStarted(false);
-        return false;
-      }
-
-      const data = response.data.data;
-      const updatedCourses = courses.map((course) => {
-        const matched = Array.isArray(data)
-          ? data.find(
-              (item: any) =>
-                item.code === course.code && item.class === course.class,
-            )
-          : null;
-
-        if (matched && matched.schedule_submit_id) {
-          // course found and ready for war submit
-          return {
-            ...course,
-            schedule_submit_id: matched.schedule_submit_id,
-            saved_in_submit: false,
-          };
-        } else {
-          return {
-            // Course has been saved before (win the war this class)
-            ...course,
-            schedule_submit_id: "",
-            saved_in_submit: true,
-          };
-        }
-      });
-
-      setLocalStorage("krs_saved_schedule", updatedCourses);
-      setSelectedCourses(updatedCourses);
-      setWarStarted(true);
-
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setFindActualSchedule(false);
-    }
-  };
-
-  useEffect(() => {
-    // Identity resync from localStorage now lives in the root layout's
-    // AnalyticsBoot, so it also covers pages other than this one.
-    const savedCourses = getLocalStorage("krs_saved_schedule");
-    if (savedCourses && Array.isArray(savedCourses)) {
-      setSelectedCourses(savedCourses);
-      findActualScheduleIds(savedCourses);
-    }
-    setIsHydrated(true);
-  }, []);
-
-  const handleStartWar = async () => {
-    if (!isWarStarted) {
-      gooeyToast.warning("Info Bosku", {
-        description: "Waktu perang KRS belum dimulai",
-      });
-      return;
-    }
-    if (selectedCourses.length === 0) {
-      gooeyToast.error("Jadwalmu kosong", {
-        description: "Pilih jadwal dulu sebelum mulai Perang!",
-      });
-      return;
-    }
-    setIsSubmitting(true);
-    setSubmitLogs([]);
-    const scheduleIds = selectedCourses
-      .filter((c) => c.saved_in_submit === false && c.schedule_submit_id != "")
-      .map((c) => c.schedule_submit_id as string);
-
-    if (scheduleIds.length === 0) {
-      gooeyToast.success("Info Bosku", {
-        description: "Tidak ada jadwal lagi yang perlu di ikutkan perang",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    const activeUser = getLocalStorage("active_user") as ActiveUser | null;
-    if (activeUser) trackPrepared(activeUser, selectedCourses.length);
-
-    const wait = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
-
-    // Loop action
-    for (let i = 1; i <= TOTAL_ATTEMPTS; i++) {
-      const newLog: SubmitLog = {
-        attempt: i,
-        status: "pending",
-        messages: [],
-        timestamp: new Date().toISOString(),
-      };
-
-      setSubmitLogs((prev) => [newLog, ...prev]);
-      processSubmitRequest(i, scheduleIds);
-      if (i < TOTAL_ATTEMPTS) {
-        await wait(DELAY_MS);
-      }
-    }
-    setTimeout(() => {
-      setIsSubmitting(false);
-      gooeyToast.success("Info Bosku", {
-        description: "Perang berhasil diselesaikan",
-      });
-
-      // Analytics: prepared vs successfully secured schedules
-      const finalCourses =
-        (getLocalStorage("krs_saved_schedule") as CourseSchedule[] | null) ||
-        [];
-      const preparedCount = finalCourses.length;
-      const successCount = finalCourses.filter(
-        (c) => c.saved_in_submit === true,
-      ).length;
-      if (activeUser) {
-        trackWarFinished(activeUser, preparedCount, successCount);
-      }
-    }, 1000);
-  };
-
-  const handleAlertType = (message: string) => {
-    const lowerMsg = message.toLowerCase();
-    if (
-      lowerMsg.includes("bukan periode") ||
-      lowerMsg.includes("gagal") ||
-      lowerMsg.includes("bentrok") ||
-      lowerMsg.includes("penuh")
-    ) {
-      return "error";
-    } else if (
-      lowerMsg.includes("berhasil") ||
-      lowerMsg.includes("sukses") ||
-      lowerMsg.includes("terdaftar") ||
-      lowerMsg.includes("tersimpan") ||
-      lowerMsg.includes("simpan")
-    ) {
-      return "success";
-    }
-  };
-
-  const processSubmitRequest = async (attemptId: number, ids: string[]) => {
-    const scheduleIds = (
-      getLocalStorage("krs_saved_schedule") as CourseSchedule[]
-    )
-      .filter(
-        (c: CourseSchedule) =>
-          c.saved_in_submit === false && c.schedule_submit_id != "",
-      )
-      .map((c: CourseSchedule) => c.schedule_submit_id as string);
-    if (scheduleIds.length === 0) {
-      updateLogStatus(attemptId, {
-        status: "success",
-        messages: [
-          {
-            status: "success",
-            message: "Kamu menang dalam perang KRS. Semua jadwalmu telah aman",
-          },
-        ],
-        statusCode: 200,
-      });
-      return;
-    } else {
-      try {
-        const response = await axios.post("/api/submit", {
-          schedule_ids: ids,
-        });
-
-        const data = response.data;
-
-        updateLogStatus(attemptId, {
-          status: "success",
-          messages:
-            data.messages?.map((msg: string) => ({
-              status: handleAlertType(msg) || "error",
-              message: msg,
-            })) || [],
-          statusCode: data.status_code,
-        });
-
-        // Mark saved_in_submit and empty schedule_submit_id for successfully saved courses
-        let updatedCourses = [...selectedCourses];
-        if (Array.isArray(data.messages)) {
-          data.messages.forEach((msg: string) => {
-            const lowerMsg = msg.toLowerCase();
-
-            if (lowerMsg.includes("tersimpan")) {
-              const match = msg.match(
-                /Tersimpan\s*:\s*([A-Z0-9]+)\s+([A-Z])\s*-/i,
-              );
-              if (match) {
-                const code = match[1];
-                const className = match[2];
-                updatedCourses = updatedCourses.map((course) => {
-                  if (course.code === code && course.class === className) {
-                    return {
-                      ...course,
-                      saved_in_submit: true,
-                      schedule_submit_id: "",
-                    };
-                  }
-                  return course;
-                });
-              }
-            }
-          });
-
-          setSelectedCourses(updatedCourses);
-          setLocalStorage("krs_saved_schedule", updatedCourses);
-        }
-      } catch (error: any) {
-        const errorMsg =
-          error.response?.data?.message ||
-          error.message ||
-          "Error tidak dikenal";
-        updateLogStatus(attemptId, {
-          status: "success",
-          messages: [errorMsg],
-          statusCode: error.response?.status,
-        });
-      }
-    }
-  };
-
-  const updateLogStatus = (
-    attemptId: number,
-    updateData: Partial<SubmitLog>,
-  ) => {
-    setSubmitLogs((prevLogs) =>
-      prevLogs.map((log) =>
-        log.attempt === attemptId ? { ...log, ...updateData } : log,
-      ),
-    );
-  };
-
   const handleReadyReleases = (course_code: string, course_class: string) => {
+    if (war.isSubmitting) return;
     setReadyReleases((prev) => {
-      // Check if the item already exists
       const exists = prev.some(
         (item) =>
           item.course_code === course_code &&
           item.course_class === course_class,
       );
       if (exists) {
-        // Remove it
         return prev.filter(
           (item) =>
             !(
@@ -344,13 +70,12 @@ export default function Page() {
             ),
         );
       } else {
-        // Add it
         return [...prev, { course_code, course_class }];
       }
     });
   };
 
-  const SubmitReleaseCourse = async () => {
+  const handleSubmitRelease = async () => {
     if (readyReleases.length === 0) {
       gooeyToast.warning("Info Bosku", {
         description: "Tidak ada jadwal yang dipilih untuk dihapus",
@@ -362,92 +87,15 @@ export default function Page() {
       });
       return;
     }
-
-    const releasableCourses = readyReleases.filter((item) => {
-      const course = selectedCourses.find(
-        (c) =>
-          c.code === item.course_code &&
-          c.class === item.course_class &&
-          c.saved_in_submit === true,
-      );
-      return course !== undefined;
-    });
-
-    const removableCourses = readyReleases.filter((item) => {
-      const course = selectedCourses.find(
-        (c) =>
-          c.code === item.course_code &&
-          c.class === item.course_class &&
-          c.saved_in_submit === false,
-      );
-      return course !== undefined;
-    });
-
-    if (releasableCourses.length > 0) {
-      let response;
-      try {
-        response = await axios.delete("/api/submit", {
-          data: { courses: JSON.stringify(releasableCourses) },
-        });
-      } catch (error) {
-        gooeyToast.error("Terjadi Kesalahan", {
-          description: "Gagal melepas jadwal yang dipilih",
-        });
-        return;
-      }
-      const isSuccess = response.data.success;
-      if (isSuccess) {
-        const updatedCourses = selectedCourses.map((course) => {
-          const shouldUpdate = releasableCourses.some(
-            (item) =>
-              item.course_code === course.code &&
-              item.course_class === course.class,
-          );
-          if (shouldUpdate) {
-            return {
-              ...course,
-              saved_in_submit: false,
-              schedule_submit_id: "",
-            };
-          }
-          return course;
-        });
-        setSelectedCourses(updatedCourses);
-        setLocalStorage("krs_saved_schedule", updatedCourses);
-        setReadyReleases([]);
-        gooeyToast.success("Info Bosku", {
-          description: "Jadwal terpilih telah dilepaskan",
-        });
-      } else {
-        gooeyToast.error("Terjadi Kesalahan", {
-          description: "Gagal melepas jadwal yang dipilih",
-        });
-      }
-    }
-
-    if (removableCourses.length > 0) {
-      const updatedCourses = selectedCourses.filter((course) => {
-        const shouldRemove = removableCourses.some(
-          (item) =>
-            item.course_code === course.code &&
-            item.course_class === course.class,
-        );
-        return !shouldRemove;
-      });
-      setSelectedCourses(updatedCourses);
-      setLocalStorage("krs_saved_schedule", updatedCourses);
-      setReadyReleases([]);
-      gooeyToast.success("Info Bosku", {
-        description: "Jadwal terpilih telah dihapus",
-      });
-    }
-    window.location.reload();
+    const changed = await war.releaseCourses(readyReleases);
+    if (changed) setReadyReleases([]);
   };
 
   const totalSKS = useMemo(() => {
-    return selectedCourses.reduce((acc, curr) => acc + Number(curr.sks), 0);
-  }, [selectedCourses]);
-  if (!isHydrated) return null;
+    return war.courses.reduce((acc, curr) => acc + Number(curr.sks), 0);
+  }, [war.courses]);
+
+  if (!war.isHydrated) return null;
 
   return (
     <AuthAccess>
@@ -464,8 +112,8 @@ export default function Page() {
               <ResizablePanel defaultSize={40} minSize={30}>
                 <div className="flex flex-col h-full bg-muted/10">
                   <ElectricBorder
-                    color={isSubmitting ? "#FF3000" : "#000000"}
-                    speed={isSubmitting ? 4 : 1}
+                    color={war.isSubmitting ? "#FF3000" : "#000000"}
+                    speed={war.isSubmitting ? 4 : 1}
                     chaos={0.15}
                     style={{
                       padding: "10px",
@@ -482,20 +130,40 @@ export default function Page() {
                           kali
                         </p>
                       </div>
+
+                      {war.totalCount > 0 && (
+                        <div className="border-2 border-black bg-[#F2F2F2] px-3 py-2">
+                          <div className="flex items-center justify-between text-xs font-bold tracking-widest">
+                            <span>Diamankan</span>
+                            <span className="tabular-nums">
+                              {war.securedCount} / {war.totalCount} Mata Kuliah
+                            </span>
+                          </div>
+                          <div className="mt-1.5 h-2 w-full border border-black bg-white">
+                            <div
+                              className="h-full bg-[#FF3000] transition-all"
+                              style={{
+                                width: `${war.totalCount > 0 ? (war.securedCount / war.totalCount) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex flex-col gap-2">
-                        {isWarStarted ? (
+                        {war.isWarStarted ? (
                           <Button
                             size="lg"
-                            onClick={handleStartWar}
+                            onClick={war.startWar}
                             variant="default"
                             disabled={
-                              isSubmitting ||
-                              selectedCourses.length === 0 ||
-                              !isWarStarted
+                              war.isSubmitting ||
+                              war.courses.length === 0 ||
+                              !war.isWarStarted
                             }
-                            className={`w-full font-bold text-md transition-all ${isSubmitting ? "animate-pulse" : ""}`}
+                            className={`w-full font-bold text-md transition-all ${war.isSubmitting ? "animate-pulse" : ""}`}
                           >
-                            {isSubmitting ? (
+                            {war.isSubmitting ? (
                               <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Berdoalah...
@@ -511,11 +179,11 @@ export default function Page() {
                           <Button
                             size="lg"
                             variant={"outline"}
-                            onClick={() => findActualScheduleIds()}
-                            disabled={isFindActualSchedule}
-                            className={`w-full font-bold text-md transition-all ${isFindActualSchedule ? "animate-pulse" : ""}`}
+                            onClick={() => war.checkWarStatus()}
+                            disabled={war.isFindingSchedule}
+                            className={`w-full font-bold text-md transition-all ${war.isFindingSchedule ? "animate-pulse" : ""}`}
                           >
-                            {isFindActualSchedule ? (
+                            {war.isFindingSchedule ? (
                               <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Hmm.. bentar
@@ -535,11 +203,11 @@ export default function Page() {
                   <div className="grow overflow-auto flex flex-col">
                     <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">
                       <span className="text-xs font-black uppercase tracking-widest text-black">
-                        Aktivitas perang ({submitLogs.length} aktivitas)
+                        Aktivitas perang ({war.logs.length} aktivitas)
                       </span>
                     </div>
                     <ScrollArea className="grow p-4">
-                      {submitLogs.length === 0 && (
+                      {war.logs.length === 0 && (
                         <div className="h-40 flex flex-col items-center justify-center text-muted-foreground opacity-60 gap-2 border-2 border-dashed border-black uppercase tracking-widest text-xs font-bold">
                           <Sword className="w-8 h-8" />
                           <span className="text-sm">
@@ -553,7 +221,7 @@ export default function Page() {
                         collapsible
                         className="w-full space-y-2"
                       >
-                        {submitLogs.map((log) => (
+                        {war.logs.map((log) => (
                           <AccordionItem
                             key={log.attempt}
                             value={`item-${log.attempt}`}
@@ -578,6 +246,14 @@ export default function Page() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                  {log.durationMs !== undefined && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] h-5"
+                                    >
+                                      {log.durationMs}ms
+                                    </Badge>
+                                  )}
                                   {log.statusCode && (
                                     <Badge
                                       variant="outline"
@@ -654,7 +330,10 @@ export default function Page() {
                             <Button
                               variant={"destructive"}
                               size={"sm"}
-                              disabled={readyReleases.length == 0}
+                              type="button"
+                              disabled={
+                                readyReleases.length == 0 || war.isSubmitting
+                              }
                               className="rounded-none uppercase font-bold tracking-widest"
                             >
                               <Trash2 />
@@ -662,7 +341,7 @@ export default function Page() {
                             </Button>
                           </span>
                         }
-                        confirmAction={SubmitReleaseCourse}
+                        confirmAction={handleSubmitRelease}
                       />
                       <div className="text-right">
                         <span className="text-xs text-muted-foreground block uppercase tracking-widest">
@@ -685,7 +364,7 @@ export default function Page() {
                               {day}
                             </div>
                             <div className="space-y-2 h-full min-h-[80px] md:min-h-100 bg-white rounded-md p-2">
-                              {selectedCourses
+                              {war.courses
                                 .filter(
                                   (c) =>
                                     c.day.toLowerCase() === day.toLowerCase(),
@@ -704,17 +383,21 @@ export default function Page() {
                                       )
                                     }
                                     key={course.schedule_id}
-                                    className="relative cursor-pointer pt-0 border-2 border-black overflow-hidden"
+                                    className={`relative border-2 border-black overflow-hidden ${
+                                      war.isSubmitting
+                                        ? "cursor-not-allowed opacity-90"
+                                        : "cursor-pointer"
+                                    }`}
                                   >
                                     {readyReleases.some(
                                       (item) =>
                                         item.course_code === course.code &&
                                         item.course_class === course.class,
                                     ) && (
-                                      <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center z-10 transition-all bg-[#FF3000] text-white">
+                                      <div className={cn("absolute bottom-0 left-0 w-full py-1 flex justify-center items-center z-10 transition-all", course.saved_in_submit ? "bg-[#FED24F] text-black" : "bg-[#FF3000] text-white")}>
                                         <div className="flex w-full justify-center items-center">
                                           <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
-                                            Siap dihapus
+                                            {course.saved_in_submit ? "Siap Dilepas" : "Siap Dihapus"}
                                           </p>
                                         </div>
                                       </div>
@@ -766,7 +449,7 @@ export default function Page() {
                                   </Card>
                                 ))}
 
-                              {selectedCourses.filter(
+                              {war.courses.filter(
                                 (c) =>
                                   c.day.toLowerCase() === day.toLowerCase(),
                               ).length === 0 && (
@@ -787,6 +470,17 @@ export default function Page() {
           </div>
         </div>
       </AppLayout>
+
+      {isWarTestModeClient && (
+        <WarTestDebugPanel
+          attempt={war.attempt}
+          courses={war.courses}
+          inFlight={war.inFlight}
+          remaining={war.remaining}
+          isSubmitting={war.isSubmitting}
+          startedAt={war.startedAt}
+        />
+      )}
     </AuthAccess>
   );
 }

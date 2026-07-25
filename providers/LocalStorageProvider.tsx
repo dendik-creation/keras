@@ -17,10 +17,12 @@ import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 
 const OFFERING_COURSE_KEY = "offering_course";
 const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
+export const WAR_IN_PROGRESS_KEY = "krs_war_in_progress";
 
 type LocalStorageContextValue = {
   offeringCourse: OfferingCourse[] | null;
   savedSchedule: CourseSchedule[] | null;
+  isWarInProgress: boolean;
   isHydrated: boolean;
   setOfferingCourse: (data: OfferingCourse[]) => void;
   setSavedSchedule: (data: CourseSchedule[]) => void;
@@ -53,6 +55,9 @@ export function LocalStorageProvider({
   const [savedSchedule, setSavedScheduleState] = useState<
     CourseSchedule[] | null
   >(() => getLocalStorage(SAVED_SCHEDULE_KEY));
+  const [isWarInProgress, setIsWarInProgress] = useState<boolean>(
+    () => getLocalStorage(WAR_IN_PROGRESS_KEY) === true,
+  );
   const [isHydrated, setIsHydrated] = useState(false);
   const writingKeysRef = useRef(new Set<string>());
 
@@ -61,6 +66,8 @@ export function LocalStorageProvider({
       setOfferingCourseState(getLocalStorage(OFFERING_COURSE_KEY));
     } else if (key === SAVED_SCHEDULE_KEY) {
       setSavedScheduleState(getLocalStorage(SAVED_SCHEDULE_KEY));
+    } else if (key === WAR_IN_PROGRESS_KEY) {
+      setIsWarInProgress(getLocalStorage(WAR_IN_PROGRESS_KEY) === true);
     }
   }, []);
 
@@ -107,6 +114,7 @@ export function LocalStorageProvider({
       value={{
         offeringCourse,
         savedSchedule,
+        isWarInProgress,
         isHydrated,
         setOfferingCourse,
         setSavedSchedule,

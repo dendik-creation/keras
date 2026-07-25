@@ -11,6 +11,12 @@ import {
   submitSchedules,
   syncSchedules,
 } from "@/modules/submit/submit.service";
+import {
+  simulateReleaseSchedules,
+  simulateSubmitSchedules,
+  simulateSyncSchedules,
+} from "@/modules/submit/submit.simulator";
+import { isWarTestMode } from "@/lib/server/war-test-mode";
 import { logger } from "@/lib/logger";
 
 const httpErrorResponse = (error: unknown) => {
@@ -45,7 +51,9 @@ export async function syncSubmit(req: Request) {
     throw error;
   }
 
-  const result = await syncSchedules(sessionCookie.value, targetCourses);
+  const result = isWarTestMode()
+    ? await simulateSyncSchedules(sessionCookie.value, targetCourses)
+    : await syncSchedules(sessionCookie.value, targetCourses);
 
   if (!result.warStarted) {
     return NextResponse.json(
@@ -75,7 +83,9 @@ export async function postSubmit(req: Request) {
 
     const scheduleIds = validateScheduleIds(await req.json());
 
-    const result = await submitSchedules(sessionCookie.value, scheduleIds);
+    const result = isWarTestMode()
+      ? await simulateSubmitSchedules(sessionCookie.value, scheduleIds)
+      : await submitSchedules(sessionCookie.value, scheduleIds);
 
     return NextResponse.json({
       success: result.isSuccess,
@@ -106,7 +116,9 @@ export async function deleteSubmit(req: Request) {
 
     const targetCourses = parseDeleteCourses(await req.json());
 
-    const result = await releaseSchedules(sessionCookie.value, targetCourses);
+    const result = isWarTestMode()
+      ? await simulateReleaseSchedules(sessionCookie.value, targetCourses)
+      : await releaseSchedules(sessionCookie.value, targetCourses);
 
     if (!result.matched) {
       return NextResponse.json(

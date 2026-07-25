@@ -1,0 +1,27 @@
+name: Deploy (docker compose)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target server (GitHub Environment)"
+        required: true
+        type: environment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Deploying to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            docker compose down
+            docker compose up -d

@@ -33,10 +33,10 @@ export function useResumeAdoptToast({
     if (!hasOffering) {
       if (pendingToastId.current !== null) return;
       pendingToastId.current = gooeyToast.warning(
-        "Ketersediaan Jadwal Belum Dimuat",
+        "Siapkan Ketersediaan Jadwalmu",
         {
           description:
-            'Klik "Perbarui Ketersediaan Jadwal" dulu. Setelah refresh selesai, kamu bisa lanjut mengadopsi jadwal yang dibagikan.',
+            'Klik "Perbarui Ketersediaan Jadwal" dulu. Setelah selesai, kamu bisa melanjutkan adopsi jadwal',
           duration: Infinity,
         },
       );

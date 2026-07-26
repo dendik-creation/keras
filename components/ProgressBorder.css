@@ -1,0 +1,52 @@
+@property --pb-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.progress-border {
+  position: relative;
+  border-radius: var(--pb-radius);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.progress-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--pb-thickness);
+  background: conic-gradient(
+    from var(--pb-angle),
+    var(--pb-color) 0deg 24deg,
+    transparent 24deg 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: pb-rotate var(--pb-duration) linear infinite;
+  pointer-events: none;
+}
+
+.progress-border:not(.progress-border--active)::before {
+  display: none;
+}
+
+@keyframes pb-rotate {
+  to {
+    --pb-angle: 360deg;
+  }
+}
+
+.pb-content {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-border::before {
+    animation: none;
+  }
+}

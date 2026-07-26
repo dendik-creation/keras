@@ -13,7 +13,7 @@ import {
   Trash2,
   BadgeQuestionMark,
 } from "lucide-react";
-import ElectricBorder from "@/components/ElectricBorder";
+import ProgressBorder from "@/components/ProgressBorder";
 
 import AppLayout from "@/components/partials/AppLayout";
 import {
@@ -111,10 +111,10 @@ export default function Page() {
               {/* War Action & Log Activity */}
               <ResizablePanel defaultSize={40} minSize={30}>
                 <div className="flex flex-col h-full bg-muted/10">
-                  <ElectricBorder
+                  <ProgressBorder
                     color={war.isSubmitting ? "#FF3000" : "#000000"}
-                    speed={war.isSubmitting ? 4 : 1}
-                    chaos={0.15}
+                    duration={war.isSubmitting ? 1 : 4.5}
+                    thickness={5}
                     style={{
                       padding: "10px",
                       width: "100%",
@@ -141,7 +141,7 @@ export default function Page() {
                           </div>
                           <div className="mt-1.5 h-2 w-full border border-black bg-white">
                             <div
-                              className="h-full bg-[#FF3000] transition-all"
+                              className="h-full bg-yellow-500 transition-all"
                               style={{
                                 width: `${war.totalCount > 0 ? (war.securedCount / war.totalCount) * 100 : 0}%`,
                               }}
@@ -166,7 +166,7 @@ export default function Page() {
                             {war.isSubmitting ? (
                               <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Berdoalah...
+                                Semoga Sukses😁
                               </>
                             ) : (
                               <>
@@ -198,7 +198,7 @@ export default function Page() {
                         )}
                       </div>
                     </div>
-                  </ElectricBorder>
+                  </ProgressBorder>
 
                   <div className="grow overflow-auto flex flex-col">
                     <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">

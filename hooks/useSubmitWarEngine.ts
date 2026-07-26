@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import axios, { isAxiosError } from "axios";
-import { CourseSchedule } from "@/types/course_schedule";
+import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { SubmitLog } from "@/types/submit_log";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
-import { SAVED_SCHEDULE_KEY } from "@/helper/frontend_helper";
+import {
+  SAVED_SCHEDULE_KEY,
+  OFFERING_COURSE_KEY,
+  backfillCourseSemesters,
+} from "@/helper/frontend_helper";
 import { WAR_IN_PROGRESS_KEY } from "@/providers/LocalStorageProvider";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import {
@@ -543,8 +547,13 @@ export function useSubmitWarEngine() {
   useEffect(() => {
     const saved = getLocalStorage(SAVED_SCHEDULE_KEY);
     if (saved && Array.isArray(saved)) {
-      dispatch({ type: "HYDRATE", courses: saved });
-      void syncWithServer(saved);
+      const offeringCourse = getLocalStorage(OFFERING_COURSE_KEY) as
+        | OfferingCourse[]
+        | null;
+      const patched = backfillCourseSemesters(saved, offeringCourse);
+      if (patched !== saved) setLocalStorage(SAVED_SCHEDULE_KEY, patched);
+      dispatch({ type: "HYDRATE", courses: patched });
+      void syncWithServer(patched);
     } else {
       dispatch({ type: "HYDRATE", courses: [] });
     }

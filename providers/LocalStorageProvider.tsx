@@ -14,6 +14,7 @@ import {
   LOCAL_STORAGE_WRITE_EVENT,
 } from "@/helper/local_storage";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { backfillCourseSemesters } from "@/helper/frontend_helper";
 
 const OFFERING_COURSE_KEY = "offering_course";
 const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
@@ -108,6 +109,18 @@ export function LocalStorageProvider({
     setSavedScheduleState(data);
     writingKeysRef.current.delete(SAVED_SCHEDULE_KEY);
   }, []);
+
+  // One-time backfill: patch `semester` onto saved courses that predate the
+  // field, matched by code against offering_course. No-ops once every saved
+  // course already has a semester.
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!savedSchedule || savedSchedule.length === 0) return;
+    if (!offeringCourse || offeringCourse.length === 0) return;
+
+    const patched = backfillCourseSemesters(savedSchedule, offeringCourse);
+    if (patched !== savedSchedule) setSavedSchedule(patched);
+  }, [isHydrated, savedSchedule, offeringCourse, setSavedSchedule]);
 
   return (
     <LocalStorageContext.Provider

@@ -383,7 +383,7 @@ export default function Page() {
                                       )
                                     }
                                     key={course.schedule_id}
-                                    className={`relative border-2 border-black overflow-hidden ${
+                                    className={`relative border-2 pt-0 pb-6 border-black overflow-hidden ${
                                       war.isSubmitting
                                         ? "cursor-not-allowed opacity-90"
                                         : "cursor-pointer"
@@ -418,6 +418,11 @@ export default function Page() {
                                               Belum punya
                                             </p>
                                           </div>
+                                        </div>
+                                      )}
+                                      {course.semester && (
+                                        <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
+                                          {course.semester}
                                         </div>
                                       )}
                                       <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">

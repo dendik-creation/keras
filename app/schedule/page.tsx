@@ -399,7 +399,10 @@ export default function Page() {
                                                   <Card
                                                     key={cls.schedule_id}
                                                     onClick={() =>
-                                                      handleSelectCourse(cls)
+                                                      handleSelectCourse({
+                                                        ...cls,
+                                                        semester: sem.semester,
+                                                      })
                                                     }
                                                     className={`cursor-pointer border-2 transition-colors duration-200 hover:border-[#FF3000] py-3 ${isSelected ? "border-[#FF3000] bg-[#FF3000]/5" : "border-black"}`}
                                                   >
@@ -594,6 +597,11 @@ export default function Page() {
                                           <span>Hapus</span>
                                         </button>
                                       </div>
+                                      {course.semester && (
+                                        <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
+                                          {course.semester}
+                                        </div>
+                                      )}
                                       <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
                                         {course.course}
                                       </div>

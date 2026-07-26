@@ -4,6 +4,7 @@ import { id } from "date-fns/locale";
 import { setLocalStorage } from "@/helper/local_storage";
 
 export const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
+export const OFFERING_COURSE_KEY = "offering_course";
 
 /**
  * Get scheduling: read the /api/schedule NDJSON stream to completion.
@@ -118,6 +119,37 @@ export const stampForAdoption = (courses: CourseSchedule[]): CourseSchedule[] =>
 /** Persist the selected courses under the app's single saved-schedule key. */
 export const saveScheduleToStorage = (courses: CourseSchedule[]): void => {
   setLocalStorage(SAVED_SCHEDULE_KEY, stampForAdoption(courses));
+};
+
+/**
+ * One-time backfill: fills `semester` on courses that don't have it yet by
+ * matching course code against current offering_course data. Returns the
+ * same array reference when nothing changed, so callers can skip a
+ * redundant write and this naturally becomes a no-op after the first run.
+ */
+export const backfillCourseSemesters = (
+  courses: CourseSchedule[],
+  offeringCourse: OfferingCourse[] | null,
+): CourseSchedule[] => {
+  if (!offeringCourse || offeringCourse.length === 0) return courses;
+
+  const semesterByCode = new Map<string, string>();
+  offeringCourse.forEach((group) => {
+    group.courses.forEach((c) => {
+      if (!semesterByCode.has(c.code)) semesterByCode.set(c.code, group.semester);
+    });
+  });
+
+  let changed = false;
+  const patched = courses.map((course) => {
+    if (course.semester) return course;
+    const semester = semesterByCode.get(course.code);
+    if (!semester) return course;
+    changed = true;
+    return { ...course, semester };
+  });
+
+  return changed ? patched : courses;
 };
 
 export const parseTimeRange = (timeStr: string) => {

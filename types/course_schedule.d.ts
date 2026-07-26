@@ -11,6 +11,7 @@ export type CourseSchedule = {
   classroom: string;
   schedule_submit_id?: string;
   saved_in_submit?: boolean;
+  semester?: string;
 };
 
 export type OfferingCourse = {

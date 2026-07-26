@@ -244,7 +244,7 @@ export default function Page() {
                       <Field>
                         <div className="border-l-2 border-[#FF3000] pl-3 py-1">
                           <span className="text-xs text-[#555555] font-medium leading-snug">
-                            Tidak dirancang untuk berpindah-pindah akun
+                            Sebaiknya tidak berpindah akun, nanti kena sendiri akibatnya😹
                           </span>
                         </div>
                       </Field>

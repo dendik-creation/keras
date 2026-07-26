@@ -111,9 +111,9 @@ export default function ShareScheduleClient({
     if (flow.redirectTo) router.replace(flow.redirectTo);
   }, [flow.redirectTo, router]);
 
-  useEffect(() => {
-    if (flow.phase === "ready") setDialogOpen(true);
-  }, [flow.phase]);
+  const handleReject = () => {
+    router.push("/schedule");
+  };
 
   const handleAdopt = () => {
     const toSave = stampForAdoption(flow.matched);
@@ -232,7 +232,7 @@ export default function ShareScheduleClient({
       )}
 
       {!showLoader && flow.phase === "ready" && (
-        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+        <div className="flex flex-col items-center gap-4 text-center">
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-[0.9]">
             Siap <span className="text-[#FF3000]">Adopsi</span>
           </h1>
@@ -245,24 +245,49 @@ export default function ShareScheduleClient({
             {flow.matched.reduce((acc, c) => acc + Number(c.sks || 0), 0)}{" "}
             SKS).
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {flow.matched.map((c) => (
-              <Badge
+              <div
                 key={c.schedule_id}
-                variant="outline"
-                className="rounded-none border-2 border-black text-xs"
+                className="flex items-center justify-between gap-3 border-2 border-black bg-[#F2F2F2] px-3 py-2 text-left"
               >
-                {c.code} • {c.class}
-              </Badge>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-black">
+                    {c.course}
+                  </p>
+                  <p className="truncate text-xs text-[#555555] font-medium">
+                    {c.lecture || "-"}
+                  </p>
+                  <p className="truncate text-xs text-[#555555] font-medium">
+                    {c.day || "-"} | {c.hour || "-"} | {c.classroom || "-"}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="rounded-none border-2 border-black bg-white text-xs flex-shrink-0"
+                >
+                  {c.code} • {c.class}
+                </Badge>
+              </div>
             ))}
           </div>
-          <Button
-            onClick={() => setDialogOpen(true)}
-            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8 mt-2"
-          >
-            <CalendarCheck2 className="w-4 h-4 mr-2" />
-            Adopsi Jadwal
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            <Button
+              onClick={handleReject}
+              variant="outline"
+              className="rounded-none border-2 border-black uppercase font-black tracking-widest h-12 px-8"
+            >
+              <CalendarX2 className="w-4 h-4 mr-2" />
+              Gak Jadi
+            </Button>
+            <Button
+              onClick={() => setDialogOpen(true)}
+              className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8"
+            >
+              <CalendarCheck2 className="w-4 h-4 mr-2" />
+              Adopsi Jadwal
+            </Button>
+          </div>
         </div>
       )}
 

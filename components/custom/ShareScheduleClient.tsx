@@ -126,12 +126,13 @@ export default function ShareScheduleClient({
   };
 
   const showLoader =
-    isValidating ||
-    !isAuthenticated ||
-    resolvePhase === "checking" ||
-    resolvePhase === "resolving" ||
-    flow.phase === "waiting" ||
-    flow.phase === "redirecting";
+    resolvePhase !== "error" &&
+    (isValidating ||
+      !isAuthenticated ||
+      resolvePhase === "checking" ||
+      resolvePhase === "resolving" ||
+      flow.phase === "waiting" ||
+      flow.phase === "redirecting");
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-white swiss-grid-pattern px-6 py-16 text-black">

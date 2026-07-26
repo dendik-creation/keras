@@ -1,9 +1,4 @@
-import type {
-  CompactPayload,
-  OptimizationGoal,
-  PreferredTime,
-  ScheduleValidationIssues,
-} from "@/modules/schedule-ai/schedule-ai.types";
+import type { CompactPayload, OptimizationGoal, PreferredTime } from "@/modules/schedule-ai/schedule-ai.types";
 
 /** Standard Indonesian semester SKS ceiling — used when the student picks "Maximum available". */
 export const MAX_SKS_CAP = 24;
@@ -51,17 +46,18 @@ export const IDLE_TIME_LABELS: Record<string, string> = {
 };
 
 /**
- * The whole pipeline now makes at most two AI calls: one full "generate"
- * and, only if that's close but not valid, one tiny "repair". Neither may
- * block the deterministic fallback for long — a reverse proxy's idle-read
- * timeout is the real ceiling here, not how thorough the model wants to be.
+ * The pipeline makes at most one AI call now — a ranking request, not a
+ * selection request. The deterministic optimizer runs before and after it
+ * (schedule-ai.service.ts) and is what actually builds and validates the
+ * schedule, so there's nothing left for the AI to time out on that would
+ * lose real work; the timeout just bounds how long a slow provider can hold
+ * the request open.
  */
 export const GENERATE_TIMEOUT_MS = 15_000;
-export const REPAIR_TIMEOUT_MS = 10_000;
 
 type PromptTier = "full" | "compact" | "ultra";
 
-/** More candidates means a terser, less explanatory system prompt for the one generate call. */
+/** More candidates means a terser, less explanatory system prompt for the one ranking call. */
 export function pickPromptTier(candidateRows: number): PromptTier {
   if (candidateRows < 20) return "full";
   if (candidateRows < 40) return "compact";
@@ -71,64 +67,55 @@ export function pickPromptTier(candidateRows: number): PromptTier {
 const SCHEMA_LINE =
   'row=[id,courseId,classId,lecturerId,semesterId,day,start,end,sks]. day: 1=Senin..5=Jumat. start/end: minutes since midnight. courseId/lecturerId/semesterId are opaque tokens — match them by equality against prefs, you don\'t need the real name.';
 
-const HARD_RULES = [
-  "pick at most one row per courseId",
-  "picked rows must not overlap in time on the same day",
-  "total sks must not exceed prefs.sks unless prefs.sks is \"max\"",
-  "only use ids that appear in data",
+const RANK_OUTPUT_LINE =
+  'Reply with raw JSON only, no markdown, no explanation: {"ranked_ids": ["<id>", ...]} — every id you were given, ordered best-to-worst by preference fit. Ids you leave out are treated as least preferred.';
+
+const RANK_CRITERIA = [
+  "matches prefs.semester",
+  "lecturerId is in prefs.pref_l",
+  "courseId is in prefs.pref_c",
+  "fits prefs.time / prefs.goal",
 ];
 
-const OUTPUT_LINE =
-  'Reply with raw JSON only, no markdown, no explanation: {"selected_schedule_ids": ["<id>", ...]}';
-
 /**
- * The candidates you receive are already deterministically filtered and
- * ranked server-side — every row is already a legal option for at least
- * one course. Your only job is preference reasoning: which combination
- * best fits prefs. The server re-validates every hard rule below; a minor
- * violation gets a tiny follow-up repair request instead of you seeing it.
+ * The AI never builds or selects a schedule — it only orders the candidate
+ * rows by how well they fit the student's stated preferences. The server's
+ * deterministic optimizer (schedule-ai.optimizer.ts) is the only thing that
+ * picks a final combination, re-checks every hard rule (no overlaps, no
+ * duplicate courses, SKS cap), and decides semester coverage / SKS / active
+ * days / idle time — none of which a single ranked row can determine in
+ * isolation, so don't ask the model to reason about them.
  */
 export function buildSystemPrompt(tier: PromptTier = "full"): string {
   if (tier === "ultra") {
     return [
-      `KeRaS schedule picker. ${SCHEMA_LINE}`,
-      `Hard rules: ${HARD_RULES.join("; ")}.`,
-      "Prefer rows matching prefs (semester/lecturer/course/time/goal).",
-      OUTPUT_LINE,
+      `KeRaS preference ranker. ${SCHEMA_LINE}`,
+      `Rank rows best-to-worst by: ${RANK_CRITERIA.map((c, i) => `${i + 1}) ${c}`).join("; ")}.`,
+      "You are not building a schedule — ignore overlaps, duplicate courses, and SKS totals, the server's optimizer handles those.",
+      RANK_OUTPUT_LINE,
     ].join("\n");
   }
 
   if (tier === "compact") {
     return [
-      "You pick the best course schedule for a student from already-filtered, already-ranked candidates.",
+      "You rank course-schedule candidates for KeRaS by how well they fit a student's preferences. You are not choosing which ones end up in the schedule.",
       SCHEMA_LINE,
-      `Hard rules (server re-checks these): ${HARD_RULES.join("; ")}.`,
-      "Among rows that satisfy the hard rules, prefer the combination that best matches prefs: semester, preferred lecturer/course, preferred_time, and the requested goal.",
-      OUTPUT_LINE,
+      `Rank in this order of importance: ${RANK_CRITERIA.map((c, i) => `${i + 1}) ${c}`).join("; ")}.`,
+      "Ignore overlaps, duplicate courses, and SKS totals entirely — the server's deterministic optimizer resolves those and only uses your ranking as one input.",
+      RANK_OUTPUT_LINE,
     ].join("\n\n");
   }
 
   return [
-    "You are the schedule-selection engine for KeRaS, a course-planning tool. The candidates you receive are already deterministically filtered and ranked by the server — every row is a legal option for at least one course. Your job is preference reasoning, not constraint solving.",
+    "You are the preference-ranking engine for KeRaS, a course-planning tool. You never build or select a final schedule — the server's deterministic optimizer does that, re-checks every hard rule, and is the only source of truth for whether a schedule is valid. Your only job is to order the given candidate rows by preference fit.",
     `Data encoding: ${SCHEMA_LINE}`,
-    `Hard rules the server re-checks after you answer: ${HARD_RULES.join("; ")}.`,
-    "Among the rows that satisfy the hard rules, prefer the combination that best matches prefs: matching preferred semester, preferred lecturer, preferred course, the requested preferred_time, and the requested optimization goal (balanced, compact schedule, fewer campus days, morning classes, afternoon classes, or maximizing sks for fast_graduation).",
-    OUTPUT_LINE,
+    [
+      `Rank best-to-worst using these criteria in order of importance:`,
+      ...RANK_CRITERIA.map((c, i) => `${i + 1}. ${c}`),
+    ].join("\n"),
+    "Do not reason about overlaps, duplicate courses, active days, idle time, or SKS totals — those are combination-level decisions only the server's optimizer can make, and it ignores anything you say about them.",
+    RANK_OUTPUT_LINE,
   ].join("\n\n");
-}
-
-/** Strip a validation-issues object down to only the fields that actually found something. */
-export function compactIssues(issues: ScheduleValidationIssues): Record<string, unknown> {
-  const compact: Record<string, unknown> = {};
-  if (issues.invalid_id.length) compact.invalid_id = issues.invalid_id;
-  if (issues.duplicate_course.length) compact.duplicate_course = issues.duplicate_course;
-  if (issues.overlap.length) compact.overlap = issues.overlap;
-  if (issues.outside_day.length) compact.outside_day = issues.outside_day;
-  if (issues.outside_time.length) compact.outside_time = issues.outside_time;
-  if (issues.sks_exceeded) {
-    compact.sks_exceeded = { total: issues.total_sks, target: issues.target_sks };
-  }
-  return compact;
 }
 
 /** Compact, token-cheap user message: preferences + candidate rows, no repeated keys. */
@@ -136,31 +123,4 @@ export function buildUserPrompt(payload: CompactPayload): string {
   return [`prefs=${JSON.stringify(payload.prefs)}`, `data=${JSON.stringify(payload.rows)}`].join(
     "\n",
   );
-}
-
-const REPAIR_OUTPUT_LINE =
-  'Reply with raw JSON only: {"selected_schedule_ids": ["<id>", ...]} — the repaired list, nothing else.';
-
-/**
- * Fixed, tiny system prompt for the repair call — deliberately not tiered
- * or dataset-size-dependent, since a repair request never carries the
- * candidate rows in the first place.
- */
-export function buildRepairSystemPrompt(): string {
-  return [
-    "You repair an already-selected course schedule for KeRaS. You are given the ids you selected last time and the problems the server found with them.",
-    "Remove ONLY the entries responsible for a listed problem. Do not add ids that weren't already selected, do not reconsider other candidates, do not regenerate from scratch — just return the previous list minus the offending entries.",
-    REPAIR_OUTPUT_LINE,
-  ].join("\n\n");
-}
-
-/** <300-token repair request: previously selected short ids + the problems found, nothing else. */
-export function buildRepairUserPrompt(
-  selectedShortIds: string[],
-  issues: ScheduleValidationIssues,
-): string {
-  return [
-    `selected=${JSON.stringify(selectedShortIds)}`,
-    `problems=${JSON.stringify(compactIssues(issues))}`,
-  ].join("\n");
 }

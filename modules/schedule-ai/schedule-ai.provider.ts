@@ -11,7 +11,7 @@ export type AiCallResult = { content: string; usage: AiUsage };
 
 /**
  * Thin OpenAI-compatible chat-completions client — the only piece of the
- * pipeline that talks to the network. Callers own retry/repair/fallback
+ * pipeline that talks to the network. Callers own retry/timeout handling
  * decisions; this just makes one call and returns the raw content + token
  * usage, or throws.
  */

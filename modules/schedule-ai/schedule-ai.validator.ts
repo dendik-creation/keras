@@ -101,17 +101,17 @@ export function parseOfferingCourses(body: unknown): OfferingCourse[] {
   return result.data;
 }
 
-const aiRawResponseSchema = z.object({
-  selected_schedule_ids: z.array(z.string().min(1)),
+const aiRankResponseSchema = z.object({
+  ranked_ids: z.array(z.string().min(1)),
 });
 
 /** Parse the model's raw JSON reply — throws on anything but the exact expected shape. */
-export function parseAiRawResponse(raw: unknown): string[] {
-  const result = aiRawResponseSchema.safeParse(raw);
+export function parseAiRankResponse(raw: unknown): string[] {
+  const result = aiRankResponseSchema.safeParse(raw);
   if (!result.success) {
     throw new Error("AI response did not match the expected JSON schema");
   }
-  return result.data.selected_schedule_ids;
+  return result.data.ranked_ids;
 }
 
 export type ScheduleValidationResult =
@@ -123,7 +123,6 @@ export function emptyValidationIssues(
   overrides: Partial<ScheduleValidationIssues> = {},
 ): ScheduleValidationIssues {
   return {
-    invalid_id: [],
     duplicate_course: [],
     overlap: [],
     outside_day: [],
@@ -138,8 +137,6 @@ export function emptyValidationIssues(
 /** Human-readable summary of an issue set — for logs and the final error message, not for the model. */
 function describeIssues(issues: ScheduleValidationIssues): string {
   const parts: string[] = [];
-  if (issues.invalid_id.length)
-    parts.push(`schedule_id tidak dikenal: ${issues.invalid_id.join(", ")}`);
   if (issues.duplicate_course.length)
     parts.push(`mata kuliah dipilih lebih dari satu kelas: ${issues.duplicate_course.join(", ")}`);
   if (issues.overlap.length)
@@ -156,32 +153,19 @@ function describeIssues(issues: ScheduleValidationIssues): string {
 }
 
 /**
- * Re-checks every hard constraint against the model's selection. The AI's
- * output is never trusted — this is the actual source of truth for whether a
- * generated schedule is acceptable. Unlike a first-violation-wins check,
- * this collects every violation so a retry prompt can point at all of them
- * at once instead of trickling out one failure per attempt.
+ * Re-checks every hard constraint against the deterministic optimizer's own
+ * output. The optimizer enforces all of these by construction, so this
+ * should always come back valid — it's the defensive safety net (schedule
+ * generation is never allowed to skip it just because "the optimizer
+ * wouldn't produce this"), not a resolver of untrusted AI selections
+ * anymore. Unlike a first-violation-wins check, this collects every
+ * violation so a failure is fully diagnosable from one log line.
  */
 export function validateGeneratedSchedule(
-  selectedIds: string[],
-  availableCourses: CourseSchedule[],
+  courses: CourseSchedule[],
   preference: AiPreference,
 ): ScheduleValidationResult {
   const issues = emptyValidationIssues({ target_sks: targetSksFor(preference) });
-
-  const byId = new Map(availableCourses.map((c) => [c.schedule_id, c]));
-  const seenIds = new Set<string>();
-  const courses: CourseSchedule[] = [];
-  for (const id of selectedIds) {
-    if (seenIds.has(id)) continue;
-    seenIds.add(id);
-    const course = byId.get(id);
-    if (!course) {
-      issues.invalid_id.push(id);
-      continue;
-    }
-    courses.push(course);
-  }
 
   const allowedDays = new Set<string>(
     preference.preferred_days.length > 0 ? preference.preferred_days : STUDY_DAYS,
@@ -219,7 +203,6 @@ export function validateGeneratedSchedule(
   issues.sks_exceeded = issues.total_sks > issues.target_sks;
 
   const hasIssues =
-    issues.invalid_id.length > 0 ||
     issues.duplicate_course.length > 0 ||
     issues.overlap.length > 0 ||
     issues.outside_day.length > 0 ||

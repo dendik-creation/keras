@@ -18,9 +18,10 @@ const unauthorized = () =>
 /**
  * POST /api/schedule-ai — generate an optimized schedule from student preferences.
  *
- * Streams newline-delimited JSON instead of one buffered response. AI +
- * repair + deterministic fallback is capped well under a minute, but a
- * plain request/response held open even that long risks a reverse proxy's
+ * Streams newline-delimited JSON instead of one buffered response. The
+ * deterministic optimizer plus one optional AI ranking call is capped well
+ * under a minute, but a plain request/response held open even that long
+ * risks a reverse proxy's
  * (Nginx Proxy Manager / Cloudflare) idle-read timeout killing the
  * connection before an already-successful backend result reaches the
  * client — the exact 504 this used to produce. Streaming status events

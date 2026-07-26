@@ -76,22 +76,18 @@ export type CompactPayload = {
   rows: CompactRow[];
 };
 
-/** Raw, untrusted shape the model is instructed to return. */
-export type AiRawResponse = {
-  selected_schedule_ids: string[];
-};
-
-export type GeneratedSchedule = {
-  courses: CourseSchedule[];
+/** Raw, untrusted shape the model is instructed to return — a preference ranking, never a final selection. */
+export type AiRankResponse = {
+  ranked_ids: string[];
 };
 
 /**
- * Full structured breakdown of every hard-constraint violation found in a
- * selection. Collected exhaustively (not short-circuited) so a retry prompt
- * can tell the model exactly, and only, what to fix.
+ * Full structured breakdown of every hard-constraint violation found in the
+ * optimizer's own output. Should always come back empty — the optimizer
+ * enforces every one of these by construction — but this is the defensive
+ * safety net, not an assumption.
  */
 export type ScheduleValidationIssues = {
-  invalid_id: string[];
   duplicate_course: string[];
   overlap: { courseA: string; courseB: string }[];
   outside_day: string[];

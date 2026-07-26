@@ -32,8 +32,21 @@ const ConfirmDialog = ({
   open,
   onOpenChange,
 }: ConfirmDialogProps) => {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isControlled = open !== undefined;
+  const actualOpen = isControlled ? open : internalOpen;
+
+  const handleOpenChange = (value: boolean) => {
+    if (value && disabled) return;
+    if (isControlled) {
+      onOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={actualOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
         {triggerNode}
       </DialogTrigger>

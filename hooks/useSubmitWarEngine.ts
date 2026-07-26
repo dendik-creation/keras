@@ -531,10 +531,11 @@ export function useSubmitWarEngine() {
 
       if (anyChange) {
         dispatch({ type: "COURSE_RELEASED", courses: nextCourses });
+        await syncWithServer(nextCourses);
       }
       return anyChange;
     },
-    [],
+    [syncWithServer],
   );
 
   // Hydrate from localStorage once, then run the initial "is the war open"

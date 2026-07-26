@@ -24,7 +24,6 @@
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [Getting Help](#getting-help)
-- [Star History](#star-history)
 
 ## What is KeRaS?
 

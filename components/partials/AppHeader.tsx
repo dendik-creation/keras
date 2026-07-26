@@ -24,7 +24,6 @@ interface AppHeaderProps {
 const avatars = [
   "1.jpg",
   "2.jpg",
-  "3.jpg",
   "4.jpg",
   "5.jpg",
   "6.jpg",
@@ -43,6 +42,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     () => `/avatar/${avatars[Math.floor(Math.random() * avatars.length)]}`,
     [],
   );
+  const firstLetterCapitalized = (text: string) => {
+    const newText = text.toLowerCase();
+    const parts = newText.split(" ");
+    return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+  }
   return (
     <header
       className={cn(
@@ -85,16 +89,16 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           <div className="flex items-center gap-3 cursor-pointer select-none group">
             {!isMobile && (
               <div className="flex text-sm flex-col justify-center items-end">
-                <span className="font-bold text-black uppercase tracking-widest text-xs">
-                  {name}
+                <span className="font-bold text-black text-md">
+                  {firstLetterCapitalized(name)}
                 </span>
-                <span className="text-xs font-black text-[#555555]">{nim}</span>
+                <span className="text-xs font-black text-[#555555]">{firstLetterCapitalized(nim)}</span>
               </div>
             )}
             <Avatar size="lg" className="border-2 border-black rounded-none transition-colors duration-200 group-hover:bg-[#FF3000]">
               <AvatarImage src={avatarSrc} alt={name} className="rounded-none" />
               <AvatarFallback className="rounded-none bg-black text-white font-black text-base group-hover:bg-[#FF3000]">
-                {name?.charAt(0)}
+                {firstLetterCapitalized(name)?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <ChevronDown size={16} className="text-black" />

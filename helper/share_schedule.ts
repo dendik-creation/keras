@@ -1,4 +1,5 @@
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
+import { maskNim } from "@/lib/analytics/identity";
 
 /**
  * Helpers for the "bagikan jadwal" feature: a schedule is shared as a link
@@ -23,6 +24,17 @@ export type ShareInfo = {
   nama: string;
 };
 
+/**
+ * Masks a name to its first 3 and last 3 characters, starring out
+ * everything in between. e.g. `SENDY PRABOWO` -> `SEN*******OWO`.
+ */
+export function maskNama(nama: string): string {
+  if (nama.length <= 6) return nama;
+  return (
+    nama.slice(0, 3) + "*".repeat(nama.length - 6) + nama.slice(-3)
+  );
+}
+
 /** Relative adopt URL carrying the selected schedule IDs + sharer identity. */
 export function buildAdoptPath(
   courses: CourseSchedule[],
@@ -34,8 +46,8 @@ export function buildAdoptPath(
 
   const params = new URLSearchParams();
   params.set("ids", ids.join(ID_SEP));
-  if (user?.nim) params.set("nim", user.nim);
-  if (user?.name) params.set("nama", user.name);
+  if (user?.nim) params.set("nim", maskNim(user.nim));
+  if (user?.name) params.set("nama", maskNama(user.name));
 
   return `/adopt-schedule?${params.toString()}`;
 }
@@ -58,10 +70,16 @@ export function parseShareParams(search: string): ShareInfo {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const nim = params.get("nim") || "";
+  const nama = params.get("nama") || "";
+
   return {
     ids,
-    nim: params.get("nim") || "",
-    nama: params.get("nama") || "",
+    // Masked again here (not just at build time in buildAdoptPath) so links
+    // generated before masking shipped, which still carry the raw nim/nama,
+    // display masked too. Idempotent on already-masked values.
+    nim: maskNim(nim),
+    nama: maskNama(nama),
   };
 }
 

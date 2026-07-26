@@ -243,7 +243,3 @@ Contributions are welcome. Open an issue or submit a pull request on [GitHub](ht
 ## Getting Help
 
 Found a bug or have a question? Open an issue on the [GitHub repository](https://github.com/dendik-creation/keras/issues).
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/chart?repos=dendik-creation/keras&type=date&legend=top-left&sealed_token=x0KLzvuhFQ2ux6t52vv1s1IMQVgyN_HVfyEhFNITqR2B81azGJid7imjMYXms07Yeb5uKwUFDRF4Vnc_CLVP6pMdstiU0U5EZn27MC0mrQVyx7bskWeSgvfwHOKB_9mgfhXKvmnUAjqe0LaJEjtoXFoSbFOtDf3fAyZTIAc2kzjLg2r7-I_L1-0mGtPM)](https://www.star-history.com/?repos=dendik-creation%2Fkeras&type=date&legend=top-left)

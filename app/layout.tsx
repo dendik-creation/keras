@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
-import TurnstileGuard from "@/components/middleware_wrapper/TurnstileGuard";
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
 import AnalyticsBoot from "@/components/analytics/AnalyticsBoot";
 
@@ -27,6 +26,9 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   applicationName: siteTitle,
+  alternates: {
+    canonical: siteUrl,
+  },
   keywords: [
     "KRS",
     "jadwal kuliah",
@@ -67,6 +69,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: "KeRaS — Siapkan Jadwal KRS-mu dengan Mudah",
+        type: "image/png",
       },
     ],
   },
@@ -100,9 +103,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} swiss-noise antialiased`}>
-        <LocalStorageProvider>
-          <TurnstileGuard>{children}</TurnstileGuard>
-        </LocalStorageProvider>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: siteTitle,
+              url: siteUrl,
+              description: siteDescription,
+            }),
+          }}
+        />
+        <LocalStorageProvider>{children}</LocalStorageProvider>
         <GooeyToaster />
         <AnalyticsBoot />
       </body>

@@ -52,7 +52,7 @@ import { getLocalStorage } from "@/helper/local_storage";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
-import LoadingBooks from "@/components/ui/loading-books";
+import { AppLoader } from "@/components/ui/app-loader";
 import RollingNumber from "@/components/ui/rolling-number";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -315,11 +315,15 @@ export default function Page() {
 
                     {loading ? (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">
-                        <LoadingBooks className="h-56 w-56" />
+                        {progress ?
+                        <AppLoader size={64} variant="schedule-extracting" aria-label="Ekstraksi ketersediaan jadwal" />
+                          :
+                        <AppLoader size={64} variant="schedule-refresh" aria-label="Mencari ketersediaan jadwal" />
+                        }
                         <span className="text-center text-sm font-semibold text-[#555555]">
                           {progress ? (
                             <span className="inline-flex items-center gap-1">
-                              Sedang melahap
+                              Bongkar pasang
                               <RollingNumber
                                 value={progress.done}
                                 className="font-black tabular-nums mb-2 mx-1 text-lg text-black"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, type Transition } from "motion/react";
 import { CourseSchedule } from "@/types/course_schedule";
 import { parseTimeRange } from "@/helper/frontend_helper";
 import { ScheduleDayColumn } from "./ScheduleDayColumn";
@@ -56,7 +56,7 @@ export function ScheduleBoard({
     return map;
   }, [activeCourses]);
 
-  const transitionConfig = shouldReduceMotion
+  const transitionConfig: Transition = shouldReduceMotion
     ? { duration: 0 }
     : {
         type: "spring",

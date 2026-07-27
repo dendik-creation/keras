@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ymdToIdDate } from "@/helper/frontend_helper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";

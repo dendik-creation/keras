@@ -1,6 +1,6 @@
 "use client";
 
-import LoadingBooks from "@/components/ui/loading-books";
+import { AppLoader } from "@/components/ui/app-loader";
 
 /** Step shown in place of the form while the AI request is in flight. */
 export default function StepGenerating() {
@@ -13,7 +13,7 @@ export default function StepGenerating() {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-2 px-6 py-8">
-        <LoadingBooks className="h-40 w-40" />
+        <AppLoader variant="ai-generating" aria-label="Membuat jadwal" />
         <p className="text-xs font-semibold text-[#555555]">
           BentaR, sedang ngeracik jadwalmu...
         </p>

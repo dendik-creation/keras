@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, type Transition } from "motion/react";
 import { CalendarSearch } from "lucide-react";
 import { CourseSchedule } from "@/types/course_schedule";
 import { ScheduleCard } from "./ScheduleCard";
@@ -33,7 +33,7 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
   isSubmitting = false,
   shouldReduceMotion = false,
 }: ScheduleDayColumnProps) {
-  const transitionConfig = shouldReduceMotion
+  const transitionConfig: Transition = shouldReduceMotion
     ? { duration: 0 }
     : {
         type: "spring",

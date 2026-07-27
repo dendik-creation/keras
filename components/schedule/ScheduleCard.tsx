@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { motion } from "motion/react";
+import { motion, type Variants, type Transition } from "motion/react";
 import { Clock, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ export interface ScheduleCardProps {
   shouldReduceMotion?: boolean;
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 12,
@@ -46,7 +46,7 @@ const cardVariants = {
   },
 };
 
-const reducedVariants = {
+const reducedVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.05 } },
   exit: { opacity: 0, transition: { duration: 0.05 } },
@@ -61,7 +61,7 @@ export const ScheduleCard = memo(function ScheduleCard({
   isSubmitting = false,
   shouldReduceMotion = false,
 }: ScheduleCardProps) {
-  const springTransition = shouldReduceMotion
+  const springTransition: Transition = shouldReduceMotion
     ? { duration: 0 }
     : {
         type: "spring",
@@ -71,6 +71,7 @@ export const ScheduleCard = memo(function ScheduleCard({
       };
 
   const cardKey = course.schedule_id || `${course.code}-${course.class}`;
+  const activeVariants: Variants = shouldReduceMotion ? reducedVariants : cardVariants;
 
   return (
     <motion.div
@@ -79,7 +80,7 @@ export const ScheduleCard = memo(function ScheduleCard({
       initial="hidden"
       animate="visible"
       exit="exit"
-      variants={shouldReduceMotion ? reducedVariants : cardVariants}
+      variants={activeVariants}
       transition={springTransition}
       className="w-full"
     >

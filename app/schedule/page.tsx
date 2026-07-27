@@ -277,7 +277,7 @@ export default function Page() {
               {/* Schedule Offer */}
               <ResizablePanel defaultSize={40} minSize={30}>
                 <ScrollArea className="h-full bg-[#F2F2F2]">
-                  <div className="p-4 space-y-4">
+                  <div data-tour="schedule-course-list" className="p-4 space-y-4">
                     <div className="flex flex-col gap-2">
                       <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                         <BookOpen className="w-5 h-5" /> Daftar Mata Kuliah
@@ -287,6 +287,7 @@ export default function Page() {
                           `Data terbaru pada ${ymdToIdDate(data[0].latest_update, true)}`}
                       </p>
                       <Button
+                        data-tour="schedule-refresh-button"
                         disabled={loading}
                         onClick={handleFindSchedules}
                         size={"sm"}
@@ -468,7 +469,7 @@ export default function Page() {
 
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
-                <div className="flex flex-col h-full bg-white">
+                <div data-tour="schedule-timetable" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
                       <h3 className="font-black text-lg uppercase tracking-tight">
@@ -491,6 +492,7 @@ export default function Page() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
+                            data-tour="schedule-actions"
                             size="sm"
                             variant="outline"
                             className="rounded-none border-2 border-black uppercase font-bold tracking-widest"

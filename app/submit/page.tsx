@@ -120,7 +120,7 @@ export default function Page() {
                       width: "100%",
                     }}
                   >
-                    <div className="p-4 border-b-2 border-black bg-white space-y-4">
+                    <div data-tour="war-control-panel" className="p-4 border-b-2 border-black bg-white space-y-4">
                       <div className="">
                         <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                           <Sword className="w-5 h-5" /> Ayo Perang KRS
@@ -200,7 +200,7 @@ export default function Page() {
                     </div>
                   </ProgressBorder>
 
-                  <div className="grow overflow-auto flex flex-col">
+                  <div data-tour="war-activity-log" className="grow overflow-auto flex flex-col">
                     <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">
                       <span className="text-xs font-black uppercase tracking-widest text-black">
                         Aktivitas perang ({war.logs.length} aktivitas)
@@ -310,7 +310,7 @@ export default function Page() {
 
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
-                <div className="flex flex-col h-full bg-white">
+                <div data-tour="war-schedule-table" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
                       <h3 className="font-black text-lg uppercase tracking-tight">
@@ -328,6 +328,7 @@ export default function Page() {
                         triggerNode={
                           <span>
                             <Button
+                              data-tour="war-remove-selected"
                               variant={"destructive"}
                               size={"sm"}
                               type="button"

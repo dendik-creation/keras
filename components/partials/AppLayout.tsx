@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import AppHeader from "@/components/partials/AppHeader";
 import AppSidebar from "@/components/partials/AppSidebar";
 import BottomNav from "@/components/partials/BottomNav";
+import OnboardingController from "@/components/onboarding/OnboardingController";
 import { getLocalStorage } from "@/helper/local_storage";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -56,6 +57,7 @@ export default function AppLayout({
         </main>
       </div>
       <BottomNav />
+      <OnboardingController />
     </div>
   );
 }

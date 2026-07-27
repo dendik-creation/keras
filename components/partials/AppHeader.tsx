@@ -2,11 +2,12 @@
 import React, { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Menu, ChevronDown } from "lucide-react";
+import { Menu, ChevronDown, Lightbulb } from "lucide-react";
 import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LogoutMenu from "@/components/custom/LogoutMenu";
@@ -58,6 +59,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         <button
           type="button"
           onClick={onMenuClick}
+          data-tour="schedule-sidebar-toggle"
           className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center"
         >
           <Menu size={16} />
@@ -73,7 +75,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         />
         {/* Page Title */}
         {pageTitle && pageDescription && (
-          <div className="flex flex-col border-l-2 border-black pl-4">
+          <div data-tour="schedule-page-title" className="flex flex-col border-l-2 border-black pl-4">
             <h2 className="font-black text-sm uppercase tracking-widest text-black leading-none">
               {pageTitle}
             </h2>
@@ -108,6 +110,15 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           className="w-56 rounded-none border-2 border-black bg-white"
           align="end"
         >
+
+          <DropdownMenuItem
+            key={"sign-out"}
+            className="flex w-full cursor-pointer items-center gap-2"
+            onClick={() => window.dispatchEvent(new CustomEvent("keras-restart-tour"))}
+          >
+            <Lightbulb/>
+            <span>Ulangi Panduan (Tour)</span>
+          </DropdownMenuItem>
           <LogoutMenu />
         </DropdownMenuContent>
       </DropdownMenu>

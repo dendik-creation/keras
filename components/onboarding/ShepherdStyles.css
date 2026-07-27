@@ -1,0 +1,121 @@
+@import "shepherd.js/dist/css/shepherd.css";
+
+/* Neo-brutalist styling for Shepherd.js in KeRaS */
+.shepherd-element {
+  border: 3px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0px #000000 !important;
+  background-color: #ffffff !important;
+  font-family: inherit !important;
+  max-width: 400px !important;
+  padding: 0 !important;
+  z-index: 99999 !important;
+}
+
+.shepherd-modal-overlay-container {
+  opacity: 0.6 !important;
+  z-index: 99990 !important;
+}
+
+.shepherd-header {
+  background-color: #f2f2f2 !important;
+  border-bottom: 2px solid #000000 !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+.shepherd-title {
+  font-weight: 900 !important;
+  font-size: 0.95rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #000000 !important;
+  margin: 0 !important;
+}
+
+.shepherd-cancel-icon {
+  color: #000000 !important;
+  font-size: 1.25rem !important;
+  font-weight: bold !important;
+  opacity: 0.8 !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.shepherd-cancel-icon:hover {
+  color: #ff3000 !important;
+  opacity: 1 !important;
+}
+
+.shepherd-text {
+  padding: 16px !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  color: #1a1a1a !important;
+  font-weight: 500 !important;
+}
+
+.shepherd-footer {
+  padding: 12px 16px !important;
+  border-top: 2px solid #000000 !important;
+  background-color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.shepherd-button {
+  border: 2px solid #000000 !important;
+  border-radius: 0 !important;
+  font-weight: 800 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 8px 14px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.shepherd-button-secondary {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.shepherd-button-secondary:hover {
+  background-color: #f2f2f2 !important;
+}
+
+.shepherd-button-primary {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.shepherd-button-primary:hover {
+  background-color: #ff3000 !important;
+  border-color: #ff3000 !important;
+  color: #ffffff !important;
+}
+
+.shepherd-button-danger {
+  background-color: #ffffff !important;
+  color: #ff3000 !important;
+  border-color: #ff3000 !important;
+}
+
+.shepherd-button-danger:hover {
+  background-color: #ff3000 !important;
+  color: #ffffff !important;
+}
+
+.shepherd-arrow,
+.shepherd-arrow:before {
+  background: #ffffff !important;
+  border-color: #000000 !important;
+}

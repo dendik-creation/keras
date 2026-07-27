@@ -59,6 +59,7 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
 import { useResumeAdoptToast } from "@/hooks/useResumeAdoptToast";
+import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
 
 export default function Page() {
   const [activeUser, setActiveUser] = useState<{
@@ -326,7 +327,7 @@ export default function Page() {
                               / <RollingNumber
                                 value={progress.total}
                                 className="font-black tabular-nums mb-2 mx-1 text-lg text-black"
-                              /> jadwal mata kuliah
+                              /> jadwal mata kuliah, jangan refresh wok
                             </span>
                           ) : (
                             "Sedang mencari ketersediaan jadwal, tapi agak lama hehe..."
@@ -563,90 +564,10 @@ export default function Page() {
                   </div>
 
                   <div className="grow p-4 overflow-auto">
-                    {/* Calendar Grid — 5 columns on desktop, stacked days on mobile */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150">
-                      {["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].map(
-                        (day) => (
-                          <div key={day} className="flex flex-col gap-2">
-                            <div className="text-center font-black py-2 border-b-2 border-black text-black uppercase tracking-widest">
-                              {day}
-                            </div>
-                            <div className="space-y-2 h-full min-h-[80px] md:min-h-100 bg-white rounded-md p-2">
-                              {selectedCourses
-                                .filter(
-                                  (c) =>
-                                    c.day.toLowerCase() === day.toLowerCase(),
-                                )
-                                .sort(
-                                  (a, b) =>
-                                    parseTimeRange(a.hour).start -
-                                    parseTimeRange(b.hour).start,
-                                )
-                                .map((course) => (
-                                  <Card
-                                    key={course.schedule_id}
-                                    className="relative pt-0 border-2 border-black overflow-hidden"
-                                  >
-                                    <CardContent className="p-2">
-                                      <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-black hover:bg-[#FF3000]">
-                                        <button
-                                          className="text-white flex items-center justify-center gap-2 text-sm text-center w-full absolute bottom-0 cursor-pointer left-0"
-                                          style={{ minHeight: "2rem" }}
-                                          onClick={() =>
-                                            handleSelectCourse(course)
-                                          }
-                                        >
-                                          <span>Hapus</span>
-                                        </button>
-                                      </div>
-                                      {course.semester && (
-                                        <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
-                                          {course.semester}
-                                        </div>
-                                      )}
-                                      <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
-                                        {course.course}
-                                      </div>
-                                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                                        <Badge
-                                          variant="outline"
-                                          className="h-4 px-1 text-[9px]"
-                                        >
-                                          {course.code}
-                                        </Badge>
-                                        <Badge
-                                          variant="secondary"
-                                          className="h-4 px-1 text-[9px]"
-                                        >
-                                          {course.class}
-                                        </Badge>
-                                      </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-[#555555]">
-                                        <Clock className="w-3 h-3" />{" "}
-                                        {course.hour}
-                                      </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
-                                        <Building2 className="w-3 h-3" />{" "}
-                                        {course.classroom}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-
-                              {selectedCourses.filter(
-                                (c) =>
-                                  c.day.toLowerCase() === day.toLowerCase(),
-                              ).length === 0 && (
-                                <div className="h-full text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-widest text-xs font-bold">
-                                  <CalendarSearch />
-                                  <span>Mau Libur Ya?</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
+                    <ScheduleBoard
+                      selectedCourses={selectedCourses}
+                      onRemoveCourse={handleSelectCourse}
+                    />
                   </div>
                 </div>
               </ResizablePanel>

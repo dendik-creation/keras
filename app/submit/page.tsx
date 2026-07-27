@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  Clock,
-  Building2,
-  CalendarSearch,
   Loader2,
   CheckCircle2,
   Swords,
@@ -27,11 +24,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { parseTimeRange, ymdToIdDate } from "@/helper/frontend_helper";
+import { ymdToIdDate } from "@/helper/frontend_helper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
@@ -39,6 +34,7 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubmitWarEngine, TOTAL_ATTEMPTS } from "@/hooks/useSubmitWarEngine";
 import WarTestDebugPanel from "@/components/custom/WarTestDebugPanel";
+import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
 import { cn } from "@/lib/utils";
 
 const isWarTestModeClient = process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true";
@@ -356,119 +352,15 @@ export default function Page() {
                   </div>
 
                   <div className="grow p-4 overflow-auto">
-                    {/* Calendar Grid — 5 columns on desktop, stacked days on mobile */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150">
-                      {["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].map(
-                        (day) => (
-                          <div key={day} className="flex flex-col gap-2">
-                            <div className="text-center font-black py-2 border-b-2 border-black text-black uppercase tracking-widest">
-                              {day}
-                            </div>
-                            <div className="space-y-2 h-full min-h-[80px] md:min-h-100 bg-white rounded-md p-2">
-                              {war.courses
-                                .filter(
-                                  (c) =>
-                                    c.day.toLowerCase() === day.toLowerCase(),
-                                )
-                                .sort(
-                                  (a, b) =>
-                                    parseTimeRange(a.hour).start -
-                                    parseTimeRange(b.hour).start,
-                                )
-                                .map((course) => (
-                                  <Card
-                                    onClick={() =>
-                                      handleReadyReleases(
-                                        course.code,
-                                        course.class,
-                                      )
-                                    }
-                                    key={course.schedule_id}
-                                    className={`relative border-2 pt-0 pb-6 border-black overflow-hidden ${
-                                      war.isSubmitting
-                                        ? "cursor-not-allowed opacity-90"
-                                        : "cursor-pointer"
-                                    }`}
-                                  >
-                                    {readyReleases.some(
-                                      (item) =>
-                                        item.course_code === course.code &&
-                                        item.course_class === course.class,
-                                    ) && (
-                                      <div className={cn("absolute bottom-0 left-0 w-full py-1 flex justify-center items-center z-10 transition-all", course.saved_in_submit ? "bg-[#FED24F] text-black" : "bg-[#FF3000] text-white")}>
-                                        <div className="flex w-full justify-center items-center">
-                                          <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
-                                            {course.saved_in_submit ? "Siap Dilepas" : "Siap Dihapus"}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-                                    <CardContent className="p-2">
-                                      {course.saved_in_submit ? (
-                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-black text-white">
-                                          <div className="flex w-full justify-center items-center">
-                                            <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
-                                              Sudah punya
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-[#F2F2F2] text-black border-t-2 border-black">
-                                          <div className="flex w-full justify-center items-center">
-                                            <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
-                                              Belum punya
-                                            </p>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {course.semester && (
-                                        <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
-                                          {course.semester}
-                                        </div>
-                                      )}
-                                      <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
-                                        {course.course}
-                                      </div>
-                                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                                        <Badge
-                                          variant="outline"
-                                          className="h-4 px-1 text-[9px]"
-                                        >
-                                          {course.code}
-                                        </Badge>
-                                        <Badge
-                                          variant="secondary"
-                                          className="h-4 px-1 text-[9px]"
-                                        >
-                                          {course.class}
-                                        </Badge>
-                                      </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-[#555555]">
-                                        <Clock className="w-3 h-3" />{" "}
-                                        {course.hour}
-                                      </div>
-                                      <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
-                                        <Building2 className="w-3 h-3" />{" "}
-                                        {course.classroom}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-
-                              {war.courses.filter(
-                                (c) =>
-                                  c.day.toLowerCase() === day.toLowerCase(),
-                              ).length === 0 && (
-                                <div className="h-full text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-widest text-xs font-bold">
-                                  <CalendarSearch />
-                                  <span>Mau Libur Ya?</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
+                    <ScheduleBoard
+                      courses={war.courses}
+                      isSubmitMode={true}
+                      readyReleases={readyReleases}
+                      isSubmitting={war.isSubmitting}
+                      onCardClick={(course) =>
+                        handleReadyReleases(course.code, course.class)
+                      }
+                    />
                   </div>
                 </div>
               </ResizablePanel>

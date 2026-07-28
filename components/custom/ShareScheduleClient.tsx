@@ -27,7 +27,12 @@ const BLOCK_MESSAGES = {
     "Jadwal ini hanya bisa diadopsi sesama mahasiswa program studi yang sama, karena tiap program studi punya penawaran mata kuliah yang berbeda.",
   "codes-not-found":
     "Mata kuliah pada link ini tidak ditemukan sama sekali di penawaranmu. Jadwal yang dibagikan kemungkinan berasal dari program studi lain.",
+  "classes-not-found":
+    "Mata kuliah ditemukan di penawaranmu, namun kelas spesifik yang dipilih pada link ini tidak tersedia lagi.",
+  "corrupted-link":
+    "Link adopsi ini tidak valid atau mengalami kerusakan format data.",
 } as const;
+
 
 /**
  * Same adoption flow as /adopt-schedule, but the share IDs come from resolving

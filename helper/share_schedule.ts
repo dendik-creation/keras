@@ -1,27 +1,33 @@
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { maskNim } from "@/lib/analytics/identity";
-
-/**
- * Helpers for the "bagikan jadwal" feature: a schedule is shared as a link
- * carrying the selected courses' `code`+`class` pairs plus the sharer's NIM
- * and name. The recipient's browser matches those pairs against the
- * offered-course list to rebuild the exact schedule, then adopts it into
- * local storage.
- *
- * `code`+`class` is used instead of `schedule_id` because `schedule_id` is
- * the raw `data-id` scraped from the campus KRS portal per-session — it is
- * not guaranteed stable across two different students' sessions, even when
- * both see the exact same offering. `code`+`class` is the visible, stable
- * identity of a course offering.
- */
+import {
+  makeCourseKey,
+  normalizeClass,
+  normalizeCode,
+  PAIR_SEP,
+  parseIdPair,
+} from "./share_schedule_validation";
 
 const ID_SEP = ",";
-const PAIR_SEP = "::";
 
 export type ShareInfo = {
   ids: string[];
   nim: string;
   nama: string;
+};
+
+export type MatchOfferingResult = {
+  matched: CourseSchedule[];
+  missingIds: string[];
+  corruptedIds: string[];
+  codeExistOnly: string[];
+  summary: {
+    totalShared: number;
+    totalOffering: number;
+    matchedCount: number;
+    missingCount: number;
+    corruptedCount: number;
+  };
 };
 
 /**
@@ -42,7 +48,7 @@ export function buildAdoptPath(
 ): string {
   const ids = courses
     .filter((c) => c.code && c.class)
-    .map((c) => `${c.code}${PAIR_SEP}${c.class}`);
+    .map((c) => makeCourseKey(c.code, c.class));
 
   const params = new URLSearchParams();
   params.set("ids", ids.join(ID_SEP));
@@ -64,42 +70,36 @@ export function buildShareUrl(
 /** Parse the adopt-schedule query string into structured share info. */
 export function parseShareParams(search: string): ShareInfo {
   const params = new URLSearchParams(search);
-  const rawIds = params.get("ids") || "";
-  const ids = rawIds
-    .split(ID_SEP)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const rawIdsParam = params.get("ids") || "";
+
+  let rawIds: string[] = [];
+  try {
+    const decoded = decodeURIComponent(rawIdsParam);
+    rawIds = decoded.split(ID_SEP).map((s) => s.trim()).filter(Boolean);
+  } catch {
+    rawIds = rawIdsParam.split(ID_SEP).map((s) => s.trim()).filter(Boolean);
+  }
 
   const nim = params.get("nim") || "";
   const nama = params.get("nama") || "";
 
   return {
-    ids,
-    // Masked again here (not just at build time in buildAdoptPath) so links
-    // generated before masking shipped, which still carry the raw nim/nama,
-    // display masked too. Idempotent on already-masked values.
+    ids: rawIds,
     nim: maskNim(nim),
     nama: maskNama(nama),
   };
 }
 
 /**
- * Match the shared IDs against the offered-course list and return the matching
- * courses in the order the IDs were shared. Missing IDs (e.g. the offering has
- * since changed) are simply skipped — the caller compares lengths to warn.
- *
- * Used for intra-session lookups (e.g. schedule-ai) where the ids and the
- * offering array come from the same student's own fetch, so `schedule_id` is
- * a valid stable key. For cross-student sharing, use
- * `matchCoursesByCodeClass` instead — see the module doc comment above.
+ * Match the shared IDs against the offered-course list by schedule_id (intra-session).
  */
 export function matchCoursesByIds(
   ids: string[],
   offering: OfferingCourse[],
 ): CourseSchedule[] {
   const byId = new Map<string, CourseSchedule>();
-  for (const group of offering) {
-    for (const course of group.courses) {
+  for (const group of offering || []) {
+    for (const course of group.courses || []) {
       if (course.schedule_id) byId.set(course.schedule_id, course);
     }
   }
@@ -113,28 +113,100 @@ export function matchCoursesByIds(
 }
 
 /**
- * Match shared `code::class` pairs (see `ShareInfo.ids`) against the
- * offered-course list. Used by the adopt-schedule flow so matching survives
- * across two different students' sessions, where raw `schedule_id`s are not
- * guaranteed to line up.
+ * Unified matching engine for Share & Adopt Schedule.
+ * Normalizes all identifiers (trim & uppercase) and matches code::class pairs against offering courses.
+ * Logs detailed progress in development mode.
  */
-export function matchCoursesByCodeClass(
-  ids: string[],
+export function matchOfferingByCodeClass(
+  rawIds: string[],
   offering: OfferingCourse[],
-): CourseSchedule[] {
+): MatchOfferingResult {
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev) {
+    console.log("[adopt] Starting matchOfferingByCodeClass with raw IDs:", rawIds);
+  }
+
   const byPair = new Map<string, CourseSchedule>();
-  for (const group of offering) {
-    for (const course of group.courses) {
-      if (course.code && course.class) {
-        byPair.set(`${course.code}${PAIR_SEP}${course.class}`, course);
+  const byCode = new Set<string>();
+  let totalOfferingCourses = 0;
+
+  for (const group of offering || []) {
+    for (const course of group.courses || []) {
+      const code = normalizeCode(course.code);
+      const cls = normalizeClass(course.class);
+
+      if (code && cls) {
+        totalOfferingCourses++;
+        byPair.set(makeCourseKey(code, cls), course);
+        byCode.add(code);
       }
     }
   }
 
   const matched: CourseSchedule[] = [];
-  for (const id of ids) {
-    const course = byPair.get(id);
-    if (course) matched.push(course);
+  const missingIds: string[] = [];
+  const corruptedIds: string[] = [];
+  const codeExistOnly: string[] = [];
+
+  for (const rawId of rawIds) {
+    const parsed = parseIdPair(rawId);
+    if (!parsed) {
+      corruptedIds.push(rawId);
+      if (isDev) {
+        console.log(`[adopt] ✗ CORRUPTED ID: "${rawId}"`);
+      }
+      continue;
+    }
+
+    const course = byPair.get(parsed.key);
+    if (course) {
+      matched.push(course);
+      if (isDev) {
+        console.log(`[adopt] ✓ FOUND: ${parsed.key} -> "${course.course}"`);
+      }
+    } else {
+      missingIds.push(parsed.key);
+      if (byCode.has(parsed.code)) {
+        codeExistOnly.push(parsed.code);
+        if (isDev) {
+          console.log(`[adopt] ✗ CLASS NOT FOUND: ${parsed.key} (Course ${parsed.code} exists in offering, but class ${parsed.class} missing)`);
+        }
+      } else {
+        if (isDev) {
+          console.log(`[adopt] ✗ CODE NOT FOUND: ${parsed.key} (Course ${parsed.code} not offered at all)`);
+        }
+      }
+    }
   }
-  return matched;
+
+  const summary = {
+    totalShared: rawIds.length,
+    totalOffering: totalOfferingCourses,
+    matchedCount: matched.length,
+    missingCount: missingIds.length,
+    corruptedCount: corruptedIds.length,
+  };
+
+  if (isDev) {
+    console.log("[adopt] Match Summary:", summary);
+  }
+
+  return {
+    matched,
+    missingIds,
+    corruptedIds,
+    codeExistOnly,
+    summary,
+  };
 }
+
+/**
+ * Legacy wrapper around matchOfferingByCodeClass.
+ */
+export function matchCoursesByCodeClass(
+  ids: string[],
+  offering: OfferingCourse[],
+): CourseSchedule[] {
+  return matchOfferingByCodeClass(ids, offering).matched;
+}
+

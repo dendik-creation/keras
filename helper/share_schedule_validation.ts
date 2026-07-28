@@ -1,58 +1,137 @@
 import { OfferingCourse } from "@/types/course_schedule";
 
-const PAIR_SEP = "::";
+export const PAIR_SEP = "::";
 
 /**
- * Validation 1 helper: `ids` carries `code::class` pairs (see
- * `helper/share_schedule.ts`). This strips each pair down to the bare
- * course code, so we can check "is this course offered at all" separately
- * from "is this exact class still offered" (the latter is what
- * `matchCoursesByCodeClass` already checks downstream).
+ * Normalizes a course code string by trimming whitespace and converting to uppercase.
+ */
+export function normalizeCode(code: string | undefined | null): string {
+  return (code || "").trim().toUpperCase();
+}
+
+/**
+ * Normalizes a class string by trimming whitespace and converting to uppercase.
+ */
+export function normalizeClass(cls: string | undefined | null): string {
+  return (cls || "").trim().toUpperCase();
+}
+
+/**
+ * Creates a unique combined key for a course code and class.
+ * e.g. ("gs51 ", " a") -> "GS51::A"
+ */
+export function makeCourseKey(
+  code: string | undefined | null,
+  cls: string | undefined | null,
+): string {
+  return `${normalizeCode(code)}${PAIR_SEP}${normalizeClass(cls)}`;
+}
+
+/**
+ * Parses a raw ID pair string into normalized code and class.
+ * Supports both "CODE::CLASS" and fallback "CODE:CLASS", including URL-encoded colons (%3A).
+ * Returns null if either code or class is missing/invalid.
+ */
+export function parseIdPair(
+  rawId: string,
+): { code: string; class: string; key: string } | null {
+  if (!rawId) return null;
+
+  let decoded = rawId.trim();
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    // If decode fails, use raw string as fallback
+  }
+
+  // Support "::" as primary separator, fallback to ":"
+  let parts: string[];
+  if (decoded.includes(PAIR_SEP)) {
+    parts = decoded.split(PAIR_SEP);
+  } else if (decoded.includes(":")) {
+    parts = decoded.split(":");
+  } else {
+    return null;
+  }
+
+  const code = normalizeCode(parts[0]);
+  const cls = normalizeClass(parts[1]);
+
+  if (!code || !cls) return null;
+
+  return {
+    code,
+    class: cls,
+    key: `${code}${PAIR_SEP}${cls}`,
+  };
+}
+
+/**
+ * Extracts study program code (5th and 6th digits) from a NIM string.
+ * Example: `202451823` -> `51`.
+ * Trims whitespace and strips non-alphanumeric characters first.
+ * Returns null when the NIM is invalid or too short.
+ */
+export function extractStudyProgramCode(nim: string | undefined | null): string | null {
+  if (!nim) return null;
+  const cleanNim = nim.trim().replace(/[^a-zA-Z0-9*]/g, "");
+  if (cleanNim.length < 6) return null;
+  const code = cleanNim.slice(4, 6);
+  // Ensure the extracted code contains valid digits or mask chars
+  return code || null;
+}
+
+/**
+ * Legacy alias for extractStudyProgramCode.
+ */
+export function getStudyProgramCode(nim: string | undefined | null): string | null {
+  return extractStudyProgramCode(nim);
+}
+
+/**
+ * Helper: extracts normalized course codes from raw ID strings.
  */
 export function extractCourseCodes(ids: string[]): string[] {
   const codes = new Set<string>();
   for (const id of ids) {
-    const code = id.split(PAIR_SEP)[0];
-    if (code) codes.add(code);
+    const parsed = parseIdPair(id);
+    if (parsed) {
+      codes.add(parsed.code);
+    }
   }
   return [...codes];
 }
 
 /**
- * Study-program code is the 5th/6th digit of a NIM, e.g. `202451823` -> `51`.
- * Returns null when the NIM is too short to contain those digits (older
- * share links didn't always carry a `nim` param).
+ * Validation: checks if course codes exist anywhere in the offering list.
  */
-export function getStudyProgramCode(nim: string): string | null {
-  if (nim.length < 6) return null;
-  return nim.slice(4, 6);
-}
-
-/** Validation 1: every shared course code must be offered somewhere (any class). */
 export function courseCodesExistInOffering(
   codes: string[],
   offering: OfferingCourse[],
 ): boolean {
+  if (codes.length === 0) return false;
   const offeredCodes = new Set<string>();
   for (const group of offering) {
-    for (const course of group.courses) {
-      if (course.code) offeredCodes.add(course.code);
+    for (const course of group.courses || []) {
+      const normalized = normalizeCode(course.code);
+      if (normalized) offeredCodes.add(normalized);
     }
   }
-  return codes.every((code) => offeredCodes.has(code));
+  const normCodes = codes.map(normalizeCode);
+  return normCodes.every((code) => offeredCodes.has(code));
 }
 
 /**
- * Validation 2: sender and receiver must be in the same study program.
- * Returns null (unverifiable) when either NIM can't be parsed — callers
- * should treat null as "skip this check", not as a block.
+ * Validation: sender and receiver must be in the same study program.
+ * Returns null (unverifiable) when either NIM can't be parsed.
  */
 export function studyProgramsMatch(
-  senderNim: string,
-  receiverNim: string,
+  senderNim: string | undefined | null,
+  receiverNim: string | undefined | null,
 ): boolean | null {
-  const senderCode = getStudyProgramCode(senderNim);
-  const receiverCode = getStudyProgramCode(receiverNim);
+  const senderCode = extractStudyProgramCode(senderNim);
+  const receiverCode = extractStudyProgramCode(receiverNim);
   if (senderCode === null || receiverCode === null) return null;
   return senderCode === receiverCode;
 }
+

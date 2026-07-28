@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
-import { matchCoursesByCodeClass, ShareInfo } from "@/helper/share_schedule";
 import {
-  courseCodesExistInOffering,
+  matchOfferingByCodeClass,
+  ShareInfo,
+} from "@/helper/share_schedule";
+import {
   extractCourseCodes,
   studyProgramsMatch,
 } from "@/helper/share_schedule_validation";
@@ -14,7 +16,11 @@ export type AdoptFlowPhase =
   | "empty"
   | "ready";
 
-export type AdoptFlowBlockReason = "program-mismatch" | "codes-not-found";
+export type AdoptFlowBlockReason =
+  | "program-mismatch"
+  | "codes-not-found"
+  | "classes-not-found"
+  | "corrupted-link";
 
 export type AdoptScheduleFlowResult = {
   phase: AdoptFlowPhase;
@@ -46,11 +52,9 @@ const EMPTY_RESULT: AdoptScheduleFlowResult = {
 };
 
 /**
- * Shared adoption state machine for /adopt-schedule and ShareScheduleClient —
- * both hand it {ids, nim, nama} plus offering/saved state from
- * LocalStorageProvider and get back a phase to render. It never fetches or
- * navigates itself; callers own the router effects driven by `redirectTo`
- * and `phase === "ready"`.
+ * Shared adoption state machine for /adopt-schedule and ShareScheduleClient.
+ * Uses `matchOfferingByCodeClass` for complete normalization, detailed error taxonomy,
+ * and dev logging.
  */
 export function useAdoptScheduleFlow({
   share,
@@ -69,8 +73,7 @@ export function useAdoptScheduleFlow({
 
     const offering = offeringCourse ?? [];
 
-    // Case A: nothing to match against yet — get-schedule only runs on
-    // /schedule, so send the user there and bring them straight back.
+    // Case A: nothing to match against yet — redirect to /schedule to fetch offering
     if (offering.length === 0) {
       return {
         ...EMPTY_RESULT,
@@ -79,7 +82,7 @@ export function useAdoptScheduleFlow({
       };
     }
 
-    // Validation 2: same study program (fail-open when either NIM is unparseable).
+    // Validation 1: Same study program check (fail-open if either NIM is unparseable)
     if (receiverNim && studyProgramsMatch(share.nim, receiverNim) === false) {
       return {
         ...EMPTY_RESULT,
@@ -88,18 +91,39 @@ export function useAdoptScheduleFlow({
       };
     }
 
-    // Validation 1: every shared course code must be offered at all (any class).
-    const codes = extractCourseCodes(share.ids);
-    if (!courseCodesExistInOffering(codes, offering)) {
+    // Execute matching engine
+    const matchResult = matchOfferingByCodeClass(share.ids, offering);
+
+    // Case B: All shared IDs are corrupted or unparseable
+    if (matchResult.corruptedIds.length > 0 && matchResult.matched.length === 0) {
       return {
         ...EMPTY_RESULT,
         phase: "blocked",
-        blockReason: "codes-not-found",
+        blockReason: "corrupted-link",
       };
     }
 
-    const matched = matchCoursesByCodeClass(share.ids, offering);
-    if (matched.length === 0) {
+    // Case C: No courses matched at all
+    if (matchResult.matched.length === 0) {
+      const extractedCodes = extractCourseCodes(share.ids);
+      const codeExists = matchResult.codeExistOnly.length > 0;
+
+      if (codeExists) {
+        return {
+          ...EMPTY_RESULT,
+          phase: "blocked",
+          blockReason: "classes-not-found",
+        };
+      }
+
+      if (extractedCodes.length > 0) {
+        return {
+          ...EMPTY_RESULT,
+          phase: "blocked",
+          blockReason: "codes-not-found",
+        };
+      }
+
       return { ...EMPTY_RESULT, phase: "empty" };
     }
 
@@ -108,8 +132,8 @@ export function useAdoptScheduleFlow({
     return {
       phase: "ready",
       blockReason: null,
-      matched,
-      missingCount: share.ids.length - matched.length,
+      matched: matchResult.matched,
+      missingCount: matchResult.missingIds.length + matchResult.corruptedIds.length,
       hasExisting,
       redirectTo: null,
     };
@@ -122,3 +146,4 @@ export function useAdoptScheduleFlow({
     isHydrated,
   ]);
 }
+

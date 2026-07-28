@@ -135,3 +135,124 @@ export function studyProgramsMatch(
   return senderCode === receiverCode;
 }
 
+/**
+ * Normalizes course name by converting to lowercase and stripping non-alphanumeric chars.
+ * e.g. "Pengembangan Diri dan Bimbingan Karir" -> "pengembangandiridanbimbingankarir"
+ */
+export function normalizeCourseName(name: string | undefined | null): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Pure JS FNV-1a 64-bit string hashing algorithm yielding a 16-character hex string.
+ * Deterministic across all environments (Browser, SSR, Node).
+ */
+export function generateHash16(input: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0xcbf29ce4;
+  for (let i = 0; i < input.length; i++) {
+    const charCode = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ charCode, 0x01000193);
+    h2 = Math.imul(h2 ^ charCode, 0x100000001b3);
+  }
+  const p1 = (h1 >>> 0).toString(16).padStart(8, "0");
+  const p2 = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `${p1}${p2}`.slice(0, 16);
+}
+
+export type GenerateShareCourseIdArgs = {
+  studyProgramCode?: string | null;
+  courseName: string;
+  sks?: string | number | null;
+  category?: string | null;
+  nim?: string | null;
+};
+
+/**
+ * Generates immutable `share_course_id` based on study program code and course fingerprint.
+ * Format: `<studyProgramCode>_<16-char-hash>` (e.g., `51_83ab7d9248cfab12`).
+ * Deterministic for all students in the same study program regardless of mutable course_code.
+ */
+export function generateShareCourseId(args: GenerateShareCourseIdArgs): string {
+  const prodiCode =
+    args.studyProgramCode ||
+    extractStudyProgramCode(args.nim) ||
+    "00";
+  const normName = normalizeCourseName(args.courseName);
+  const sks = String(args.sks || "").trim();
+  const category = (args.category || "").trim().toLowerCase();
+
+  const fingerprint = `${prodiCode}|${normName}|${sks}|${category}`;
+  const hash = generateHash16(fingerprint);
+  return `${prodiCode}_${hash}`;
+}
+
+/**
+ * Calculates string similarity using Levenshtein distance (returns 0.0 to 1.0).
+ */
+export function calculateStringSimilarity(str1: string, str2: string): number {
+  const s1 = normalizeCourseName(str1);
+  const s2 = normalizeCourseName(str2);
+  if (s1 === s2) return 1.0;
+  if (!s1 || !s2) return 0.0;
+
+  const m = s1.length;
+  const n = s2.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  const dist = dp[m][n];
+  return 1.0 - dist / Math.max(m, n);
+}
+
+/**
+ * Automatically enriches offering course objects with `share_course_id` if missing.
+ * Idempotent: skips courses that already have `share_course_id`.
+ */
+export function enrichOfferingCourses(
+  offering: OfferingCourse[],
+  userNim?: string | null,
+): OfferingCourse[] {
+  if (!offering || offering.length === 0) return offering;
+
+  let changed = false;
+  const enriched = offering.map((group) => {
+    let groupChanged = false;
+    const courses = (group.courses || []).map((course) => {
+      if (course.share_course_id) return course;
+      groupChanged = true;
+      changed = true;
+      const shareCourseId = generateShareCourseId({
+        courseName: course.course,
+        sks: course.sks,
+        category: course.category,
+        nim: userNim,
+      });
+      return {
+        ...course,
+        share_course_id: shareCourseId,
+      };
+    });
+
+    return groupChanged ? { ...group, courses } : group;
+  });
+
+  return changed ? enriched : offering;
+}
+
+

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import {
-  matchOfferingByCodeClass,
+  matchSharedCourses,
   ShareInfo,
 } from "@/helper/share_schedule";
 import {
@@ -53,8 +53,7 @@ const EMPTY_RESULT: AdoptScheduleFlowResult = {
 
 /**
  * Shared adoption state machine for /adopt-schedule and ShareScheduleClient.
- * Uses `matchOfferingByCodeClass` for complete normalization, detailed error taxonomy,
- * and dev logging.
+ * Uses `matchSharedCourses` for multi-level matching strategy (share_course_id, course_code, fingerprint, fuzzy).
  */
 export function useAdoptScheduleFlow({
   share,
@@ -91,8 +90,14 @@ export function useAdoptScheduleFlow({
       };
     }
 
-    // Execute matching engine
-    const matchResult = matchOfferingByCodeClass(share.ids, offering);
+    // Execute multi-level matching engine
+    const matchResult = matchSharedCourses(
+      share.ids,
+      offering,
+      receiverNim,
+      share.version || 2,
+    );
+
 
     // Case B: All shared IDs are corrupted or unparseable
     if (matchResult.corruptedIds.length > 0 && matchResult.matched.length === 0) {

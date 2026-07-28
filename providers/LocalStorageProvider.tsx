@@ -15,6 +15,8 @@ import {
 } from "@/helper/local_storage";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { backfillCourseSemesters } from "@/helper/frontend_helper";
+import { enrichOfferingCourses } from "@/helper/share_schedule_validation";
+
 
 const OFFERING_COURSE_KEY = "offering_course";
 const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
@@ -121,6 +123,16 @@ export function LocalStorageProvider({
     const patched = backfillCourseSemesters(savedSchedule, offeringCourse);
     if (patched !== savedSchedule) setSavedSchedule(patched);
   }, [isHydrated, savedSchedule, offeringCourse, setSavedSchedule]);
+
+  // Automatic migration: enrich offering_course items with permanent share_course_id
+  useEffect(() => {
+    if (!isHydrated || !offeringCourse || offeringCourse.length === 0) return;
+    const enriched = enrichOfferingCourses(offeringCourse);
+    if (enriched !== offeringCourse) {
+      setOfferingCourse(enriched);
+    }
+  }, [isHydrated, offeringCourse, setOfferingCourse]);
+
 
   return (
     <LocalStorageContext.Provider

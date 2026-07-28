@@ -36,6 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubmitWarEngine, TOTAL_ATTEMPTS } from "@/hooks/useSubmitWarEngine";
 import WarTestDebugPanel from "@/components/custom/WarTestDebugPanel";
 import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
+import { SegmentedSchedulePreview } from "@/components/schedule/SegmentedSchedulePreview";
 import { cn } from "@/lib/utils";
 
 const isWarTestModeClient = process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true";
@@ -100,11 +101,212 @@ export default function Page() {
         pageTitleHeader="Perang KRS"
         pageDescriptionHeader="Otomatiskan perang KRS kamu dengan sekali klik!"
       >
-        <div className="flex flex-col h-[calc(100dvh-160px)] md:h-[calc(100vh-100px)]">
-          <div className="grow mt-4 border-2 border-black overflow-hidden bg-white">
-            <ResizablePanelGroup
-              direction={isMobile ? "vertical" : "horizontal"}
+        {/* MOBILE ADAPTIVE SINGLE-COLUMN LAYOUT (≤ 767px) */}
+        <div className="md:hidden flex flex-col gap-5 pb-28">
+          {/* 1. Progress Card */}
+          <div className="bg-white text-black p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-black text-xs uppercase tracking-widest text-[#FF3000]">
+                PERANG KRS
+              </span>
+              <Badge
+                variant="outline"
+                className="bg-black text-white border-black font-bold text-xs uppercase px-2 py-0.5"
+              >
+                {war.securedCount} / {war.totalCount} Diamankan
+              </Badge>
+            </div>
+            <div className="text-xl font-black text-black uppercase tracking-tight">
+              {war.securedCount} / {war.totalCount} Mata Kuliah Diamankan
+            </div>
+            {/* Progress bar */}
+            <div className="h-3 w-full border-2 border-black bg-[#F2F2F2] overflow-hidden">
+              <div
+                className="h-full bg-[#FF3000] transition-all duration-300"
+                style={{
+                  width: `${war.totalCount > 0 ? (war.securedCount / war.totalCount) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 2. Primary Action Button */}
+          {war.isWarStarted ? (
+            <Button
+              size="lg"
+              onClick={war.startWar}
+              disabled={
+                war.isSubmitting ||
+                war.courses.length === 0 ||
+                !war.isWarStarted
+              }
+              className={cn(
+                "w-full h-13 bg-[#FF3000] hover:bg-black text-white border-2 border-black rounded-none font-black text-base uppercase tracking-widest shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
+                war.isSubmitting && "animate-pulse",
+              )}
             >
+              {war.isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Semoga Sukses😁</span>
+                </>
+              ) : (
+                <>
+                  <Swords className="w-5 h-5" />
+                  <span>Mulai Perang</span>
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => war.checkWarStatus()}
+              disabled={war.isFindingSchedule}
+              className={cn(
+                "w-full h-13 bg-white text-black hover:bg-black hover:text-white border-2 border-black rounded-none font-black text-sm uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
+                war.isFindingSchedule && "animate-pulse",
+              )}
+            >
+              {war.isFindingSchedule ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Hmm.. bentar</span>
+                </>
+              ) : (
+                <>
+                  <span>Apakah Perang Sudah Dibuka?</span>
+                  <BadgeQuestionMark className="w-5 h-5 text-[#FF3000]" />
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* 3. Schedule Preview (Segmented Day Selector) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center px-1">
+              <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
+                <Sword className="w-4 h-4 text-[#FF3000]" /> Jadwal Perang KRS
+              </h3>
+              <span className="text-[10px] font-bold text-black uppercase tracking-wider">
+                Total {totalSKS} SKS
+              </span>
+            </div>
+            <SegmentedSchedulePreview
+              courses={war.courses}
+              isSubmitMode={true}
+              readyReleases={readyReleases}
+              isSubmitting={war.isSubmitting}
+              onCardClick={(course) =>
+                handleReadyReleases(course.code, course.class)
+              }
+            />
+          </div>
+
+          {/* 4. Activity (Timeline) */}
+          <div className="flex flex-col gap-2">
+            <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2 px-1">
+              <Sword className="w-4 h-4 text-[#FF3000]" /> Aktivitas Perang (
+              {war.logs.length})
+            </h3>
+            <div className="border-2 border-black bg-white p-3 space-y-3">
+              {war.logs.length === 0 ? (
+                <div className="py-6 flex flex-col items-center justify-center text-center gap-2 bg-[#F2F2F2] border-2 border-dashed border-black/30">
+                  <Sword className="w-6 h-6 text-black/40" />
+                  <span className="text-xs font-black uppercase tracking-widest text-black/70">
+                    Belum Ada Aktivitas Perang
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {war.logs.map((log) => (
+                    <div
+                      key={log.attempt}
+                      className="border-2 border-black bg-[#F2F2F2] p-2.5 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-black">
+                          Fase {log.attempt}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {log.durationMs !== undefined && (
+                            <Badge
+                              variant="outline"
+                              className="border-black text-[9px] h-4 px-1 bg-white font-bold"
+                            >
+                              {log.durationMs}ms
+                            </Badge>
+                          )}
+                          <Badge
+                            className={cn(
+                              "text-[9px] h-4 px-1 font-bold uppercase",
+                              log.status === "success"
+                                ? "bg-black text-white"
+                                : log.status === "pending"
+                                  ? "bg-[#FED24F] text-black border border-black"
+                                  : "bg-[#FF3000] text-white",
+                            )}
+                          >
+                            {log.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {log.messages.map((msg, idx) => (
+                        <div
+                          key={idx}
+                          className="text-[11px] font-semibold flex items-start gap-1.5 text-black border-t border-black/10 pt-1"
+                        >
+                          {msg.status === "error" ? (
+                            <CircleX className="w-3.5 h-3.5 text-[#FF3000] shrink-0 mt-0.5" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
+                          )}
+                          <span>{msg.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 5. Delete Button (Sticky Action Bar) */}
+          {readyReleases.length > 0 && (
+            <div className="fixed bottom-16 inset-x-0 z-40 bg-black text-white border-t-2 border-black p-3 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom-5 duration-200">
+              <div className="flex flex-col">
+                <span className="font-black text-xs uppercase tracking-widest text-[#FF3000]">
+                  {readyReleases.length} Mata Kuliah Dipilih
+                </span>
+                <span className="text-[10px] text-white/70">
+                  Siap dilepas / dihapus
+                </span>
+              </div>
+              <ConfirmDialog
+                type="danger"
+                title="Konfirmasi Hapus Jadwal"
+                description="Jadwal akan dihapus untuk yang belum punya (perlu membuat jadwal lagi di menu jadwalmu). Untuk yang sudah punya akan dilepaskan dari kepemilikanmu. Yakin?"
+                triggerNode={
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={war.isSubmitting}
+                    className="rounded-none uppercase font-bold tracking-wider text-xs h-10 border border-white"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    <span>Hapus Terpilih</span>
+                  </Button>
+                }
+                confirmAction={handleSubmitRelease}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* DESKTOP/TABLET DUAL PANEL LAYOUT (≥ 768px) */}
+        <div className="hidden md:flex flex-col h-[calc(100vh-100px)]">
+          <div className="grow mt-4 border-2 border-black overflow-hidden bg-white">
+            <ResizablePanelGroup direction="horizontal">
               {/* War Action & Log Activity */}
               <ResizablePanel defaultSize={40} minSize={30}>
                 <div className="flex flex-col h-full bg-muted/10">

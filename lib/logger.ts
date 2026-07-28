@@ -6,7 +6,15 @@ function timestamp(): string {
 }
 
 export const logger = {
-  log: (...args: unknown[]) => console.log(`[${timestamp()}]`, ...args),
-  warn: (...args: unknown[]) => console.warn(`[${timestamp()}]`, ...args),
+  log: (...args: unknown[]) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[${timestamp()}]`, ...args);
+    }
+  },
+  warn: (...args: unknown[]) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[${timestamp()}]`, ...args);
+    }
+  },
   error: (...args: unknown[]) => console.error(`[${timestamp()}]`, ...args),
 };

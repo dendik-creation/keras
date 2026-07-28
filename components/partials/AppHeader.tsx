@@ -51,16 +51,16 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <header
       className={cn(
-        "w-full h-16 flex items-center justify-between px-6 bg-white border-b-2 border-black",
+        "w-full h-16 flex items-center justify-between px-3 md:px-6 bg-white border-b-2 border-black shrink-0",
         classNames,
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5 md:gap-4 overflow-hidden">
         <button
           type="button"
           onClick={onMenuClick}
           data-tour="schedule-sidebar-toggle"
-          className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center"
+          className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center shrink-0"
         >
           <Menu size={16} />
           <span className="sr-only">Toggle Sidebar</span>
@@ -69,19 +69,21 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         <Image
           src="/logo.png"
           alt="KeRaS"
-          width={32}
-          height={32}
-          className="md:hidden w-8 h-8 object-contain flex-shrink-0"
+          width={28}
+          height={28}
+          className="md:hidden w-7 h-7 object-contain flex-shrink-0"
         />
         {/* Page Title */}
-        {pageTitle && pageDescription && (
-          <div data-tour="schedule-page-title" className="flex flex-col border-l-2 border-black pl-4">
-            <h2 className="font-black text-sm uppercase tracking-widest text-black leading-none">
+        {pageTitle && (
+          <div data-tour="schedule-page-title" className="flex flex-col border-l-2 border-black pl-2.5 md:pl-4 overflow-hidden">
+            <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-black leading-none truncate">
               {pageTitle}
             </h2>
-            <span className="text-xs text-[#555555] font-medium mt-0.5">
-              {pageDescription}
-            </span>
+            {pageDescription && (
+              <span className="text-[10px] md:text-xs text-[#555555] font-medium mt-0.5 truncate">
+                {pageDescription}
+              </span>
+            )}
           </div>
         )}
       </div>

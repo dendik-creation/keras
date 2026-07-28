@@ -10,6 +10,7 @@ import type {
   GooeyToasterProps,
 } from "goey-toast";
 import "goey-toast/styles.css";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type { GooeyToasterProps };
 export type {
@@ -73,7 +74,9 @@ const gooeyToast = Object.assign(
 export { gooeyToast };
 
 function GooeyToaster(props: GooeyToasterProps) {
-  return <GooeyToasterPrimitive position="bottom-right" {...props} />;
+  const isMobile = useIsMobile();
+  const position = isMobile ? "top-center" : "bottom-right";
+  return <GooeyToasterPrimitive position={position} {...props} />;
 }
 
 export { GooeyToaster };

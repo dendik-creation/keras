@@ -15,7 +15,7 @@ type ConfirmDialogProps = {
   title: string;
   description: string;
   type: "danger" | "warning" | "info" | "success";
-  triggerNode: React.ReactNode;
+  triggerNode?: React.ReactNode;
   confirmAction?: () => void;
   disabled?: boolean;
   open?: boolean;
@@ -47,9 +47,11 @@ const ConfirmDialog = ({
 
   return (
     <Dialog open={actualOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild disabled={disabled}>
-        {triggerNode}
-      </DialogTrigger>
+      {triggerNode && (
+        <DialogTrigger asChild disabled={disabled}>
+          {triggerNode}
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

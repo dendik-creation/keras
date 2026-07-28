@@ -75,7 +75,6 @@ export const ScheduleCard = memo(function ScheduleCard({
 
   return (
     <motion.div
-      layoutId={`card-${cardKey}`}
       layout="position"
       initial="hidden"
       animate="visible"
@@ -107,11 +106,11 @@ export const ScheduleCard = memo(function ScheduleCard({
               </div>
             </div>
           )}
-          <CardContent className="p-2">
+          <CardContent className="p-3 flex flex-col justify-between min-h-[95px]">
             {course.saved_in_submit ? (
               <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-black text-white">
                 <div className="flex w-full justify-center items-center">
-                  <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
+                  <p className="m-0 text-[10px] w-full text-center uppercase tracking-wide font-bold">
                     Sudah punya
                   </p>
                 </div>
@@ -119,84 +118,103 @@ export const ScheduleCard = memo(function ScheduleCard({
             ) : (
               <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-[#F2F2F2] text-black border-t-2 border-black">
                 <div className="flex w-full justify-center items-center">
-                  <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
+                  <p className="m-0 text-[10px] w-full text-center uppercase tracking-wide font-bold">
                     Belum punya
                   </p>
                 </div>
               </div>
             )}
-            {course.semester && (
-              <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
-                {course.semester}
+
+            <div>
+              <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+                {course.course}
               </div>
-            )}
-            <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
-              {course.course}
+
+              <div className="flex flex-wrap items-center gap-1 mb-2">
+                {course.semester && (
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-black bg-[#F2F2F2] text-black uppercase">
+                    {course.semester}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-black">
+                  {course.code}
+                </Badge>
+                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-black text-white">
+                  Kelas {course.class}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-              <Badge variant="outline" className="h-4 px-1 text-[9px]">
-                {course.code}
-              </Badge>
-              <Badge variant="secondary" className="h-4 px-1 text-[9px]">
-                {course.class}
-              </Badge>
-            </div>
-            <div className="text-[10px] flex items-center gap-1 text-[#555555]">
-              <Clock className="w-3 h-3" /> {course.hour}
-            </div>
-            <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
-              <Building2 className="w-3 h-3" /> {course.classroom}
+
+            <div className="flex flex-col gap-1 text-[11px] text-[#555555] font-semibold items-start pt-1">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-black shrink-0" />
+                <span>{course.hour}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-black shrink-0" />
+                <span>{course.classroom}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <Card className="relative pt-0 border-2 border-black overflow-hidden bg-white shadow-none">
-          <CardContent className="p-2">
+        <Card className="relative pt-0 pb-7 border-2 border-black overflow-hidden bg-white shadow-none min-h-[95px]">
+          <CardContent className="p-3 flex flex-col justify-between min-h-[95px]">
             <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-black hover:bg-[#FF3000]">
               <button
-                className="text-white flex items-center justify-center gap-2 text-sm text-center w-full absolute bottom-0 cursor-pointer left-0"
+                className="text-white flex items-center justify-center gap-2 text-xs text-center w-full absolute bottom-0 cursor-pointer left-0 font-bold uppercase tracking-widest"
                 style={{ minHeight: "2rem" }}
                 onClick={() => onRemove?.(course)}
               >
                 <span>Hapus</span>
               </button>
             </div>
-            {course.semester && (
-              <div className="text-[9px] uppercase tracking-wide font-bold text-black/50 mb-0.5">
-                {course.semester}
+
+            <div>
+              <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+                {course.course}
               </div>
-            )}
-            <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
-              {course.course}
+
+              {course.is_removed && (
+                <div className="bg-[#FF3000] text-white text-[10px] p-1.5 font-bold rounded-none mb-1.5 leading-tight border border-black">
+                  Mata kuliah ini sudah tidak tersedia pada penawaran terbaru.
+                </div>
+              )}
+              {course.is_obsolete && !course.is_removed && (
+                <div className="bg-[#FED24F] text-black text-[10px] p-1.5 font-bold rounded-none mb-1.5 leading-tight border border-black">
+                  Data kampus berubah. Silakan pilih ulang kelas ini.
+                </div>
+              )}
+              {course.needs_manual_review && !course.is_removed && !course.is_obsolete && (
+                <div className="bg-orange-500 text-white text-[10px] p-1.5 font-bold rounded-none mb-1.5 leading-tight border border-black">
+                  Kami menemukan lebih dari satu kemungkinan kelas. Silakan pilih ulang.
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-1 mb-2">
+                {course.semester && (
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-black bg-[#F2F2F2] text-black uppercase">
+                    {course.semester}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-black">
+                  {course.code}
+                </Badge>
+                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-black text-white">
+                  Kelas {course.class}
+                </Badge>
+              </div>
             </div>
-            {course.is_removed && (
-              <div className="bg-[#FF3000] text-white text-[10px] p-1 font-bold rounded-none mb-1 leading-tight">
-                Mata kuliah ini sudah tidak tersedia pada penawaran terbaru.
+
+            <div className="flex flex-col gap-1 text-[11px] text-[#555555] font-semibold items-start pt-1">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-black shrink-0" />
+                <span>{course.hour}</span>
               </div>
-            )}
-            {course.is_obsolete && !course.is_removed && (
-              <div className="bg-[#FED24F] text-black text-[10px] p-1 font-bold rounded-none mb-1 leading-tight border border-black">
-                Data kampus berubah. Silakan pilih ulang kelas ini.
+              <div className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-black shrink-0" />
+                <span>{course.classroom}</span>
               </div>
-            )}
-            {course.needs_manual_review && !course.is_removed && !course.is_obsolete && (
-              <div className="bg-orange-500 text-white text-[10px] p-1 font-bold rounded-none mb-1 leading-tight">
-                Kami menemukan lebih dari satu kemungkinan kelas. Silakan pilih ulang.
-              </div>
-            )}
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-              <Badge variant="outline" className="h-4 px-1 text-[9px]">
-                {course.code}
-              </Badge>
-              <Badge variant="secondary" className="h-4 px-1 text-[9px]">
-                {course.class}
-              </Badge>
-            </div>
-            <div className="text-[10px] flex items-center gap-1 text-[#555555]">
-              <Clock className="w-3 h-3" /> {course.hour}
-            </div>
-            <div className="text-[10px] flex items-center gap-1 text-[#555555] mt-0.5">
-              <Building2 className="w-3 h-3" /> {course.classroom}
             </div>
           </CardContent>
         </Card>

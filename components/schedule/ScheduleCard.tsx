@@ -169,6 +169,21 @@ export const ScheduleCard = memo(function ScheduleCard({
             <div className="text-sm font-bold line-clamp-2 leading-tight mb-1 pr-3">
               {course.course}
             </div>
+            {course.is_removed && (
+              <div className="bg-[#FF3000] text-white text-[10px] p-1 font-bold rounded-none mb-1 leading-tight">
+                Mata kuliah ini sudah tidak tersedia pada penawaran terbaru.
+              </div>
+            )}
+            {course.is_obsolete && !course.is_removed && (
+              <div className="bg-[#FED24F] text-black text-[10px] p-1 font-bold rounded-none mb-1 leading-tight border border-black">
+                Data kampus berubah. Silakan pilih ulang kelas ini.
+              </div>
+            )}
+            {course.needs_manual_review && !course.is_removed && !course.is_obsolete && (
+              <div className="bg-orange-500 text-white text-[10px] p-1 font-bold rounded-none mb-1 leading-tight">
+                Kami menemukan lebih dari satu kemungkinan kelas. Silakan pilih ulang.
+              </div>
+            )}
             <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
               <Badge variant="outline" className="h-4 px-1 text-[9px]">
                 {course.code}

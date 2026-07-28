@@ -13,6 +13,9 @@ export type CourseSchedule = {
   saved_in_submit?: boolean;
   semester?: string;
   share_course_id?: string;
+  is_obsolete?: boolean;
+  needs_manual_review?: boolean;
+  is_removed?: boolean;
 };
 
 export type OfferingCourse = {

@@ -48,7 +48,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { getLocalStorage } from "@/helper/local_storage";
+import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import { reconcileSavedSchedule } from "@/modules/schedule/reconcile_saved_schedule";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
@@ -105,7 +106,47 @@ export default function Page() {
         return;
       }
 
+      // Reconcile saved schedule atomically against the newly fetched offering
+      const reconcileResult = reconcileSavedSchedule(savedSchedule, finalData);
+
+      if (!reconcileResult.success) {
+        gooeyToast.error("Gagal Sinkronisasi Jadwal", {
+          description:
+            reconcileResult.error || "Validasi data penawaran terbaru gagal",
+        });
+        return;
+      }
+
+      // Atomic persistence
       setOfferingCourse(finalData);
+      setSavedSchedule(reconcileResult.reconciledSchedule);
+      setSelectedCourses(reconcileResult.reconciledSchedule);
+      setLocalStorage("last_reconciled_at", new Date().toISOString());
+
+      const { summary } = reconcileResult;
+      const totalProcessed = summary.matched + summary.obsolete + summary.removed + summary.manual_review;
+
+      if (totalProcessed > 0 && (summary.updated > 0 || summary.unchanged > 0)) {
+        gooeyToast.success("Ketersediaan Jadwal Diperbarui", {
+          description: `${summary.updated + summary.unchanged} mata kuliah berhasil diselaraskan dengan data terbaru kampus.`,
+        });
+      } else if (totalProcessed === 0) {
+        gooeyToast.success("Ketersediaan Jadwal Diperbarui", {
+          description: "Data penawaran terbaru kampus berhasil ditarik.",
+        });
+      }
+
+      if (summary.obsolete > 0 || summary.removed > 0) {
+        gooeyToast.warning("Data Kampus Berubah", {
+          description: `${summary.obsolete + summary.removed} mata kuliah perlu diperiksa karena sudah berubah.`,
+        });
+      }
+
+      if (summary.manual_review > 0) {
+        gooeyToast.warning("Konfirmasi Diperlukan", {
+          description: `${summary.manual_review} mata kuliah membutuhkan konfirmasi ulang.`,
+        });
+      }
     } catch (error) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Gagal mengambil jadwal kuliah",

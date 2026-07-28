@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CalendarSearch, Clock } from "lucide-react";
+import { CalendarSearch } from "lucide-react";
 import { CourseSchedule } from "@/types/course_schedule";
 import { parseTimeRange } from "@/helper/frontend_helper";
 import { ScheduleCard } from "./ScheduleCard";
+import { SwipedCardProvider, useSwipedCardContext } from "./ScheduleCardContext";
 import { cn } from "@/lib/utils";
 
 interface SegmentedSchedulePreviewProps {
@@ -27,7 +28,7 @@ const DAYS = [
   { key: "jumat", label: "Jum", full: "Jumat" },
 ];
 
-export function SegmentedSchedulePreview({
+function SegmentedSchedulePreviewInner({
   selectedCourses,
   courses,
   onRemoveCourse,
@@ -39,8 +40,13 @@ export function SegmentedSchedulePreview({
 }: SegmentedSchedulePreviewProps) {
   const [activeDay, setActiveDay] = useState<string>("senin");
   const activeCourses = courses ?? selectedCourses ?? [];
+  const { closeAllSwipedCards } = useSwipedCardContext();
 
-  // Derived state: calculate courses grouped by day directly without useEffect race conditions
+  const handleSelectDay = (dayKey: string) => {
+    closeAllSwipedCards();
+    setActiveDay(dayKey);
+  };
+
   const coursesByDay = useMemo(() => {
     const map: Record<string, CourseSchedule[]> = {
       senin: [],
@@ -75,7 +81,7 @@ export function SegmentedSchedulePreview({
 
   return (
     <div className={cn("flex flex-col gap-3 w-full", className)}>
-      {/* Segmented Day Selector: Swiss Style with top red indicator for active state */}
+      {/* Segmented Day Selector */}
       <div className="grid grid-cols-5 gap-1.5 p-1 bg-white border-2 border-black">
         {DAYS.map((d) => {
           const count = (coursesByDay[d.key] || []).length;
@@ -84,7 +90,7 @@ export function SegmentedSchedulePreview({
             <button
               key={d.key}
               type="button"
-              onClick={() => setActiveDay(d.key)}
+              onClick={() => handleSelectDay(d.key)}
               className={cn(
                 "relative flex flex-col items-center justify-center py-2 px-1 text-xs font-black uppercase tracking-wider transition-all duration-150 border-2 select-none",
                 isActive
@@ -113,7 +119,7 @@ export function SegmentedSchedulePreview({
         })}
       </div>
 
-      {/* Active Day Header: Swiss Style clean white/grey header with thin border */}
+      {/* Active Day Header */}
       <div className="flex justify-between items-center px-3.5 py-2 bg-[#F2F2F2] text-black border-2 border-black">
         <div className="flex items-center gap-2">
           <h4 className="font-black text-sm uppercase tracking-widest text-black">
@@ -171,5 +177,13 @@ export function SegmentedSchedulePreview({
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export function SegmentedSchedulePreview(props: SegmentedSchedulePreviewProps) {
+  return (
+    <SwipedCardProvider>
+      <SegmentedSchedulePreviewInner {...props} />
+    </SwipedCardProvider>
   );
 }

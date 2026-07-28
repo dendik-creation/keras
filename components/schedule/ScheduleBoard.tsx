@@ -5,6 +5,7 @@ import { motion, useReducedMotion, type Transition } from "motion/react";
 import { CourseSchedule } from "@/types/course_schedule";
 import { parseTimeRange } from "@/helper/frontend_helper";
 import { ScheduleDayColumn } from "./ScheduleDayColumn";
+import { SwipedCardProvider } from "./ScheduleCardContext";
 
 interface ScheduleBoardProps {
   selectedCourses?: CourseSchedule[];
@@ -18,15 +19,16 @@ interface ScheduleBoardProps {
 
 const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-export function ScheduleBoard({
-  selectedCourses,
-  courses,
-  onRemoveCourse,
-  onCardClick,
-  isSubmitMode = false,
-  readyReleases = [],
-  isSubmitting = false,
-}: ScheduleBoardProps) {
+export function ScheduleBoard(props: ScheduleBoardProps) {
+  const {
+    selectedCourses,
+    courses,
+    onRemoveCourse,
+    onCardClick,
+    isSubmitMode = false,
+    readyReleases = [],
+    isSubmitting = false,
+  } = props;
   const shouldReduceMotion = useReducedMotion() ?? false;
   const activeCourses = courses ?? selectedCourses ?? [];
 
@@ -66,27 +68,29 @@ export function ScheduleBoard({
       };
 
   return (
-    <motion.div
-      layout
-      transition={transitionConfig}
-      className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150"
-    >
-      {DAYS.map((day) => {
-        const dayCourses = coursesByDay[day.toLowerCase()] || [];
-        return (
-          <ScheduleDayColumn
-            key={day}
-            day={day}
-            courses={dayCourses}
-            onRemoveCourse={onRemoveCourse}
-            onCardClick={onCardClick}
-            isSubmitMode={isSubmitMode}
-            readyReleases={readyReleases}
-            isSubmitting={isSubmitting}
-            shouldReduceMotion={shouldReduceMotion}
-          />
-        );
-      })}
-    </motion.div>
+    <SwipedCardProvider>
+      <motion.div
+        layout
+        transition={transitionConfig}
+        className="grid grid-cols-1 md:grid-cols-5 gap-2 md:min-w-150"
+      >
+        {DAYS.map((day) => {
+          const dayCourses = coursesByDay[day.toLowerCase()] || [];
+          return (
+            <ScheduleDayColumn
+              key={day}
+              day={day}
+              courses={dayCourses}
+              onRemoveCourse={onRemoveCourse}
+              onCardClick={onCardClick}
+              isSubmitMode={isSubmitMode}
+              readyReleases={readyReleases}
+              isSubmitting={isSubmitting}
+              shouldReduceMotion={shouldReduceMotion}
+            />
+          );
+        })}
+      </motion.div>
+    </SwipedCardProvider>
   );
 }

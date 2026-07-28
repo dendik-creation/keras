@@ -59,7 +59,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         <button
           type="button"
           onClick={onMenuClick}
-          data-tour="schedule-sidebar-toggle"
+          data-tour-desktop="schedule-sidebar-toggle"
           className="hidden md:flex border-2 border-black rounded-none hover:bg-[#FF3000] hover:text-white transition-colors duration-200 w-8 h-8 items-center justify-center shrink-0"
         >
           <Menu size={16} />
@@ -75,7 +75,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         />
         {/* Page Title */}
         {pageTitle && (
-          <div data-tour="schedule-page-title" className="flex flex-col border-l-2 border-black pl-2.5 md:pl-4 overflow-hidden">
+          <div data-tour-desktop="schedule-page-title" data-tour-mobile="schedule-page-title" className="flex flex-col border-l-2 border-black pl-2.5 md:pl-4 overflow-hidden">
             <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-black leading-none truncate">
               {pageTitle}
             </h2>

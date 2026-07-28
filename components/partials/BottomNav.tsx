@@ -15,7 +15,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t-2 border-black grid grid-cols-2 h-16">
+    <nav data-tour-mobile="schedule-sidebar-toggle" className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t-2 border-black grid grid-cols-2 h-16">
       {navItems.map((item) => {
         const isActive =
           pathname === item.url || pathname.includes(item.url);

@@ -1,18 +1,4 @@
-export interface OnboardingStepConfig {
-  id: string;
-  target: string;
-  title: string;
-  text: string;
-  attachToOptions?: {
-    element: string;
-    on?: "top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end" | "auto";
-  };
-}
-
-export interface RouteOnboardingConfig {
-  route: string;
-  steps: OnboardingStepConfig[];
-}
+import { RouteOnboardingConfig } from "./types";
 
 export const ONBOARDING_CONFIGS: Record<string, RouteOnboardingConfig> = {
   "/schedule": {
@@ -20,45 +6,85 @@ export const ONBOARDING_CONFIGS: Record<string, RouteOnboardingConfig> = {
     steps: [
       {
         id: "schedule-page-title",
-        target: '[data-tour="schedule-page-title"]',
         title: "Jadwal KRS-MU",
         text: "Ini adalah halaman Jadwal KRS-MU. Kamu sedang berada di ruang utama untuk menyusun jadwal kuliah.",
-        attachToOptions: { element: '[data-tour="schedule-page-title"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="schedule-page-title"]',
+        mobileTarget: '[data-tour-mobile="schedule-page-title"]',
+        desktopPlacement: "bottom-start",
+        mobilePlacement: "bottom",
       },
       {
         id: "schedule-course-list",
-        target: '[data-tour="schedule-course-list"]',
         title: "Daftar Mata Kuliah",
         text: "Di sini kamu akan melihat daftar mata kuliah yang tersedia sesuai prodi kamu.",
-        attachToOptions: { element: '[data-tour="schedule-course-list"]', on: "right" },
+        desktopTarget: '[data-tour-desktop="schedule-course-list"]',
+        mobileTarget: '[data-tour-mobile="schedule-course-list"]',
+        desktopPlacement: "right",
+        mobilePlacement: "top",
       },
       {
         id: "schedule-refresh-button",
-        target: '[data-tour="schedule-refresh-button"]',
         title: "Perbarui Ketersediaan",
         text: "KeRaS akan mengambil jadwal terbaru dari KRS kampus agar daftar tetap akurat.",
-        attachToOptions: { element: '[data-tour="schedule-refresh-button"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="schedule-refresh-button"]',
+        mobileTarget: '[data-tour-mobile="schedule-refresh-button"]',
+        desktopPlacement: "bottom",
+        mobilePlacement: "bottom",
       },
       {
         id: "schedule-timetable",
-        target: '[data-tour="schedule-timetable"]',
         title: "Tabel Jadwal",
         text: "Ruang ini menampilkan jadwal yang sudah kamu bentuk.",
-        attachToOptions: { element: '[data-tour="schedule-timetable"]', on: "left" },
+        desktopTarget: '[data-tour-desktop="schedule-timetable"]',
+        mobileTarget: '[data-tour-mobile="schedule-timetable"]',
+        desktopPlacement: "left",
+        mobilePlacement: "top",
       },
       {
         id: "schedule-actions",
-        target: '[data-tour="schedule-actions"]',
         title: "Aksi Jadwal",
         text: "Di sini kamu bisa simpan jadwal, hapus jadwal, berbagi jadwal sesama prodi, dan membuat jadwal dengan AI.",
-        attachToOptions: { element: '[data-tour="schedule-actions"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="schedule-actions"]',
+        mobileTarget: '[data-tour-mobile="schedule-actions"]',
+        desktopPlacement: "bottom",
+        mobilePlacement: "top",
+        async beforeShow() {
+          const desktopBtn = document.querySelector<HTMLElement>('[data-tour-desktop="schedule-actions"]');
+          const mobileBtn = document.querySelector<HTMLElement>('[data-tour-mobile="schedule-actions"]');
+          const isDropdownOpen = !!document.querySelector('[role="menu"]');
+          if (desktopBtn && desktopBtn.offsetParent !== null && !isDropdownOpen) {
+            desktopBtn.click();
+          } else if (mobileBtn && mobileBtn.offsetParent !== null && !isDropdownOpen) {
+            mobileBtn.click();
+          }
+        },
+        async beforeHide() {
+          const isDropdownOpen = !!document.querySelector('[role="menu"]');
+          if (isDropdownOpen) {
+            const desktopBtn = document.querySelector<HTMLElement>('[data-tour-desktop="schedule-actions"]');
+            if (desktopBtn && desktopBtn.offsetParent !== null) {
+              desktopBtn.click();
+            } else {
+              document.body.click();
+            }
+          }
+        },
       },
       {
         id: "schedule-sidebar-toggle",
-        target: '[data-tour="schedule-sidebar-toggle"]',
         title: "Navigasi Menu",
         text: "Klik di sini untuk membuka menu lain dan berpindah ke halaman lain.",
-        attachToOptions: { element: '[data-tour="schedule-sidebar-toggle"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="schedule-sidebar-toggle"]',
+        mobileTarget: '[data-tour-mobile="schedule-sidebar-toggle"]',
+        desktopPlacement: "right",
+        mobilePlacement: "top",
+        async beforeShow() {
+          const overlay = document.querySelector<HTMLElement>('[data-state="open"]');
+          if (overlay && overlay.getAttribute("role") === "dialog") {
+            const close = overlay.querySelector<HTMLElement>("button");
+            close?.click();
+          }
+        },
       },
     ],
   },
@@ -67,31 +93,39 @@ export const ONBOARDING_CONFIGS: Record<string, RouteOnboardingConfig> = {
     steps: [
       {
         id: "war-control-panel",
-        target: '[data-tour="war-control-panel"]',
         title: "Pusat Kendali Perang",
         text: "Ini adalah pusat kendali untuk memulai submit jadwal yang sudah kamu siapkan.",
-        attachToOptions: { element: '[data-tour="war-control-panel"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="war-control-panel"]',
+        mobileTarget: '[data-tour-mobile="war-control-panel"]',
+        desktopPlacement: "bottom",
+        mobilePlacement: "bottom",
       },
       {
         id: "war-schedule-table",
-        target: '[data-tour="war-schedule-table"]',
         title: "Tabel Jadwal Perang",
         text: "Bagian ini menampilkan jadwal final dan status setiap kelas.",
-        attachToOptions: { element: '[data-tour="war-schedule-table"]', on: "left" },
+        desktopTarget: '[data-tour-desktop="war-schedule-table"]',
+        mobileTarget: '[data-tour-mobile="war-schedule-table"]',
+        desktopPlacement: "left",
+        mobilePlacement: "top",
       },
       {
         id: "war-activity-log",
-        target: '[data-tour="war-activity-log"]',
         title: "Aktivitas Perang",
         text: "Semua histori aksi perang KRS dicatat di sini.",
-        attachToOptions: { element: '[data-tour="war-activity-log"]', on: "right" },
+        desktopTarget: '[data-tour-desktop="war-activity-log"]',
+        mobileTarget: '[data-tour-mobile="war-activity-log"]',
+        desktopPlacement: "right",
+        mobilePlacement: "top",
       },
       {
         id: "war-remove-selected",
-        target: '[data-tour="war-remove-selected"]',
         title: "Hapus Terpilih",
         text: "Gunakan ini untuk melepas mata kuliah yang sudah didapat atau menghapus mata kuliah yang belum berhasil.",
-        attachToOptions: { element: '[data-tour="war-remove-selected"]', on: "bottom" },
+        desktopTarget: '[data-tour-desktop="war-remove-selected"]',
+        mobileTarget: '[data-tour-mobile="war-remove-selected"]',
+        desktopPlacement: "bottom",
+        mobilePlacement: "top",
       },
     ],
   },

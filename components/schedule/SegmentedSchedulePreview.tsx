@@ -116,7 +116,6 @@ export function SegmentedSchedulePreview({
       {/* Active Day Header: Swiss Style clean white/grey header with thin border */}
       <div className="flex justify-between items-center px-3.5 py-2 bg-[#F2F2F2] text-black border-2 border-black">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-[#FF3000]" />
           <h4 className="font-black text-sm uppercase tracking-widest text-black">
             {activeDayObj.full}
           </h4>

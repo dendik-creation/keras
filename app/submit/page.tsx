@@ -104,7 +104,7 @@ export default function Page() {
         {/* MOBILE ADAPTIVE SINGLE-COLUMN LAYOUT (≤ 767px) */}
         <div className="md:hidden flex flex-col gap-5 pb-28">
           {/* 1. Progress Card */}
-          <div className="bg-white text-black p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] space-y-2">
+          <div data-tour-mobile="war-control-panel" className="bg-white text-black p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] space-y-2">
             <div className="flex justify-between items-center">
               <span className="font-black text-xs uppercase tracking-widest text-[#FF3000]">
                 PERANG KRS
@@ -183,7 +183,7 @@ export default function Page() {
           )}
 
           {/* 3. Schedule Preview (Segmented Day Selector) */}
-          <div className="flex flex-col gap-2">
+          <div data-tour-mobile="war-schedule-table" className="flex flex-col gap-2">
             <div className="flex justify-between items-center px-1">
               <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
                 <Sword className="w-4 h-4 text-[#FF3000]" /> Jadwal Perang KRS
@@ -204,7 +204,7 @@ export default function Page() {
           </div>
 
           {/* 4. Activity (Timeline) */}
-          <div className="flex flex-col gap-2">
+          <div data-tour-mobile="war-activity-log" className="flex flex-col gap-2">
             <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2 px-1">
               <Sword className="w-4 h-4 text-[#FF3000]" /> Aktivitas Perang (
               {war.logs.length})
@@ -232,7 +232,7 @@ export default function Page() {
                           {log.durationMs !== undefined && (
                             <Badge
                               variant="outline"
-                              className="border-black text-[9px] h-4 px-1 bg-white font-bold"
+                              className="border-black text-[9px] h-4 px-1 bg-[#FFFFFF] font-bold"
                             >
                               {log.durationMs}ms
                             </Badge>
@@ -288,6 +288,7 @@ export default function Page() {
                 description="Jadwal akan dihapus untuk yang belum punya (perlu membuat jadwal lagi di menu jadwalmu). Untuk yang sudah punya akan dilepaskan dari kepemilikanmu. Yakin?"
                 triggerNode={
                   <Button
+                    data-tour-mobile="war-remove-selected"
                     variant="destructive"
                     size="sm"
                     disabled={war.isSubmitting}
@@ -319,7 +320,7 @@ export default function Page() {
                       width: "100%",
                     }}
                   >
-                    <div data-tour="war-control-panel" className="p-4 border-b-2 border-black bg-white space-y-4">
+                    <div data-tour-desktop="war-control-panel" className="p-4 border-b-2 border-black bg-white space-y-4">
                       <div className="">
                         <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                           <Sword className="w-5 h-5" /> Ayo Perang KRS
@@ -399,7 +400,7 @@ export default function Page() {
                     </div>
                   </ProgressBorder>
 
-                  <div data-tour="war-activity-log" className="grow overflow-auto flex flex-col">
+                  <div data-tour-desktop="war-activity-log" className="grow overflow-auto flex flex-col">
                     <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">
                       <span className="text-xs font-black uppercase tracking-widest text-black">
                         Aktivitas perang ({war.logs.length} aktivitas)
@@ -509,7 +510,7 @@ export default function Page() {
 
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
-                <div data-tour="war-schedule-table" className="flex flex-col h-full bg-white">
+                <div data-tour-desktop="war-schedule-table" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
                       <h3 className="font-black text-lg uppercase tracking-tight">
@@ -527,7 +528,7 @@ export default function Page() {
                         triggerNode={
                           <span>
                             <Button
-                              data-tour="war-remove-selected"
+                              data-tour-desktop="war-remove-selected"
                               variant={"destructive"}
                               size={"sm"}
                               type="button"

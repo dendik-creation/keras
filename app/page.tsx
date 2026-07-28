@@ -361,7 +361,14 @@ export default function Page() {
         </div>
         <p className="gsap-statement-body opacity-0 max-w-4xl text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.05]">
           Keras{" "}
-          <span className="text-[#FF3000]">Mengamankan</span> 1 semester untukmu {"& sedikit "} <span className="text-[#FF3000]">Sikma</span>😹
+          <span className="text-[#FF3000]">Mengamankan</span> 1 semester untukmu  <sup>
+            <a
+              href="#note-1"
+              className="text-[#FF3000] group-hover:text-white hover:underline text-sm font-bold"
+            >
+              1
+            </a>
+          </sup> {"& sedikit "} <span className="text-[#FF3000]">Sikma</span>😹
         </p>
       </section>
 
@@ -423,10 +430,10 @@ export default function Page() {
               sistem universitas tanpa klik satu-satu.{" "}
               <sup>
                 <a
-                  href="#note-1"
+                  href="#note-2"
                   className="text-[#FF3000] group-hover:text-white hover:underline font-bold"
                 >
-                  1
+                  2
                 </a>
               </sup>
             </p>
@@ -471,10 +478,10 @@ export default function Page() {
               memastikan kamu tidak tertinggal ingpo.{" "}
               <sup>
                 <a
-                  href="#note-2"
+                  href="#note-3"
                   className="text-[#FF3000] group-hover:text-white font-bold"
                 >
-                  2
+                  3
                 </a>
               </sup>
             </p>
@@ -513,14 +520,13 @@ export default function Page() {
               >
                 01
               </span>
-              <h3 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-6">
-                Yang Kami
+              <h3 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.9] mb-6">
+                Yang KeRaS.
                 <br />
                 <span className="text-[#FF3000]">Simpan</span>
               </h3>
               <p className="text-[#555555] leading-relaxed font-medium max-w-md">
-                Statistik penggunaan secara anonim. NIM-mu selalu disamarkan
-                dan tidak ada data pribadi yang disimpan.
+              Hanya aktivitasmu untuk analitik dan sebagai bahan evaluasi KeRaS berikutnya.
               </p>
             </div>
 
@@ -531,10 +537,10 @@ export default function Page() {
               >
                 02
               </span>
-              <h3 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-6 text-white">
+              <h3 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.9] mb-6 text-white">
                 Yang Tidak
                 <br />
-                <span className="text-[#FF3000]">Kami Sentuh</span>
+                <span className="text-[#FF3000]">KeRaS. Sentuh</span>
               </h3>
               <p className="text-white/70 leading-relaxed font-medium max-w-md">
                 <strong className="text-white">KeRaS</strong> hanya
@@ -554,8 +560,8 @@ export default function Page() {
         <div className="gsap-changelog-label opacity-0 mb-16 md:mb-24">
           <SectionLabel index="04" label="Changelog" />
           <h2 className="mt-6 text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase text-black">
-            Developer
-            <span className="block text-[#FF3000]">Ngapain Aja Sih</span>
+            Perjalanan KeRaS
+            <span className="block text-[#FF3000]">Apa Aja Sih</span>
           </h2>
         </div>
 
@@ -711,14 +717,20 @@ export default function Page() {
               className="text-sm text-white/50 font-medium leading-tight"
               id="note-1"
             >
-              1. Peningkatan peluang bergantung pada performa sistem dari situs
-              resmi universitas.
+              1. Bergantung terhadap ketersediaan kelas yang dibuka universitas.
             </small>
             <small
               className="text-sm text-white/50 font-medium leading-tight"
               id="note-2"
             >
-              2. Trigger manual dari mahasiswa untuk mendapatkan jadwal
+              2. Peningkatan peluang bergantung pada performa sistem dari situs
+              resmi universitas.
+            </small>
+            <small
+              className="text-sm text-white/50 font-medium leading-tight"
+              id="note-3"
+            >
+              3. Trigger manual dari mahasiswa untuk mendapatkan jadwal
               terbaru.
             </small>
           </div>

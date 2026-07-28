@@ -1,22 +1,37 @@
 @import "shepherd.js/dist/css/shepherd.css";
 
-/* Neo-brutalist styling for Shepherd.js in KeRaS */
+/* Swiss Style Neo-brutalist styling for Shepherd.js in KeRaS */
 .shepherd-element {
   border: 3px solid #000000 !important;
   border-radius: 0 !important;
   box-shadow: 6px 6px 0px #000000 !important;
   background-color: #ffffff !important;
   font-family: inherit !important;
-  max-width: 400px !important;
+  max-width: 420px !important;
+  width: 100% !important;
   padding: 0 !important;
   z-index: 99999 !important;
+  animation: shepherdFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shepherdFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .shepherd-modal-overlay-container {
-  opacity: 0.6 !important;
+  opacity: 0.45 !important;
   z-index: 99990 !important;
+  transition: opacity 200ms ease !important;
 }
 
+/* Header */
 .shepherd-header {
   background-color: #f2f2f2 !important;
   border-bottom: 2px solid #000000 !important;
@@ -46,6 +61,11 @@
   background: transparent !important;
   border: none !important;
   cursor: pointer !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .shepherd-cancel-icon:hover {
@@ -53,6 +73,7 @@
   opacity: 1 !important;
 }
 
+/* Body Text */
 .shepherd-text {
   padding: 16px !important;
   font-size: 0.875rem !important;
@@ -61,6 +82,7 @@
   font-weight: 500 !important;
 }
 
+/* Footer & Buttons */
 .shepherd-footer {
   padding: 12px 16px !important;
   border-top: 2px solid #000000 !important;
@@ -81,6 +103,10 @@
   padding: 8px 14px !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
+  min-height: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .shepherd-button-secondary {
@@ -118,4 +144,48 @@
 .shepherd-arrow:before {
   background: #ffffff !important;
   border-color: #000000 !important;
+}
+
+/* TABLET RESPONSIVE (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .shepherd-element {
+    max-width: 340px !important;
+  }
+}
+
+/* MOBILE RESPONSIVE (< 768px) */
+@media (max-width: 767px) {
+  .shepherd-element {
+    width: min(340px, 90vw) !important;
+    max-width: 90vw !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+  }
+
+  .shepherd-modal-overlay-container {
+    opacity: 0.6 !important;
+  }
+
+  .shepherd-footer {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .shepherd-button {
+    width: 100% !important;
+    min-height: 44px !important;
+    font-size: 0.8rem !important;
+    padding: 10px 16px !important;
+  }
+
+  .shepherd-arrow {
+    transform: scale(0.75) !important;
+  }
+}
+
+/* Hide FAB AI on schedule page when onboarding tour is active */
+body.shepherd-active [data-tour="schedule-fab-ai"] {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }

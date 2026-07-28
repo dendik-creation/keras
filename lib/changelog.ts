@@ -91,10 +91,11 @@ const changelogHistories = [
   {
     version: "2.1.3",
     date: "8 Jul 2026",
-    title: "Docker Self-Hosting",
+    title: "Local Setup",
     changes: [
       "Ada docker compose untuk yang mau setup di local",
-      "Bisa memakai image ghcr di registry KeRaS."
+      "Bisa memakai image ghcr di registry KeRaS.",
+      "Tidak ada analitik yang disimpan"
     ],
   },
   {

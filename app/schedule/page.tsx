@@ -338,9 +338,6 @@ export default function Page() {
               </span>
               <div className="text-3xl font-black text-[#FF3000] tabular-nums tracking-tight flex items-baseline gap-1">
                 {totalSKS}{" "}
-                <span className="text-xs font-semibold text-black/60">
-                  / 24 SKS
-                </span>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -354,11 +351,9 @@ export default function Page() {
                 Jadwal Terpilih
               </span>
             </div>
-          </div>
-
-          {/* 2. Primary Action Button */}
+          </div>          {/* 2. Primary Action Button */}
           <Button
-            data-tour="schedule-refresh-button"
+            data-tour-mobile="schedule-refresh-button"
             disabled={loading}
             onClick={handleFindSchedules}
             className="w-full h-12 bg-black text-white hover:bg-[#FF3000] border-2 border-black rounded-none uppercase font-bold tracking-widest text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
@@ -374,11 +369,12 @@ export default function Page() {
           {/* Mobile Actions Menu (Bottom Sheet) */}
           <div className="flex items-center justify-between border-b-2 border-black pb-2 pt-1">
             <span className="font-black text-xs uppercase tracking-widest text-black">
-              Aksi & Navigasi
+              Aksi {"& Navigasi"}
             </span>
             <Sheet open={openMobileSheet} onOpenChange={setOpenMobileSheet}>
               <SheetTrigger asChild>
                 <Button
+                  data-tour-mobile="schedule-actions"
                   variant="outline"
                   size="sm"
                   className="border-2 border-black rounded-none uppercase font-bold text-xs tracking-wider"
@@ -488,7 +484,7 @@ export default function Page() {
           )}
 
           {/* 4. Course List Accordion */}
-          <div className="flex flex-col gap-2">
+          <div data-tour-mobile="schedule-course-list" className="flex flex-col gap-2">
             <div className="flex justify-between items-center px-1">
               <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-[#FF3000]" /> Daftar Mata
@@ -496,7 +492,7 @@ export default function Page() {
               </h3>
               {data[0]?.latest_update && (
                 <span className="text-[10px] text-muted-foreground font-semibold">
-                  Update: {ymdToIdDate(data[0].latest_update, true)}
+                  Data per {ymdToIdDate(data[0].latest_update, true)}
                 </span>
               )}
             </div>
@@ -636,10 +632,9 @@ export default function Page() {
           </div>
 
           {/* 5. Schedule Preview (Segmented Day Selector) */}
-          <div className="flex flex-col gap-2 mt-2">
+          <div data-tour-mobile="schedule-timetable" className="flex flex-col gap-2 mt-2">
             <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
-              <CalendarClock className="w-4 h-4 text-[#FF3000]" /> Preview
-              Jadwal Mobile
+              <CalendarClock className="w-4 h-4 text-[#FF3000]" /> Preview Jadwal
             </h3>
             <SegmentedSchedulePreview
               selectedCourses={selectedCourses}
@@ -650,6 +645,7 @@ export default function Page() {
           {/* 6. Floating AI Button (FAB) */}
           <motion.button
             type="button"
+            data-tour-mobile="schedule-fab-ai"
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.05 }}
             onClick={(e) => openGenerateAiDialog(e)}
@@ -668,7 +664,7 @@ export default function Page() {
               {/* Schedule Offer */}
               <ResizablePanel defaultSize={40} minSize={30}>
                 <ScrollArea className="h-full bg-[#F2F2F2]">
-                  <div data-tour="schedule-course-list" className="p-4 space-y-4">
+                  <div data-tour-desktop="schedule-course-list" className="p-4 space-y-4">
                     <div className="flex flex-col gap-2">
                       <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
                         <BookOpen className="w-5 h-5" /> Daftar Mata Kuliah
@@ -678,7 +674,7 @@ export default function Page() {
                           `Data terbaru pada ${ymdToIdDate(data[0].latest_update, true)}`}
                       </p>
                       <Button
-                        data-tour="schedule-refresh-button"
+                        data-tour-desktop="schedule-refresh-button"
                         disabled={loading}
                         onClick={handleFindSchedules}
                         size={"sm"}
@@ -841,7 +837,7 @@ export default function Page() {
 
               {/* Table Of Your Custom Schedule */}
               <ResizablePanel defaultSize={60} minSize={30}>
-                <div data-tour="schedule-timetable" className="flex flex-col h-full bg-white">
+                <div data-tour-desktop="schedule-timetable" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
                       <h3 className="font-black text-lg uppercase tracking-tight">
@@ -864,7 +860,7 @@ export default function Page() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            data-tour="schedule-actions"
+                            data-tour-desktop="schedule-actions"
                             size="sm"
                             variant="outline"
                             className="rounded-none border-2 border-black uppercase font-bold tracking-widest"

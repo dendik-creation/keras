@@ -3,8 +3,16 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Shepherd, { StepOptionsButton } from "shepherd.js";
+import { flip, shift, offset } from "@floating-ui/dom";
 import { ONBOARDING_CONFIGS } from "@/lib/onboarding/config";
+import { resolveTourStep } from "@/lib/onboarding/target-resolver";
 import { isOnboardingSeen, markOnboardingSeen } from "@/lib/onboarding/storage";
+import {
+  getDeviceType,
+  getModalPadding,
+  getModalRadius,
+  scrollToTargetAsync,
+} from "@/lib/onboarding/responsive";
 import "./ShepherdStyles.css";
 
 export default function OnboardingController() {
@@ -13,7 +21,6 @@ export default function OnboardingController() {
   const activeRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Determine active route config
     const currentConfig = ONBOARDING_CONFIGS[pathname];
     if (!currentConfig) {
       if (tourRef.current && tourRef.current.isActive()) {
@@ -21,13 +28,13 @@ export default function OnboardingController() {
         tourRef.current = null;
       }
       activeRouteRef.current = null;
+      document.body.classList.remove("shepherd-active");
       return;
     }
 
     const route = currentConfig.route;
     activeRouteRef.current = route;
 
-    // Check if already seen
     if (isOnboardingSeen(route)) {
       return;
     }
@@ -39,31 +46,49 @@ export default function OnboardingController() {
     const startTourWhenReady = () => {
       if (!isMounted) return;
 
-      // Check if target for the first step is in DOM
-      const firstTarget = currentConfig.steps[0]?.target;
-      const element = firstTarget ? document.querySelector(firstTarget) : null;
+      const deviceType = getDeviceType(window.innerWidth);
+      const firstStepResolved = resolveTourStep(currentConfig.steps[0], deviceType);
+      const firstElement = document.querySelector(firstStepResolved.target);
 
-      if (!element && checkAttempts < maxAttempts) {
+      if (!firstElement && checkAttempts < maxAttempts) {
         checkAttempts++;
-        setTimeout(startTourWhenReady, 250);
+        requestAnimationFrame(() => {
+          setTimeout(startTourWhenReady, 250);
+        });
         return;
       }
 
       if (!isMounted) return;
 
-      // Clean up previous tour if any
       if (tourRef.current && tourRef.current.isActive()) {
         tourRef.current.cancel();
       }
 
+      document.body.classList.add("shepherd-active");
+
       const tour = new Shepherd.Tour({
         useModalOverlay: true,
+        exitOnEsc: true,
+        keyboardNavigation: true,
         defaultStepOptions: {
           classes: "keras-shepherd-theme",
-          scrollTo: { behavior: "smooth", block: "center" },
+          scrollTo: false,
+          modalOverlayOpeningPadding: getModalPadding(deviceType),
+          modalOverlayOpeningRadius: getModalRadius(deviceType),
           cancelIcon: {
             enabled: true,
             label: "Tutup",
+          },
+          floatingUIOptions: {
+            middleware: [
+              offset(10),
+              flip({
+                fallbackPlacements: ["top", "bottom", "left", "right"],
+              }),
+              shift({
+                padding: 12,
+              }),
+            ],
           },
         },
       });
@@ -71,6 +96,7 @@ export default function OnboardingController() {
       const totalSteps = currentConfig.steps.length;
 
       currentConfig.steps.forEach((step, index) => {
+        const resolvedStep = resolveTourStep(step, deviceType);
         const isFirst = index === 0;
         const isLast = index === totalSteps - 1;
 
@@ -78,7 +104,10 @@ export default function OnboardingController() {
           {
             text: "Lewati",
             classes: "shepherd-button shepherd-button-danger",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               markOnboardingSeen(route);
               this.cancel();
             },
@@ -89,7 +118,10 @@ export default function OnboardingController() {
           buttons.push({
             text: "Kembali",
             classes: "shepherd-button shepherd-button-secondary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               this.back();
             },
           });
@@ -99,7 +131,10 @@ export default function OnboardingController() {
           buttons.push({
             text: "Selesai",
             classes: "shepherd-button shepherd-button-primary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               markOnboardingSeen(route);
               this.complete();
             },
@@ -108,43 +143,53 @@ export default function OnboardingController() {
           buttons.push({
             text: "Lanjut",
             classes: "shepherd-button shepherd-button-primary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               this.next();
             },
           });
         }
 
-        // Handle attachTo options safely in case element isn't in DOM
-        const targetEl = document.querySelector(step.target);
-        const attachTo = targetEl ? step.attachToOptions : undefined;
+        const targetEl = document.querySelector(resolvedStep.target);
 
         tour.addStep({
-          id: step.id,
-          title: step.title,
-          text: step.text,
-          attachTo: attachTo,
+          id: resolvedStep.id,
+          title: resolvedStep.title,
+          text: resolvedStep.text,
+          attachTo: targetEl ? { element: resolvedStep.target, on: resolvedStep.placement } : undefined,
           buttons: buttons,
+          async beforeShowPromise() {
+            if (resolvedStep.beforeShow) {
+              await resolvedStep.beforeShow();
+            }
+            const el = document.querySelector<HTMLElement>(resolvedStep.target);
+            if (el) {
+              await scrollToTargetAsync(el);
+            }
+          },
         });
       });
 
-      tour.on("complete", () => {
+      const cleanupTourState = () => {
+        document.body.classList.remove("shepherd-active");
         markOnboardingSeen(route);
-      });
+      };
 
-      tour.on("cancel", () => {
-        markOnboardingSeen(route);
-      });
+      tour.on("complete", cleanupTourState);
+      tour.on("cancel", cleanupTourState);
 
       tourRef.current = tour;
       tour.start();
     };
 
-    // Small delay to ensure React hydration finish
     const timer = setTimeout(startTourWhenReady, 300);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
+      document.body.classList.remove("shepherd-active");
       if (tourRef.current && tourRef.current.isActive()) {
         tourRef.current.cancel();
         tourRef.current = null;
@@ -166,14 +211,32 @@ export default function OnboardingController() {
         tourRef.current = null;
       }
 
+      const deviceType = getDeviceType(window.innerWidth);
+      document.body.classList.add("shepherd-active");
+
       const tour = new Shepherd.Tour({
         useModalOverlay: true,
+        exitOnEsc: true,
+        keyboardNavigation: true,
         defaultStepOptions: {
           classes: "keras-shepherd-theme",
-          scrollTo: { behavior: "smooth", block: "center" },
+          scrollTo: false,
+          modalOverlayOpeningPadding: getModalPadding(deviceType),
+          modalOverlayOpeningRadius: getModalRadius(deviceType),
           cancelIcon: {
             enabled: true,
             label: "Tutup",
+          },
+          floatingUIOptions: {
+            middleware: [
+              offset(10),
+              flip({
+                fallbackPlacements: ["top", "bottom", "left", "right"],
+              }),
+              shift({
+                padding: 12,
+              }),
+            ],
           },
         },
       });
@@ -181,6 +244,7 @@ export default function OnboardingController() {
       const totalSteps = currentConfig.steps.length;
 
       currentConfig.steps.forEach((step, index) => {
+        const resolvedStep = resolveTourStep(step, deviceType);
         const isFirst = index === 0;
         const isLast = index === totalSteps - 1;
 
@@ -188,7 +252,10 @@ export default function OnboardingController() {
           {
             text: "Lewati",
             classes: "shepherd-button shepherd-button-danger",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               markOnboardingSeen(targetRoute);
               this.cancel();
             },
@@ -199,7 +266,10 @@ export default function OnboardingController() {
           buttons.push({
             text: "Kembali",
             classes: "shepherd-button shepherd-button-secondary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               this.back();
             },
           });
@@ -209,7 +279,10 @@ export default function OnboardingController() {
           buttons.push({
             text: "Selesai",
             classes: "shepherd-button shepherd-button-primary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               markOnboardingSeen(targetRoute);
               this.complete();
             },
@@ -218,31 +291,42 @@ export default function OnboardingController() {
           buttons.push({
             text: "Lanjut",
             classes: "shepherd-button shepherd-button-primary",
-            action() {
+            async action() {
+              if (resolvedStep.beforeHide) {
+                await resolvedStep.beforeHide();
+              }
               this.next();
             },
           });
         }
 
-        const targetEl = document.querySelector(step.target);
-        const attachTo = targetEl ? step.attachToOptions : undefined;
+        const targetEl = document.querySelector(resolvedStep.target);
 
         tour.addStep({
-          id: step.id,
-          title: step.title,
-          text: step.text,
-          attachTo: attachTo,
+          id: resolvedStep.id,
+          title: resolvedStep.title,
+          text: resolvedStep.text,
+          attachTo: targetEl ? { element: resolvedStep.target, on: resolvedStep.placement } : undefined,
           buttons: buttons,
+          async beforeShowPromise() {
+            if (resolvedStep.beforeShow) {
+              await resolvedStep.beforeShow();
+            }
+            const el = document.querySelector<HTMLElement>(resolvedStep.target);
+            if (el) {
+              await scrollToTargetAsync(el);
+            }
+          },
         });
       });
 
-      tour.on("complete", () => {
+      const cleanupTourState = () => {
+        document.body.classList.remove("shepherd-active");
         markOnboardingSeen(targetRoute);
-      });
+      };
 
-      tour.on("cancel", () => {
-        markOnboardingSeen(targetRoute);
-      });
+      tour.on("complete", cleanupTourState);
+      tour.on("cancel", cleanupTourState);
 
       tourRef.current = tour;
       tour.start();

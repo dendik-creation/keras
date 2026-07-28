@@ -82,8 +82,6 @@ export function reconcileSavedSchedule(
   savedSchedule: CourseSchedule[] | null | undefined,
   newOffering: OfferingCourse[] | null | undefined,
 ): ReconcileResult {
-  console.log("[schedule-sync] starting reconciliation");
-
   const initialSchedule = savedSchedule || [];
   const offeringList = newOffering || [];
 
@@ -97,9 +95,6 @@ export function reconcileSavedSchedule(
   };
 
   if (initialSchedule.length === 0) {
-    console.log(
-      "[schedule-sync] reconciliation summary matched=0 updated=0 unchanged=0 obsolete=0 manual_review=0 removed=0",
-    );
     return {
       success: true,
       reconciledSchedule: [],
@@ -158,7 +153,6 @@ export function reconcileSavedSchedule(
 
   for (const savedCourse of initialSchedule) {
     let matchedOffering: CourseSchedule | null = null;
-    let matchStrategy = "";
 
     const savedClass = normalizeClass(savedCourse.class);
     const savedCode = normalizeCode(savedCourse.code);
@@ -169,10 +163,6 @@ export function reconcileSavedSchedule(
       const key = `${savedShareId}::${savedClass}`;
       if (mapShareIdClass.has(key)) {
         matchedOffering = mapShareIdClass.get(key)!;
-        matchStrategy = "share_course_id";
-        console.log(
-          `[schedule-sync] matched via share_course_id course=${matchedOffering.course}`,
-        );
       }
     }
 
@@ -181,8 +171,6 @@ export function reconcileSavedSchedule(
       const key = `${savedCode}::${savedClass}`;
       if (mapCodeClass.has(key)) {
         matchedOffering = mapCodeClass.get(key)!;
-        matchStrategy = "course_code";
-        console.log(`[schedule-sync] matched via course_code`);
       }
     }
 
@@ -191,8 +179,6 @@ export function reconcileSavedSchedule(
       const fpKey = `${normalizeText(savedCourse.course)}::${savedClass}::${normalizeText(savedCourse.semester)}::${normalizeSks(savedCourse.sks)}`;
       if (mapFingerprint.has(fpKey)) {
         matchedOffering = mapFingerprint.get(fpKey)!;
-        matchStrategy = "fingerprint";
-        console.log(`[schedule-sync] matched via fingerprint`);
       }
     }
 
@@ -218,10 +204,7 @@ export function reconcileSavedSchedule(
 
       if (candidates.length === 1) {
         matchedOffering = candidates[0];
-        matchStrategy = "fuzzy";
-        console.log(`[schedule-sync] matched via fuzzy`);
       } else if (candidates.length > 1) {
-        console.log(`[schedule-sync] manual review required`);
         summary.manual_review++;
         reconciledSchedule.push({
           ...savedCourse,
@@ -238,11 +221,6 @@ export function reconcileSavedSchedule(
 
       const isScheduleIdChanged =
         savedCourse.schedule_id !== matchedOffering.schedule_id;
-      if (isScheduleIdChanged) {
-        console.log(
-          `[schedule-sync] course updated schedule_id changed old=${savedCourse.schedule_id} new=${matchedOffering.schedule_id}`,
-        );
-      }
 
       const hasDynamicChange =
         isScheduleIdChanged ||
@@ -292,7 +270,6 @@ export function reconcileSavedSchedule(
           schedule_submit_id: "",
         });
       } else {
-        console.log(`[schedule-sync] course marked obsolete`);
         summary.obsolete++;
         reconciledSchedule.push({
           ...savedCourse,
@@ -314,9 +291,6 @@ export function reconcileSavedSchedule(
         !item.day ||
         !item.hour
       ) {
-        console.error(
-          `[schedule-sync] validation failed for course ${item.course}`,
-        );
         return {
           success: false,
           reconciledSchedule: initialSchedule,
@@ -326,10 +300,6 @@ export function reconcileSavedSchedule(
       }
     }
   }
-
-  console.log(
-    `[schedule-sync] reconciliation summary matched=${summary.matched} updated=${summary.updated} unchanged=${summary.unchanged} obsolete=${summary.obsolete} manual_review=${summary.manual_review} removed=${summary.removed}`,
-  );
 
   return {
     success: true,

@@ -701,14 +701,25 @@ export default function Page() {
             <span className="text-[#FF3000]">aman.</span>
           </h3>
 
-          <a href="https://github.com/dendik-creation/keras/" target="_blank">
-            <Button
-              variant="outline"
-              className="rounded-none border-2 border-white bg-transparent text-white hover:bg-[#FF3000] hover:border-[#FF3000] gap-2 uppercase font-bold tracking-widest transition-colors duration-200"
-            >
-              <Github className="w-4 h-4" /> kasih star 😁
-            </Button>
-          </a>
+          <div className="flex flex-col sm:flex-row gap-6 sm:items-center w-full">
+            <a href="https://github.com/dendik-creation/keras/" target="_blank" rel="noreferrer">
+              <Button
+                variant="outline"
+                className="rounded-none border-2 border-white bg-transparent text-white hover:bg-[#FF3000] hover:border-[#FF3000] gap-2 uppercase font-bold tracking-widest transition-colors duration-200"
+              >
+                <Github className="w-4 h-4" /> kasih star 😁
+              </Button>
+            </a>
+            
+            <div className="flex items-center gap-6">
+              <Link href="/privacy" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+                Terms
+              </Link>
+            </div>
+          </div>
 
           <div className="w-full h-0.5 bg-white/20" />
 

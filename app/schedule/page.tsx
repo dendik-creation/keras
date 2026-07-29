@@ -62,16 +62,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
 import { useResumeAdoptToast } from "@/hooks/useResumeAdoptToast";
 import { motion } from "motion/react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { ActionDrawer } from "@/components/schedule/ActionDrawer";
 import { SegmentedSchedulePreview } from "@/components/schedule/SegmentedSchedulePreview";
 import { cn } from "@/lib/utils";
 import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
+import { AnimatePresence } from "motion/react";
 
 export default function Page() {
   const [activeUser, setActiveUser] = useState<{
@@ -89,7 +84,7 @@ export default function Page() {
     setSavedSchedule,
   } = useLocalStorageContext();
   const data = useMemo(() => offeringCourse ?? [], [offeringCourse]);
-  const [loading, setLoading] = useState(false);
+  const [syncState, setSyncState] = useState<"idle" | "loading" | "completed">("idle");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(
     null,
   );
@@ -100,10 +95,18 @@ export default function Page() {
   const [resumeAdopt, setResumeAdopt] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
+  useEffect(() => {
+    if (syncState === "completed") {
+      const timer = setTimeout(() => setSyncState("idle"), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [syncState]);
+
   useResumeAdoptToast({ resumeAdopt, isHydrated, offeringCourse });
 
   const findAvailableSchedules = async () => {
-    setLoading(true);
+    if (syncState !== "idle") return;
+    setSyncState("loading");
     setProgress(null);
     try {
       const finalData = await fetchOfferingCourses((done, total) =>
@@ -114,6 +117,7 @@ export default function Page() {
         gooeyToast.error("Terjadi Kesalahan", {
           description: "Gagal mengambil jadwal kuliah",
         });
+        setSyncState("idle");
         return;
       }
 
@@ -124,6 +128,7 @@ export default function Page() {
           description:
             reconcileResult.error || "Validasi data penawaran terbaru gagal",
         });
+        setSyncState("idle");
         return;
       }
 
@@ -160,13 +165,13 @@ export default function Page() {
           description: `${summary.manual_review} mata kuliah membutuhkan konfirmasi ulang.`,
         });
       }
+
+      setSyncState("completed");
     } catch (error) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Gagal mengambil jadwal kuliah",
       });
-    } finally {
-      setLoading(false);
-      setProgress(null);
+      setSyncState("idle");
     }
   };
 
@@ -322,6 +327,52 @@ export default function Page() {
     return groupedData.filter((g) => g.semester === selectedSemFilter);
   }, [groupedData, selectedSemFilter]);
 
+  const actionItems = [
+    {
+      id: "generate-ai",
+      title: "Generate Jadwal AI",
+      icon: <Sparkles className="w-4 h-4" />,
+      variant: "primary" as const,
+      disabled: isWarInProgress,
+      onClick: (e: React.MouseEvent) => {
+        setOpenMobileSheet(false);
+        openGenerateAiDialog(e);
+      },
+    },
+    {
+      id: "share-schedule",
+      title: "Bagikan Jadwal",
+      icon: <Share2 className="w-4 h-4" />,
+      variant: "default" as const,
+      onClick: (e: React.MouseEvent) => {
+        setOpenMobileSheet(false);
+        openShareScheduleDialog(e);
+      },
+    },
+    {
+      id: "save-schedule",
+      title: "Simpan Jadwal",
+      icon: <Save className="w-4 h-4" />,
+      variant: "default" as const,
+      disabled: isWarInProgress,
+      onClick: () => {
+        setOpenMobileSheet(false);
+        handleSaveKRS();
+      },
+    },
+    {
+      id: "clear-schedule",
+      title: "Bersihkan Jadwal",
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: "danger" as const,
+      disabled: isWarInProgress,
+      onClick: (e: React.MouseEvent) => {
+        setOpenMobileSheet(false);
+        openRemoveScheduleDialog(e);
+      },
+    },
+  ];
+
   return (
     <AuthAccess>
       <AppLayout
@@ -354,11 +405,11 @@ export default function Page() {
           </div>          {/* 2. Primary Action Button */}
           <Button
             data-tour-mobile="schedule-refresh-button"
-            disabled={loading}
+            disabled={syncState !== "idle"}
             onClick={handleFindSchedules}
             className="w-full h-12 bg-black text-white hover:bg-[#FF3000] border-2 border-black rounded-none uppercase font-bold tracking-widest text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
-            {loading ? (
+            {syncState !== "idle" ? (
               <Loader2 className="animate-spin w-5 h-5" />
             ) : (
               <ScanTextIcon className="w-5 h-5 text-[#FF3000]" />
@@ -366,82 +417,27 @@ export default function Page() {
             <span>Perbarui Ketersediaan Jadwal</span>
           </Button>
 
-          {/* Mobile Actions Menu (Bottom Sheet) */}
+          {/* Mobile Actions Menu (Bottom Drawer) */}
           <div className="flex items-center justify-between border-b-2 border-black pb-2 pt-1">
             <span className="font-black text-xs uppercase tracking-widest text-black">
               Aksi {"& Navigasi"}
             </span>
-            <Sheet open={openMobileSheet} onOpenChange={setOpenMobileSheet}>
-              <SheetTrigger asChild>
-                <Button
-                  data-tour-mobile="schedule-actions"
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-black rounded-none uppercase font-bold text-xs tracking-wider"
-                >
-                  Aksi Jadwal{" "}
-                  <ChevronDown className="w-4 h-4 ml-1 text-[#FF3000]" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side="bottom"
-                className="border-t-2 border-black rounded-none p-4 bg-white space-y-3"
-              >
-                <SheetHeader className="p-0 border-b-2 border-black pb-2 text-left">
-                  <SheetTitle className="font-black text-base uppercase tracking-widest">
-                    Aksi Jadwal KRS
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-2 border-black rounded-none font-bold uppercase tracking-wider text-xs h-11"
-                    onClick={(e) => {
-                      setOpenMobileSheet(false);
-                      openGenerateAiDialog(e);
-                    }}
-                    disabled={isWarInProgress}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2 text-[#FF3000]" />
-                    Generate Jadwal AI
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-2 border-black rounded-none font-bold uppercase tracking-wider text-xs h-11"
-                    onClick={(e) => {
-                      setOpenMobileSheet(false);
-                      openShareScheduleDialog(e);
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Bagikan Jadwal
-                  </Button>
-                  <Button
-                    className="w-full justify-start bg-black text-white hover:bg-[#FF3000] border-2 border-black rounded-none font-bold uppercase tracking-wider text-xs h-11"
-                    onClick={() => {
-                      setOpenMobileSheet(false);
-                      handleSaveKRS();
-                    }}
-                    disabled={isWarInProgress}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Simpan Jadwal
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="w-full justify-start rounded-none font-bold uppercase tracking-wider text-xs h-11"
-                    onClick={(e) => {
-                      setOpenMobileSheet(false);
-                      openRemoveScheduleDialog(e);
-                    }}
-                    disabled={isWarInProgress}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Bersihkan / Hapus Jadwal
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Button
+              data-tour-mobile="schedule-actions"
+              variant="outline"
+              size="sm"
+              className="border-2 border-black rounded-none uppercase font-bold text-xs tracking-wider"
+              onClick={() => setOpenMobileSheet(true)}
+            >
+              Aksi Jadwal{" "}
+              <ChevronDown className="w-4 h-4 ml-1 text-[#FF3000]" />
+            </Button>
+            
+            <ActionDrawer 
+              open={openMobileSheet}
+              onOpenChange={setOpenMobileSheet}
+              actions={actionItems}
+            />
           </div>
 
           {/* 3. Semester Filter Chips */}
@@ -497,138 +493,161 @@ export default function Page() {
               )}
             </div>
 
-            {loading ? (
-              <ScheduleLoadingProgress progress={progress} className="min-h-[220px]" />
-            ) : filteredGroupedData.length === 0 ? (
-              <div className="p-8 border-2 border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 text-center">
-                <SearchX className="w-8 h-8 text-[#FF3000]" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Tidak ada mata kuliah
-                </span>
-              </div>
-            ) : (
-              <Accordion type="multiple" className="w-full space-y-2">
-                {filteredGroupedData.map((sem, semIdx) => (
-                  <AccordionItem
-                    key={semIdx}
-                    value={`sem-${semIdx}`}
-                    className="border-2 border-black bg-white"
-                  >
-                    <AccordionTrigger className="font-black text-xs uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-3 py-2 border-b-2 border-black">
-                      <div className="flex justify-between items-center w-full pr-2">
-                        <span>{sem.semester}</span>
-                        <Badge
-                          variant="outline"
-                          className="border-black text-[10px] bg-white"
-                        >
-                          {Object.keys(sem.groupedCourses).length} Mata Kuliah
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-2 space-y-2 bg-[#F2F2F2]">
-                      {Object.entries(sem.groupedCourses).map(
-                        ([code, classes]) => {
-                          const courseName = classes[0].course;
-                          const isCourseSelected = selectedCourses.some(
-                            (sc) => sc.code === code,
-                          );
-                          const selectedClass = selectedCourses.find(
-                            (sc) => sc.code === code,
-                          )?.class;
-                          return (
-                            <Accordion
-                              key={code}
-                              type="single"
-                              collapsible
-                              className="w-full"
+            <AnimatePresence mode="wait">
+              {syncState !== "idle" ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <ScheduleLoadingProgress syncState={syncState === "loading" ? "fetching" : syncState} progress={progress} className="min-h-[220px]" />
+                </motion.div>
+              ) : filteredGroupedData.length === 0 ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="p-8 border-2 border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 text-center"
+                >
+                  <SearchX className="w-8 h-8 text-[#FF3000]" />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Tidak ada mata kuliah
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <Accordion type="multiple" className="w-full space-y-2">
+                    {filteredGroupedData.map((sem, semIdx) => (
+                      <AccordionItem
+                        key={semIdx}
+                        value={`sem-${semIdx}`}
+                        className="border-2 border-black bg-white"
+                      >
+                        <AccordionTrigger className="font-black text-xs uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-3 py-2 border-b-2 border-black">
+                          <div className="flex justify-between items-center w-full pr-2">
+                            <span>{sem.semester}</span>
+                            <Badge
+                              variant="outline"
+                              className="border-black text-[10px] bg-white"
                             >
-                              <AccordionItem
-                                value={code}
-                                className="border-2 border-black bg-white"
-                              >
-                                <AccordionTrigger className="px-3 py-2 hover:no-underline text-left">
-                                  <div className="flex items-center justify-between w-full pr-2 gap-2">
-                                    <div className="flex flex-col text-left overflow-hidden">
-                                      <span className="font-bold text-xs text-black truncate">
-                                        {courseName}
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground font-semibold">
-                                        {code} • {classes[0].sks} SKS
-                                      </span>
-                                    </div>
-                                    {isCourseSelected && (
-                                      <Badge className="bg-black text-white text-[9px] uppercase font-bold shrink-0">
-                                        Kelas {selectedClass}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-2 space-y-2 bg-[#F2F2F2] border-t-2 border-black">
-                                  <div className="flex flex-col gap-2">
-                                    {classes.map((cls) => {
-                                      const isSelected = selectedCourses.some(
-                                        (sc) =>
-                                          sc.code === cls.code &&
-                                          sc.class === cls.class,
-                                      );
-                                      return (
-                                        <Card
-                                          key={cls.schedule_id}
-                                          onClick={() =>
-                                            handleSelectCourse({
-                                              ...cls,
-                                              semester: sem.semester,
-                                            })
-                                          }
-                                          className={cn(
-                                            "cursor-pointer border-2 p-2.5 transition-all shadow-none",
-                                            isSelected
-                                              ? "border-[#FF3000] bg-[#FF3000]/10 shadow-[2px_2px_0px_0px_rgba(255,48,0,1)]"
-                                              : "border-black bg-white hover:border-[#FF3000]",
-                                          )}
-                                        >
-                                          <div className="flex justify-between items-center mb-1">
-                                            <Badge
-                                              variant={
-                                                isSelected
-                                                  ? "default"
-                                                  : "outline"
+                              {Object.keys(sem.groupedCourses).length} Mata Kuliah
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-2 space-y-2 bg-[#F2F2F2]">
+                          {Object.entries(sem.groupedCourses).map(
+                            ([code, classes]) => {
+                              const courseName = classes[0].course;
+                              const isCourseSelected = selectedCourses.some(
+                                (sc) => sc.code === code,
+                              );
+                              const selectedClass = selectedCourses.find(
+                                (sc) => sc.code === code,
+                              )?.class;
+                              return (
+                                <Accordion
+                                  key={code}
+                                  type="single"
+                                  collapsible
+                                  className="w-full"
+                                >
+                                  <AccordionItem
+                                    value={code}
+                                    className="border-2 border-black bg-white"
+                                  >
+                                    <AccordionTrigger className="px-3 py-2 hover:no-underline text-left">
+                                      <div className="flex items-center justify-between w-full pr-2 gap-2">
+                                        <div className="flex flex-col text-left overflow-hidden">
+                                          <span className="font-bold text-xs text-black truncate">
+                                            {courseName}
+                                          </span>
+                                          <span className="text-[10px] text-muted-foreground font-semibold">
+                                            {code} • {classes[0].sks} SKS
+                                          </span>
+                                        </div>
+                                        {isCourseSelected && (
+                                          <Badge className="bg-black text-white text-[9px] uppercase font-bold shrink-0">
+                                            Kelas {selectedClass}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-2 space-y-2 bg-[#F2F2F2] border-t-2 border-black">
+                                      <div className="flex flex-col gap-2">
+                                        {classes.map((cls) => {
+                                          const isSelected = selectedCourses.some(
+                                            (sc) =>
+                                              sc.code === cls.code &&
+                                              sc.class === cls.class,
+                                          );
+                                          return (
+                                            <Card
+                                              key={cls.schedule_id}
+                                              onClick={() =>
+                                                handleSelectCourse({
+                                                  ...cls,
+                                                  semester: sem.semester,
+                                                })
                                               }
-                                              className={
+                                              className={cn(
+                                                "cursor-pointer border-2 p-2.5 transition-all shadow-none",
                                                 isSelected
-                                                  ? "bg-[#FF3000] text-white"
-                                                  : "border-black"
-                                              }
+                                                  ? "border-[#FF3000] bg-[#FF3000]/10 shadow-[2px_2px_0px_0px_rgba(255,48,0,1)]"
+                                                  : "border-black bg-white hover:border-[#FF3000]",
+                                              )}
                                             >
-                                              Kelas {cls.class}
-                                            </Badge>
-                                            <span className="text-[10px] font-bold text-black">
-                                              {cls.day}, {cls.hour}
-                                            </span>
-                                          </div>
-                                          <div className="text-[11px] text-[#555555] font-semibold flex items-center justify-between mt-1">
-                                            <span className="truncate pr-2">
-                                              {cls.lecture}
-                                            </span>
-                                            <span className="shrink-0 font-bold text-black">
-                                              {cls.classroom}
-                                            </span>
-                                          </div>
-                                        </Card>
-                                      );
-                                    })}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          );
-                        },
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
+                                              <div className="flex justify-between items-center mb-1">
+                                                <Badge
+                                                  variant={
+                                                    isSelected
+                                                      ? "default"
+                                                      : "outline"
+                                                  }
+                                                  className={
+                                                    isSelected
+                                                      ? "bg-[#FF3000] text-white"
+                                                      : "border-black"
+                                                  }
+                                                >
+                                                  Kelas {cls.class}
+                                                </Badge>
+                                                <span className="text-[10px] font-bold text-black">
+                                                  {cls.day}, {cls.hour}
+                                                </span>
+                                              </div>
+                                              <div className="text-[11px] text-[#555555] font-semibold flex items-center justify-between mt-1">
+                                                <span className="truncate pr-2">
+                                                  {cls.lecture}
+                                                </span>
+                                                <span className="shrink-0 font-bold text-black">
+                                                  {cls.classroom}
+                                                </span>
+                                              </div>
+                                            </Card>
+                                          );
+                                        })}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                </Accordion>
+                              );
+                            },
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 5. Schedule Preview (Segmented Day Selector) */}
@@ -675,12 +694,12 @@ export default function Page() {
                       </p>
                       <Button
                         data-tour-desktop="schedule-refresh-button"
-                        disabled={loading}
+                        disabled={syncState !== "idle"}
                         onClick={handleFindSchedules}
                         size={"sm"}
                         className="bg-black text-white hover:bg-[#FF3000] rounded-none uppercase font-bold tracking-widest"
                       >
-                        {loading ? (
+                        {syncState !== "idle" ? (
                           <Loader2 className="animate-spin" />
                         ) : (
                           <ScanTextIcon />
@@ -689,7 +708,7 @@ export default function Page() {
                       </Button>
                     </div>
 
-                    {!loading && data.length === 0 && isHydrated && (
+                    {syncState === "idle" && data.length === 0 && isHydrated && (
                       <div className="flex flex-col h-150 gap-3 justify-center items-center">
                         <SearchX className="text-[#FF3000]" />
                         <div className="text-center">
@@ -699,10 +718,25 @@ export default function Page() {
                       </div>
                     )}
 
-                    {loading ? (
-                      <ScheduleLoadingProgress progress={progress} className="min-h-[360px]" />
-                    ) : (
-                      <Accordion type="multiple" className="w-full">
+                    <AnimatePresence mode="wait">
+                      {syncState !== "idle" ? (
+                        <motion.div
+                          key="loading"
+                          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <ScheduleLoadingProgress progress={progress} syncState={syncState === "loading" ? "fetching" : syncState} className="min-h-[360px]" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="content"
+                          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <Accordion type="multiple" className="w-full">
                         {groupedData.length > 0 &&
                           groupedData.map((sem, semIdx) => (
                             <AccordionItem key={semIdx} value={`sem-${semIdx}`}>
@@ -828,7 +862,9 @@ export default function Page() {
                             </AccordionItem>
                           ))}
                       </Accordion>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </ScrollArea>
               </ResizablePanel>

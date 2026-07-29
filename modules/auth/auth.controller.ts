@@ -11,6 +11,7 @@ import {
   checkSessionStatus,
   loginToKrs,
 } from "@/modules/auth/auth.service";
+import { fetchKanalAvatar } from "@/modules/kanal/kanal.service";
 
 /** POST /api/login */
 export async function login(req: Request) {
@@ -38,11 +39,22 @@ export async function login(req: Request) {
 
     await setSessionCookie(result.sessionValue);
 
+    let user = result.user;
+    
+    if (credentials.avatarFetched) {
+      user.avatarFetched = credentials.avatarFetched;
+      user.avatarUrl = credentials.avatarUrl;
+    } else {
+      const avatarUrl = await fetchKanalAvatar(credentials);
+      user.avatarFetched = true;
+      user.avatarUrl = avatarUrl;
+    }
+
     return NextResponse.json(
       {
         success: true,
         redirectTarget: result.redirectTarget,
-        user: result.user,
+        user,
       },
       { status: 200 },
     );

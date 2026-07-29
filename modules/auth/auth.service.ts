@@ -11,6 +11,8 @@ export type KrsUser = {
   nim: string;
   major: string;
   degree: string;
+  avatarUrl?: string | null;
+  avatarFetched?: boolean;
 };
 
 export type LoginResult =
@@ -141,7 +143,7 @@ export async function loginToKrs({
 
 /** Extract profile (name, nim, major, degree) from the dashboard HTML. */
 function scrapeUser(finalHtml: string, username: string): KrsUser {
-  let userData: KrsUser = { name: "", nim: username, major: "", degree: "" };
+  let userData: KrsUser = { name: "", nim: username, major: "", degree: "", avatarFetched: false };
   const $finalHome = cheerio.load(finalHtml);
   const myNIM = $finalHome("a.link-primary").text().trim();
   const myName =
@@ -159,6 +161,7 @@ function scrapeUser(finalHtml: string, username: string): KrsUser {
       nim: myNIM || username,
       major: majorAndDegree.split(" - ")[0] || "",
       degree: majorAndDegree.split(" - ")[1] || "",
+      avatarFetched: false,
     };
   }
   return userData;

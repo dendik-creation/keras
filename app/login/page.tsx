@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import axios from "axios";
-import { setLocalStorage } from "@/helper/local_storage";
+import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import { trackLogin } from "@/lib/analytics/events";
 import GuestAccess from "@/components/middleware_wrapper/GuestAccess";
 import TurnstileGuard from "@/components/middleware_wrapper/TurnstileGuard";
@@ -49,7 +49,17 @@ export default function Page() {
     event.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/login", form, {
+      const activeUser = getLocalStorage("active_user") as any;
+      const avatarFetched = activeUser?.nim === form.username ? !!activeUser?.avatarFetched : false;
+      const avatarUrl = activeUser?.nim === form.username ? activeUser?.avatarUrl : null;
+
+      const payload = {
+        ...form,
+        avatarFetched,
+        avatarUrl,
+      };
+
+      const response = await axios.post("/api/login", payload, {
         headers: { "Content-Type": "application/json" },
       });
       if (response.data?.error === true) {

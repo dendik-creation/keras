@@ -26,6 +26,7 @@ export default function AppLayout({
     nim: "...",
     degree: "",
     major: "",
+    avatarUrl: null as string | null,
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -46,6 +47,7 @@ export default function AppLayout({
         <AppHeader
           name={user.name}
           nim={`${user.degree || ""} ${user.major || ""} - ${user.nim}`}
+          avatarUrl={user.avatarUrl}
           pageTitle={pageTitleHeader}
           pageDescription={pageDescriptionHeader}
           onMenuClick={() => setSidebarOpen(true)}

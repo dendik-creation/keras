@@ -17,6 +17,7 @@ interface AppHeaderProps {
   classNames?: string;
   name: string;
   nim: string;
+  avatarUrl?: string | null;
   pageTitle?: string;
   pageDescription?: string;
   onMenuClick?: () => void;
@@ -34,15 +35,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   classNames,
   name,
   nim,
+  avatarUrl,
   pageTitle,
   pageDescription,
   onMenuClick,
 }) => {
   const isMobile = useIsMobile();
-  const avatarSrc = useMemo(
+  const fallbackAvatar = useMemo(
     () => `/avatar/${avatars[Math.floor(Math.random() * avatars.length)]}`,
     [],
   );
+  const avatarSrc = avatarUrl || fallbackAvatar;
   const firstLetterCapitalized = (text: string) => {
     const newText = text.toLowerCase();
     const parts = newText.split(" ");
@@ -100,7 +103,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
             <Avatar size="lg" className="border-2 border-black rounded-none transition-colors duration-200 group-hover:bg-[#FF3000]">
-              <AvatarImage src={avatarSrc} alt={name} className="rounded-none" />
+              <AvatarImage loading="lazy" src={avatarSrc} alt={name} className="rounded-none object-cover" />
               <AvatarFallback className="rounded-none bg-black text-white font-black text-base group-hover:bg-[#FF3000]">
                 {firstLetterCapitalized(name)?.charAt(0)}
               </AvatarFallback>

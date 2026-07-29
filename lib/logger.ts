@@ -5,16 +5,25 @@ function timestamp(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+const formatTimestamp = () => {
+  const ts = timestamp();
+  if (typeof window === "undefined") {
+    // Server-side: Use ANSI escape codes (Cyan color)
+    return `\x1b[36m[${ts}]\x1b[0m`;
+  }
+  return `[${ts}]`;
+};
+
 export const logger = {
   log: (...args: unknown[]) => {
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[${timestamp()}]`, ...args);
+      console.log(formatTimestamp(), ...args);
     }
   },
   warn: (...args: unknown[]) => {
     if (process.env.NODE_ENV !== "production") {
-      console.warn(`[${timestamp()}]`, ...args);
+      console.warn(formatTimestamp(), ...args);
     }
   },
-  error: (...args: unknown[]) => console.error(`[${timestamp()}]`, ...args),
+  error: (...args: unknown[]) => console.error(formatTimestamp(), ...args),
 };

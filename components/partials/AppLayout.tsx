@@ -5,8 +5,6 @@ import AppSidebar from "@/components/partials/AppSidebar";
 import BottomNav from "@/components/partials/BottomNav";
 import OnboardingController from "@/components/onboarding/OnboardingController";
 import { getLocalStorage } from "@/helper/local_storage";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -54,8 +52,6 @@ export default function AppLayout({
         />
         <main className="flex-1 p-4 pb-24 md:pb-4 bg-[#F2F2F2] swiss-grid-pattern overflow-y-auto">
           {children}
-          <Analytics />
-          <SpeedInsights />
         </main>
       </div>
       <BottomNav />

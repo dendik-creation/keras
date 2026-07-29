@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 /** Name of the cookie mirroring the student's KRS session. */
 export const SESSION_COOKIE_NAME = "external_session";
 
-const SESSION_MAX_AGE = 60 * 60 * 2; // 2 hour
+const SESSION_MAX_AGE = 60 * 60 * 1.5; // 90 minutes
 
 /** Read the external session cookie, or `undefined` when absent. */
 export async function getSessionCookie() {

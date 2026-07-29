@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { envVariable } from "@/lib/utils";
 import { axiosScrapClient } from "@/helper/axios_client";
 import { createKeepAliveAgent } from "@/lib/server/https-agent";
+import { HttpError } from "@/lib/server/http-error";
 import type {
   DeleteTargetCourse,
   SyncTargetCourse,
@@ -41,7 +42,16 @@ export async function syncSchedules(
   const response = await axiosScrapClient.get(envVariable.KRS_SCHEDULES_FORM, {
     headers: { Cookie: sessionValue },
     httpsAgent: keepAliveAgent,
+    maxRedirects: 0,
+    validateStatus: (status) => status >= 200 && status < 500,
   });
+
+  if (response.status === 302 || response.status === 303) {
+    const redirectUrl = response.headers["location"];
+    if (redirectUrl?.includes("login")) {
+      throw new HttpError(401, "Session expires di kampus, silakan login ulang");
+    }
+  }
 
   const $ = cheerio.load(response.data);
   const alertTexts: string[] = [];
@@ -130,6 +140,10 @@ export async function submitSchedules(
   if (submitResponse.status === 302 || submitResponse.status === 303) {
     const redirectUrl = submitResponse.headers["location"];
 
+    if (redirectUrl?.includes("login")) {
+      throw new HttpError(401, "Session expires di kampus, silakan login ulang");
+    }
+
     if (redirectUrl) {
       const followResponse = await axiosScrapClient.get(redirectUrl, {
         headers: { Cookie: sessionValue },
@@ -211,8 +225,17 @@ export async function releaseSchedules(
     {
       headers: { Cookie: sessionValue },
       httpsAgent: keepAliveAgent,
+      maxRedirects: 0,
+      validateStatus: (status) => status >= 200 && status < 500,
     },
   );
+
+  if (pageResponse.status === 302 || pageResponse.status === 303) {
+    const redirectUrl = pageResponse.headers["location"];
+    if (redirectUrl?.includes("login")) {
+      throw new HttpError(401, "Session expires di kampus, silakan login ulang");
+    }
+  }
 
   const releasableCourseIds = collectReleasableIds(
     pageResponse.data,
@@ -247,6 +270,11 @@ export async function releaseSchedules(
   let htmlContent = releaseResponse.data;
   if (releaseResponse.status === 302 || releaseResponse.status === 303) {
     const redirectUrl = releaseResponse.headers["location"];
+
+    if (redirectUrl?.includes("login")) {
+      throw new HttpError(401, "Session expires di kampus, silakan login ulang");
+    }
+
     if (redirectUrl) {
       const followResponse = await axiosScrapClient.get(redirectUrl, {
         headers: { Cookie: sessionValue },

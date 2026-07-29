@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { envVariable } from "@/lib/utils";
 import { axiosScrapClient } from "@/helper/axios_client";
 import { createKeepAliveAgent } from "@/lib/server/https-agent";
+import { HttpError } from "@/lib/server/http-error";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { logger } from "@/lib/logger";
 
@@ -32,8 +33,20 @@ export async function getOfferingCourses(
   const fetchStart = Date.now();
   const mainResponse = await axiosScrapClient.get(
     envVariable.KRS_GET_SCHEDULES,
-    { headers, httpsAgent: keepAliveAgent },
+    { 
+      headers, 
+      httpsAgent: keepAliveAgent,
+      maxRedirects: 0,
+      validateStatus: (status) => status >= 200 && status < 500,
+    },
   );
+
+  if (mainResponse.status === 302 || mainResponse.status === 303) {
+    const redirectUrl = mainResponse.headers["location"];
+    if (redirectUrl?.includes("login")) {
+      throw new HttpError(401, "Session expires di kampus, silakan login ulang");
+    }
+  }
   logger.log(
     `[schedule] main page fetched: status=${mainResponse.status}, ${Date.now() - fetchStart}ms`,
   );

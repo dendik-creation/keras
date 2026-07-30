@@ -34,4 +34,9 @@ export const envVariable = {
   SHLINK_BASE_URL,
   SHLINK_API_KEY,
   APP_URL,
+  WAR_PRIORITY_ENABLED: process.env.WAR_PRIORITY_ENABLED === "true",
+  WAR_PRIORITY_NIMS: process.env.WAR_PRIORITY_NIMS || "",
+  WAR_PRIORITY_GATE_TIMEOUT_MS: parseInt(process.env.WAR_PRIORITY_GATE_TIMEOUT_MS || "12000", 10),
+  WAR_PENDING_PAYLOAD_TTL_SECONDS: parseInt(process.env.WAR_PENDING_PAYLOAD_TTL_SECONDS || "30", 10),
+  REDIS_URL: process.env.REDIS_URL || "",
 };

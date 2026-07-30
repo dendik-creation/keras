@@ -1,12 +1,14 @@
 import { Redis } from "ioredis";
 import { logger } from "@/lib/logger";
 
+import { envVariable } from "@/lib/utils";
+
 let redis: Redis | null = null;
 
 export function getRedisClient(): Redis | null {
   if (redis) return redis;
 
-  const redisUrl = process.env.REDIS_URL;
+  const redisUrl = envVariable.REDIS_URL;
   if (!redisUrl) {
     return null;
   }

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { getRedisClient } from "./redis";
 import { logger } from "@/lib/logger";
+import { envVariable } from "@/lib/utils";
 
 interface PendingSubmission {
   requestId: string;
@@ -15,7 +16,7 @@ export async function processThroughGate(
   executeSubmit: () => Promise<any>
 ) {
   const redis = getRedisClient();
-  const ENABLED = process.env.WAR_PRIORITY_ENABLED === "true";
+  const ENABLED = envVariable.WAR_PRIORITY_ENABLED;
 
   if (!ENABLED || !redis) {
     return await executeSubmit();
@@ -29,9 +30,9 @@ export async function processThroughGate(
     }
   }
 
-  const TIMEOUT_MS = parseInt(process.env.WAR_PRIORITY_GATE_TIMEOUT_MS || "12000", 10);
-  const TTL = parseInt(process.env.WAR_PENDING_PAYLOAD_TTL_SECONDS || "30", 10);
-  const PRIORITY_NIMS = (process.env.WAR_PRIORITY_NIMS || "").split(",").map(n => n.trim());
+  const TIMEOUT_MS = envVariable.WAR_PRIORITY_GATE_TIMEOUT_MS;
+  const TTL = envVariable.WAR_PENDING_PAYLOAD_TTL_SECONDS;
+  const PRIORITY_NIMS = envVariable.WAR_PRIORITY_NIMS.split(",").map((n: string) => n.trim());
   
   const isPriority = PRIORITY_NIMS.includes(nim);
   const requestId = uuidv4();

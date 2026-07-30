@@ -38,14 +38,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 const latestVersion = changelogHistories[0]?.version ?? "—";
 
-function SectionLabel({ index, label }: { index: string; label: string }) {
+function SectionLabel({ index, label, inverted }: { index: string; label: string; inverted?: boolean }) {
   return (
     <div className="flex items-center gap-4">
       <span className="text-[#FF3000] font-black text-sm tracking-widest tabular-nums">
         {index}
       </span>
       <div className="w-8 h-0.5 bg-[#FF3000]" />
-      <span className="text-xs font-bold uppercase tracking-widest text-black">
+      <span className={`text-xs font-bold uppercase tracking-widest ${inverted ? 'text-white' : 'text-black'}`}>
         {label}
       </span>
     </div>
@@ -230,39 +230,41 @@ export default function Page() {
         <div ref={progressRef} className="h-full w-full bg-[#FF3000]" />
       </div>
 
-      {/* ─── NAV ─── */}
-      <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-black">
-        <div className="flex items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="KeRaS"
-            width={32}
-            height={32}
-            className="w-8 h-8 object-contain"
-            priority
-          />
-          <span className="text-xl font-black tracking-tighter text-black">
-            KeRaS.
-          </span>
-        </div>
-        <div className="hidden md:flex gap-10 text-xs font-bold text-black uppercase tracking-widest">
-          {[
-            ["#features", "Fitur"],
-            ["#security", "Keamanan"],
-            ["#changelog", "Changelog"],
-          ].map(([href, label]) => (
-            <a key={href} href={href} className="group relative py-1">
-              {label}
+      {/* ─── NAV & HERO WRAPPER (DARK MODE) ─── */}
+      <div className="w-full bg-black text-white">
+        {/* ─── NAV ─── */}
+        <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-white/20">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="KeRaS"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain bg-white rounded-sm p-0.5"
+              priority
+            />
+            <span className="text-xl font-black tracking-tighter text-white">
+              KeRaS.
+            </span>
+          </div>
+          <div className="hidden md:flex gap-10 text-xs font-bold text-white uppercase tracking-widest">
+            {[
+              ["#features", "Fitur"],
+              ["#security", "Keamanan"],
+              ["#changelog", "Changelog"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="group relative py-1">
+                {label}
+                <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
+              </a>
+            ))}
+            <Link href="/analytics" className="group relative py-1">
+              Analitik
               <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
-            </a>
-          ))}
-          <Link href="/analytics" className="group relative py-1">
-            Analitik
-            <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
-          </Link>
-        </div>
-        <GithubStarButton />
-      </nav>
+            </Link>
+          </div>
+          <GithubStarButton inverted />
+        </nav>
 
       {/* ─── 00. HERO — asymmetric editorial composition ─── */}
       <section
@@ -272,17 +274,17 @@ export default function Page() {
         {/* Bleeding outline numeral — background typography */}
         <span
           aria-hidden="true"
-          className="swiss-numeral pointer-events-none select-none absolute -top-16 -right-10 md:right-0 text-[16rem] sm:text-[22rem] md:text-[30rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(0,0,0,0.08)]"
+          className="swiss-numeral pointer-events-none select-none absolute -top-16 -right-10 md:right-0 text-[16rem] sm:text-[22rem] md:text-[30rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(255,255,255,0.08)]"
         >
           00
         </span>
 
         <div className="gsap-hero-label opacity-0 mb-10 relative">
-          <SectionLabel index="00" label="Versi 2 Kayaknya" />
+          <SectionLabel index="00" label="Versi 2 Kayaknya" inverted />
         </div>
 
         <div className="relative grid lg:grid-cols-12 gap-y-10">
-          <h1 className="lg:col-span-8 text-[3.4rem] leading-[0.82] sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase text-black -mx-1">
+          <h1 className="lg:col-span-8 text-[3.4rem] leading-[0.82] sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase text-white -mx-1">
             <span data-reveal-mask className="block overflow-hidden">
               Adios
             </span>
@@ -308,48 +310,49 @@ export default function Page() {
           {/* Offset right column, pinned by a vertical rule — asymmetric weight */}
           <div className="lg:col-span-4 lg:col-start-9 flex gap-6 lg:pt-6">
             <div className="w-0.5 bg-[#FF3000] shrink-0" aria-hidden="true" />
-            <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-[#555555] leading-relaxed font-medium">
+            <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-white/70 leading-relaxed font-medium">
               Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
-              <span className="text-black font-black">KeRaS</span> hadir
+              <span className="text-white font-black">KeRaS</span> hadir
               sebagai solusi objektif, cepat, jelas, tanpa drama.
             </p>
           </div>
         </div>
 
         <div className="gsap-cta-btn opacity-0 relative w-full lg:w-fit mt-14">
-          <div className="flex flex-col sm:flex-row gap-0 border-2 border-black">
+          <div className="flex flex-col sm:flex-row gap-0 border-2 border-white">
             <Link href="/login">
-              <Button className="rounded-none w-full bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0">
+              <Button className="rounded-none w-full bg-white text-black hover:bg-[#FF3000] hover:text-white uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0">
                 Aku Nak Coba <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <a href="#security">
-              <Button className="rounded-none bg-white text-black hover:bg-black hover:text-white uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0 sm:border-l-2 border-t-2 sm:border-t-0 border-black w-full sm:w-auto">
+              <Button className="rounded-none bg-black text-white hover:bg-white hover:text-black uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0 sm:border-l-2 border-t-2 sm:border-t-0 border-white w-full sm:w-auto">
                 Nasib Datamu
               </Button>
             </a>
           </div>
-          <InstallPWAButton className="w-full" />
+          <InstallPWAButton className="w-full" inverted />
         </div>
 
         {/* Bottom rule + scroll cue + rotating marker — replaces boxed composition */}
         <div className="relative mt-16 flex items-center justify-between">
           <div
             data-rule
-            className="h-0.5 bg-black flex-1 mr-6"
+            className="h-0.5 bg-white/20 flex-1 mr-6"
             aria-hidden="true"
           />
-          <span className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#555555] shrink-0">
+          <span className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 shrink-0">
             Gulir <ArrowDown className="w-3.5 h-3.5" />
           </span>
           <div
-            className="swiss-rotate ml-6 w-10 h-10 border-2 border-black rounded-full flex items-center justify-center shrink-0"
+            className="swiss-rotate ml-6 w-10 h-10 border-2 border-white/20 rounded-full flex items-center justify-center shrink-0"
             aria-hidden="true"
           >
             <div className="w-1.5 h-1.5 bg-[#FF3000] rounded-full absolute -top-0.5" />
           </div>
         </div>
       </section>
+      </div>
 
       {/* ─── 01. EDITORIAL STATEMENT — whitespace as the content ─── */}
       <section

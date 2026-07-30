@@ -16,9 +16,11 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPWAButton({
   className,
   source = "landing_hero",
+  inverted,
 }: {
   className?: string;
   source?: string;
+  inverted?: boolean;
 }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
     null,
@@ -68,7 +70,7 @@ export default function InstallPWAButton({
   };
 
   const base =
-    "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0 border-black";
+    "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0";
 
   if (installed) {
     return null;
@@ -77,7 +79,7 @@ export default function InstallPWAButton({
   return (
     <Button
       onClick={handleClick}
-      className={cn(base, "bg-[#FF3000] text-white hover:bg-black", className)}
+      className={cn(base, inverted ? "border-white bg-[#FF3000] text-white hover:bg-white hover:text-black" : "border-black bg-[#FF3000] text-white hover:bg-black", className)}
     >
       <Download className="w-5 h-5 mr-2" /> Install App
     </Button>

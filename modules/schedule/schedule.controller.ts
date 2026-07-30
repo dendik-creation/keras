@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionCookie } from "@/lib/server/session";
 import { getOfferingCourses } from "@/modules/schedule/schedule.service";
 import { logger } from "@/lib/logger";
+import { isHttpError } from "@/lib/server/http-error";
 
 /**
  * GET /api/schedule

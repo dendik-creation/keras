@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { reconcileSavedSchedule } from "./reconcile_saved_schedule";
+import { reconcileSavedSchedule } from "@/modules/schedule/reconcile_saved_schedule";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { generateShareCourseId } from "@/helper/share_schedule_validation";
 

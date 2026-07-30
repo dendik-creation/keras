@@ -329,7 +329,7 @@ export function matchOfferingByCodeClass(
     matched: res.matched,
     missingIds: res.missingIds,
     corruptedIds: res.corruptedIds,
-    codeExistOnly: [],
+    codeExistOnly: res.codeExistOnly,
     summary: res.summary,
   };
 }

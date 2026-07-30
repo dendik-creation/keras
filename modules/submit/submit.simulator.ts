@@ -77,11 +77,12 @@ export async function simulateSyncSchedules(
 
   const schedules = targetCourses.map((target) => {
     const key = courseKey(target.code, target.class);
-    const isSecured = secured.has(key);
+    const simId = simScheduleId(target.code, target.class);
+    const isSecured = secured.has(key) || secured.has(simId);
     return {
       code: target.code,
       class: target.class,
-      schedule_submit_id: isSecured ? "" : simScheduleId(target.code, target.class),
+      schedule_submit_id: isSecured ? "" : simId,
     };
   });
 
@@ -104,7 +105,10 @@ export async function simulateSubmitSchedules(
   const messages: string[] = [];
 
   for (const scheduleId of scheduleIds) {
-    if (secured.has(scheduleId)) {
+    const parsed = parseSimScheduleId(scheduleId);
+    const key = parsed ? courseKey(parsed.code, parsed.klass) : scheduleId;
+
+    if (secured.has(scheduleId) || secured.has(key)) {
       messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah sudah tersimpan`);
       continue;
     }
@@ -113,6 +117,7 @@ export async function simulateSubmitSchedules(
     switch (outcome) {
       case "success":
         secured.add(scheduleId);
+        secured.add(key);
         messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah berhasil disimpan (Test Mode)`);
         break;
       case "class_full":

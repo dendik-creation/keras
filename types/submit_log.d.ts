@@ -1,6 +1,23 @@
+export type AttemptStatus =
+  | "waiting"
+  | "preparing"
+  | "processing"
+  | "submitting"
+  | "completed"
+  | "failed"
+  | "pending"
+  | "success";
+
+export type PreparationStatus =
+  | "idle"
+  | "preparing"
+  | "completed"
+  | "failed";
+
 export type SubmitLog = {
   attempt: number;
-  status: "pending" | "success";
+  phase?: number;
+  status: AttemptStatus;
   messages: {
     status: "success" | "error";
     message: string;
@@ -18,3 +35,6 @@ export type SubmitLog = {
     result: "success" | "error";
   }[];
 };
+
+
+

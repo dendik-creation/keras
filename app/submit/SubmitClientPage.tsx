@@ -9,6 +9,9 @@ import {
   CircleX,
   Trash2,
   BadgeQuestionMark,
+  Search,
+  PauseCircle,
+  Clock,
 } from "lucide-react";
 import ProgressBorder from "@/components/ProgressBorder";
 
@@ -38,10 +41,67 @@ import WarTestDebugPanel from "@/components/custom/WarTestDebugPanel";
 import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
 import { SegmentedSchedulePreview } from "@/components/schedule/SegmentedSchedulePreview";
 import { cn } from "@/lib/utils";
+import { AttemptStatus } from "@/types/submit_log";
 
 type Props = {
   warTestMode: boolean;
 };
+
+
+
+function getStatusText(status: AttemptStatus): string {
+  switch (status) {
+    case "waiting":
+      return "Waiting";
+    case "processing":
+      return "Processing";
+    case "submitting":
+      return "Submitting";
+    case "completed":
+    case "success":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    case "pending":
+      return "Pending";
+    default:
+      return status;
+  }
+}
+
+function getBadgeIcon(status: AttemptStatus) {
+  switch (status) {
+    case "waiting":
+      return <Clock className="w-3.5 h-3.5 text-black/60 shrink-0" />;
+    case "processing":
+      return <Loader2 className="w-3.5 h-3.5 text-blue-700 shrink-0 animate-spin" />;
+    case "submitting":
+      return <Swords className="w-3.5 h-3.5 text-white shrink-0 animate-pulse" />;
+    case "completed":
+    case "success":
+      return <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />;
+    case "failed":
+      return <CircleX className="w-3.5 h-3.5 text-[#FF3000] shrink-0" />;
+    default:
+      return <Clock className="w-3.5 h-3.5 text-black/60 shrink-0" />;
+  }
+}
+
+function getBadgeStyle(status: AttemptStatus): string {
+  switch (status) {
+    case "completed":
+    case "success":
+      return "bg-black text-white";
+    case "submitting":
+    case "processing":
+      return "bg-[#0066FF] text-white";
+    case "failed":
+      return "bg-[#FF3000] text-white";
+    case "waiting":
+    default:
+      return "bg-[#E5E7EB] text-black border border-black/30";
+  }
+}
 
 export default function SubmitClientPage({ warTestMode }: Props) {
   const isMobile = useIsMobile();
@@ -241,18 +301,33 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                           )}
                           <Badge
                             className={cn(
-                              "text-[9px] h-4 px-1 font-bold uppercase",
-                              log.status === "success"
-                                ? "bg-black text-white"
-                                : log.status === "pending"
-                                  ? "bg-[#FED24F] text-black border border-black"
-                                  : "bg-[#FF3000] text-white",
+                              "text-[9px] h-4 px-1 font-bold uppercase flex items-center gap-1",
+                              getBadgeStyle(log.status),
                             )}
                           >
-                            {log.status}
+                            {getBadgeIcon(log.status)}
+                            <span>{getStatusText(log.status)}</span>
                           </Badge>
                         </div>
                       </div>
+
+                      {log.status === "processing" && (
+                        <Alert className="py-1.5 bg-blue-50 border border-blue-300">
+                          <AlertDescription className="text-[11px] text-blue-900 flex items-center gap-1.5 font-bold">
+                            <Loader2 className="w-3.5 h-3.5 text-blue-600 shrink-0 animate-spin" />
+                            <span>Processing... Submitting payload to server</span>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      {log.status === "submitting" && (
+                        <Alert className="py-1.5 bg-blue-50 border border-blue-300">
+                          <AlertDescription className="text-[11px] text-blue-900 flex items-center gap-1.5 font-bold">
+                            <Swords className="w-3.5 h-3.5 text-blue-600 shrink-0 animate-pulse" />
+                            <span>Submitting payload...</span>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       {log.messages.map((msg, idx) => (
                         <div
                           key={idx}
@@ -428,23 +503,19 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                             key={log.attempt}
                             value={`item-${log.attempt}`}
                             className={`border-2 px-3 bg-white ${
-                              log.status === "success"
+                              log.status === "completed" || log.status === "success"
                                 ? "border-black bg-white"
-                                : "border-[#555555] bg-[#F2F2F2]"
+                                : log.status === "failed"
+                                  ? "border-[#FF3000] bg-red-50"
+                                  : "border-[#555555] bg-[#F2F2F2]"
                             }`}
                           >
                             <AccordionTrigger className="hover:no-underline py-3">
                               <div className="flex items-center justify-between w-full pr-2">
                                 <div className="flex items-center gap-3">
-                                  {log.status === "pending" && (
-                                    <Loader2 className="w-4 h-4 text-[#FF3000] animate-spin" />
-                                  )}
-                                  {log.status === "success" && (
-                                    <CheckCircle2 className="w-4 h-4 text-black" />
-                                  )}
-
+                                  {getBadgeIcon(log.status)}
                                   <span className="text-sm font-medium">
-                                    Fase {log.attempt} - Klik untuk detail
+                                    Fase {log.attempt} - {getStatusText(log.status)}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -464,6 +535,14 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                                       HTTP {log.statusCode}
                                     </Badge>
                                   )}
+                                  <Badge
+                                    className={cn(
+                                      "text-[10px] h-5 px-1.5 font-bold uppercase",
+                                      getBadgeStyle(log.status),
+                                    )}
+                                  >
+                                    {getStatusText(log.status)}
+                                  </Badge>
                                   <span className="text-[10px] text-muted-foreground">
                                     {ymdToIdDate(log.timestamp, true)}
                                   </span>
@@ -472,6 +551,23 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                             </AccordionTrigger>
                             <AccordionContent className="pt-0 pb-3">
                               <div className="mt-2 text-xs space-y-2">
+                                {log.status === "processing" && (
+                                  <Alert className="py-2 bg-blue-50 border border-blue-300">
+                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-bold">
+                                      <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
+                                      <span>Processing... Submitting payload to server</span>
+                                    </AlertDescription>
+                                  </Alert>
+                                )}
+                                {log.status === "submitting" && (
+                                  <Alert className="py-2 bg-blue-50 border border-blue-300">
+                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-bold">
+                                      <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
+                                      <span>Submitting payload to server...</span>
+                                    </AlertDescription>
+                                  </Alert>
+                                )}
+
                                 {log.messages.map((msg, idx) => (
                                   <Alert
                                     key={idx}
@@ -493,7 +589,9 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                                   </Alert>
                                 ))}
                                 {log.messages.length === 0 &&
-                                  log.status !== "pending" && (
+                                  log.status !== "waiting" &&
+                                  log.status !== "processing" &&
+                                  log.status !== "submitting" && (
                                     <p className="italic text-muted-foreground">
                                       Tidak ada pesan respon dari server.
                                     </p>
@@ -588,3 +686,4 @@ export default function SubmitClientPage({ warTestMode }: Props) {
     </AuthAccess>
   );
 }
+

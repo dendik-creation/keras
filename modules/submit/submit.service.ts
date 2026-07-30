@@ -106,7 +106,6 @@ export async function syncSchedules(
   return { warStarted: true, schedules };
 }
 
-export { releaseSchedules, syncSchedules };
 
 /** Parse submit-result alerts into prefixed success/fail messages. */
 function parseSubmitMessages(htmlContent: string): string[] {
@@ -306,4 +305,35 @@ function parseReleaseAlert(htmlContent: string): string {
   });
 
   return alertText;
+}
+
+/** Filter out schedule IDs that succeeded in attempt messages. */
+export function filterSucceededScheduleIds(
+  currentRemaining: string[],
+  messages: string[],
+  schedules?: { code: string; class: string; schedule_submit_id: string }[]
+): string[] {
+  const succeeded = new Set<string>();
+
+  messages.forEach((msg) => {
+    const isSuccessMsg = msg.includes("Kelas Tersimpan") || msg.toUpperCase().includes("BERHASIL");
+    if (!isSuccessMsg) return;
+
+    const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
+    if (simMatch) {
+      succeeded.add(simMatch[1]);
+      return;
+    }
+
+    const courseMatch = msg.match(/Tersimpan\s*:\s*([A-Z0-9]+)\s+([A-Z0-9]+)/i);
+    if (courseMatch && schedules) {
+      const [, code, klass] = courseMatch;
+      const found = schedules.find((s) => s.code === code && s.class === klass);
+      if (found && found.schedule_submit_id) {
+        succeeded.add(found.schedule_submit_id);
+      }
+    }
+  });
+
+  return currentRemaining.filter((id) => !succeeded.has(id));
 }

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import axios, { isAxiosError } from "axios";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
-import { SubmitLog } from "@/types/submit_log";
+import { SubmitLog, AttemptStatus, PreparationStatus } from "@/types/submit_log";
+import { logger } from "@/lib/logger";
 import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
 import {
   SAVED_SCHEDULE_KEY,
@@ -25,7 +26,14 @@ import {
 export const TOTAL_ATTEMPTS = 3;
 export const DELAY_MS = 300;
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Logs frontend UI state changes in structured format matching war-ui specification. */
+function logWarUi(phase: number, status: string, durationMs?: number) {
+  const lines = [`[war-ui]`, `Phase ${phase}`, `status=${status}`];
+  if (durationMs !== undefined) {
+    lines.push(`duration=${durationMs}ms`);
+  }
+  logger.info(lines.join("\n"));
+}
 
 /** Classifies a server message as success/error by Indonesian keyword. */
 const handleAlertType = (message: string): "success" | "error" | undefined => {
@@ -48,8 +56,67 @@ const handleAlertType = (message: string): "success" | "error" | undefined => {
   }
 };
 
-const SUCCESS_COURSE_PATTERN = /Tersimpan\s*:\s*([A-Z0-9]+)\s+([A-Z0-9]+)\s*-/i;
-const FAILURE_COURSE_PATTERN = /Gagal\s*:\s*([A-Z0-9]+)\s+([A-Za-z0-9]+)/i;
+function extractCourseFromMessage(msg: string): {
+  isSuccess: boolean;
+  code?: string;
+  klass?: string;
+  scheduleId?: string;
+} | null {
+  const alertType = handleAlertType(msg);
+  if (!alertType) return null;
+  const isSuccess = alertType === "success";
+
+  const idMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
+  if (idMatch) {
+    const rawId = idMatch[1].trim();
+    if (rawId.startsWith("SIM-")) {
+      const parts = rawId.slice(4).split("-");
+      if (parts.length >= 2) {
+        const klass = parts.pop()!;
+        const code = parts.join("-");
+        return { isSuccess, code, klass, scheduleId: rawId };
+      }
+    }
+    const underscoreParts = rawId.split("_");
+    if (underscoreParts.length === 2) {
+      return { isSuccess, code: underscoreParts[0], klass: underscoreParts[1], scheduleId: rawId };
+    }
+    return { isSuccess, scheduleId: rawId };
+  }
+
+  const codeClassMatch = msg.match(/(?:Tersimpan|Gagal)\s*:\s*([A-Z0-9_-]+)\s+([A-Z0-9]+)/i);
+  if (codeClassMatch) {
+    return { isSuccess, code: codeClassMatch[1], klass: codeClassMatch[2] };
+  }
+
+  const codeDashClassMatch = msg.match(/(?:Tersimpan|Gagal)\s*:\s*([A-Z0-9]+)\s*-\s*([A-Z0-9]+)/i);
+  if (codeDashClassMatch) {
+    return { isSuccess, code: codeDashClassMatch[1], klass: codeDashClassMatch[2] };
+  }
+
+  return null;
+}
+
+function matchesCourse(
+  c: CourseSchedule,
+  code?: string,
+  klass?: string,
+  scheduleId?: string,
+): boolean {
+  if (code && klass) {
+    if (c.code.toUpperCase() === code.toUpperCase() && c.class.toUpperCase() === klass.toUpperCase()) {
+      return true;
+    }
+  }
+  if (scheduleId) {
+    if (c.schedule_id === scheduleId || c.schedule_submit_id === scheduleId) return true;
+    const simId = `SIM-${c.code}-${c.class}`.toUpperCase();
+    if (simId === scheduleId.toUpperCase()) return true;
+    const underscoreId = `${c.code}_${c.class}`.toUpperCase();
+    if (underscoreId === scheduleId.toUpperCase()) return true;
+  }
+  return false;
+}
 
 type WarState = {
   courses: CourseSchedule[];
@@ -61,7 +128,11 @@ type WarState = {
   remaining: Set<string>;
   attempt: number;
   startedAt: number | null;
+  prepStatus: PreparationStatus;
+  prepMessage: string;
+  executionGranted: boolean;
   logs: SubmitLog[];
+  currentActivePhase: number;
 };
 
 const initialState: WarState = {
@@ -74,7 +145,11 @@ const initialState: WarState = {
   remaining: new Set(),
   attempt: 0,
   startedAt: null,
+  prepStatus: "idle",
+  prepMessage: "",
+  executionGranted: false,
   logs: [],
+  currentActivePhase: 1,
 };
 
 type WarAction =
@@ -83,12 +158,14 @@ type WarAction =
   | { type: "SYNC_COMPLETED"; courses: CourseSchedule[] }
   | { type: "SYNC_FAILED" }
   | { type: "START_WAR"; scheduleIds: string[]; startedAt: number }
-  | { type: "START_ATTEMPT"; attempt: number; timestamp: string }
-  | { type: "COURSE_SUBMIT_STARTED"; scheduleIds: string[] }
-  | { type: "COURSE_SUBMIT_SUCCESS"; code: string; klass: string }
-  | { type: "COURSE_SUBMIT_FAILED"; code: string; klass: string }
-  | { type: "ATTEMPT_SETTLED"; scheduleIds: string[] }
+  | { type: "PREP_UPDATE"; status: PreparationStatus; message: string }
+  | { type: "EXECUTION_GRANTED"; message: string }
+  | { type: "ATTEMPT_STARTED"; attempt: number }
   | { type: "ATTEMPT_FINISHED"; attempt: number; patch: Partial<SubmitLog> }
+  | { type: "COURSE_SUBMIT_STARTED"; scheduleIds: string[] }
+  | { type: "COURSE_SUBMIT_SUCCESS"; code?: string; klass?: string; scheduleId?: string }
+  | { type: "COURSE_SUBMIT_FAILED"; code?: string; klass?: string; scheduleId?: string }
+  | { type: "ATTEMPT_SETTLED"; scheduleIds: string[] }
   | { type: "COURSE_RELEASED"; courses: CourseSchedule[] }
   | { type: "FINISH_WAR" };
 
@@ -111,24 +188,80 @@ function warReducer(state: WarState, action: WarAction): WarState {
     case "SYNC_FAILED":
       return { ...state, isWarStarted: false, isFindingSchedule: false };
 
-    case "START_WAR":
+    case "START_WAR": {
+      const initialLogs: SubmitLog[] = Array.from(
+        { length: TOTAL_ATTEMPTS },
+        (_, i) => {
+          const phase = i + 1;
+          return {
+            phase,
+            attempt: phase,
+            status: "waiting",
+            messages: [],
+            timestamp: new Date(action.startedAt).toISOString(),
+          };
+        },
+      );
       return {
         ...state,
         isSubmitting: true,
         remaining: new Set(action.scheduleIds),
         inFlight: new Set(),
         startedAt: action.startedAt,
+        attempt: 0,
+        prepStatus: "preparing",
+        prepMessage: "Persiapan submit...",
+        executionGranted: false,
+        logs: initialLogs,
+        currentActivePhase: 1,
+      };
+    }
+
+    case "PREP_UPDATE":
+      return {
+        ...state,
+        prepStatus: action.status,
+        prepMessage: action.message,
       };
 
-    case "START_ATTEMPT": {
-      const newLog: SubmitLog = {
-        attempt: action.attempt,
-        status: "pending",
-        messages: [],
-        timestamp: action.timestamp,
-        startedAt: action.timestamp,
+    case "EXECUTION_GRANTED":
+      return {
+        ...state,
+        prepStatus: "completed",
+        prepMessage: action.message,
+        executionGranted: true,
       };
-      return { ...state, attempt: action.attempt, logs: [newLog, ...state.logs] };
+
+    case "ATTEMPT_STARTED": {
+      const { attempt } = action;
+      let logs = [...state.logs];
+      const logIndex = attempt - 1;
+      if (logs[logIndex]) {
+        logs[logIndex] = { ...logs[logIndex], status: "processing" };
+        logWarUi(attempt, "processing");
+      }
+      return {
+        ...state,
+        attempt,
+        currentActivePhase: attempt,
+        logs,
+      };
+    }
+
+    case "ATTEMPT_FINISHED": {
+      const { attempt, patch } = action;
+      let logs = [...state.logs];
+      const logIndex = attempt - 1;
+      if (logs[logIndex]) {
+        const finalStatus = patch.status || "completed";
+        logs[logIndex] = { ...logs[logIndex], ...patch, status: finalStatus };
+        logWarUi(attempt, finalStatus, patch.durationMs);
+      }
+      return {
+        ...state,
+        logs,
+        attempt: Math.max(state.attempt, attempt),
+      };
     }
 
     case "COURSE_SUBMIT_STARTED": {
@@ -138,11 +271,11 @@ function warReducer(state: WarState, action: WarAction): WarState {
     }
 
     case "COURSE_SUBMIT_SUCCESS": {
-      const match = state.courses.find(
-        (c) => c.code === action.code && c.class === action.klass,
+      const match = state.courses.find((c) =>
+        matchesCourse(c, action.code, action.klass, action.scheduleId),
       );
       const courses = state.courses.map((c) =>
-        c.code === action.code && c.class === action.klass
+        matchesCourse(c, action.code, action.klass, action.scheduleId)
           ? { ...c, saved_in_submit: true, schedule_submit_id: "" }
           : c,
       );
@@ -156,8 +289,8 @@ function warReducer(state: WarState, action: WarAction): WarState {
     }
 
     case "COURSE_SUBMIT_FAILED": {
-      const match = state.courses.find(
-        (c) => c.code === action.code && c.class === action.klass,
+      const match = state.courses.find((c) =>
+        matchesCourse(c, action.code, action.klass, action.scheduleId),
       );
       const inFlight = new Set(state.inFlight);
       if (match) inFlight.delete(match.schedule_id);
@@ -168,13 +301,6 @@ function warReducer(state: WarState, action: WarAction): WarState {
       const inFlight = new Set(state.inFlight);
       action.scheduleIds.forEach((id) => inFlight.delete(id));
       return { ...state, inFlight };
-    }
-
-    case "ATTEMPT_FINISHED": {
-      const logs = state.logs.map((log) =>
-        log.attempt === action.attempt ? { ...log, ...action.patch } : log,
-      );
-      return { ...state, logs };
     }
 
     case "COURSE_RELEASED":
@@ -231,6 +357,9 @@ export function useSubmitWarEngine() {
           | { code: string; class: string; schedule_submit_id: string }[]
           | undefined;
         const updated = courses.map((course) => {
+          if (course.saved_in_submit) {
+            return { ...course, schedule_submit_id: "", saved_in_submit: true };
+          }
           const matched = Array.isArray(data)
             ? data.find(
                 (item) =>
@@ -260,149 +389,6 @@ export function useSubmitWarEngine() {
     },
     [],
   );
-
-  // --- One submit attempt: computes its own remaining/not-in-flight list at
-  // fire time (never the stale list captured when the war started), marks
-  // those schedule_ids in-flight before the request goes out, and updates
-  // course state the instant a success message is parsed — not batched.
-  const processAttempt = useCallback(async (attemptNumber: number) => {
-    const startedAt = new Date();
-    dispatch({
-      type: "START_ATTEMPT",
-      attempt: attemptNumber,
-      timestamp: startedAt.toISOString(),
-    });
-
-    const activeUser = getLocalStorage("active_user") as ActiveUser | null;
-    if (activeUser) trackAttemptStarted(activeUser, attemptNumber);
-
-    const finishLog = (patch: Partial<SubmitLog>) => {
-      const finishedAt = new Date();
-      dispatch({
-        type: "ATTEMPT_FINISHED",
-        attempt: attemptNumber,
-        patch: {
-          ...patch,
-          finishedAt: finishedAt.toISOString(),
-          durationMs: finishedAt.getTime() - startedAt.getTime(),
-        },
-      });
-    };
-
-    const submitTargets = stateRef.current.courses.filter(
-      (c) =>
-        c.saved_in_submit === false &&
-        c.schedule_submit_id !== "" &&
-        stateRef.current.remaining.has(c.schedule_id) &&
-        !stateRef.current.inFlight.has(c.schedule_id),
-    );
-
-    if (submitTargets.length === 0) {
-      finishLog({
-        status: "success",
-        messages: [
-          {
-            status: "success",
-            message: "Kamu menang dalam perang KRS. Semua jadwalmu telah aman",
-          },
-        ],
-        statusCode: 200,
-        successCount: 0,
-        failureCount: 0,
-        affectedCourses: [],
-      });
-      return;
-    }
-
-    const scheduleIds = submitTargets.map((c) => c.schedule_id);
-    dispatch({ type: "COURSE_SUBMIT_STARTED", scheduleIds });
-
-    try {
-      const response = await axios.post("/api/submit", {
-        schedule_ids: submitTargets.map((c) => c.schedule_submit_id as string),
-        nim: activeUser?.username || "",
-      });
-
-      const data = response.data;
-      const rawMessages: string[] = Array.isArray(data.messages)
-        ? data.messages
-        : [];
-
-      let successCount = 0;
-      let failureCount = 0;
-      const affectedCourses: {
-        code: string;
-        class: string;
-        result: "success" | "error";
-      }[] = [];
-
-      const logMessages = rawMessages.map((msg) => {
-        const type = handleAlertType(msg) || "error";
-        if (type === "success") successCount++;
-        else failureCount++;
-        return { status: type, message: msg };
-      });
-
-      rawMessages.forEach((msg) => {
-        const successMatch = msg.match(SUCCESS_COURSE_PATTERN);
-        if (successMatch) {
-          const [, code, klass] = successMatch;
-          dispatch({ type: "COURSE_SUBMIT_SUCCESS", code, klass });
-          affectedCourses.push({ code, class: klass, result: "success" });
-          if (activeUser) trackCourseSecured(activeUser, attemptNumber);
-          return;
-        }
-        const failureMatch = msg.match(FAILURE_COURSE_PATTERN);
-        if (failureMatch) {
-          const [, code, klass] = failureMatch;
-          dispatch({ type: "COURSE_SUBMIT_FAILED", code, klass });
-          affectedCourses.push({ code, class: klass, result: "error" });
-          if (activeUser) trackCourseFailed(activeUser, attemptNumber);
-        }
-      });
-
-      // Safety net: any schedule_id sent this attempt that didn't match a
-      // parsed message (e.g. a simulated/real network timeout) must still be
-      // freed from in-flight so the next attempt can retry it.
-      dispatch({ type: "ATTEMPT_SETTLED", scheduleIds });
-
-      finishLog({
-        status: "success",
-        messages: logMessages,
-        statusCode: data.status_code,
-        successCount,
-        failureCount,
-        affectedCourses,
-      });
-
-      if (activeUser) {
-        trackAttemptFinished(activeUser, {
-          attempt: attemptNumber,
-          durationMs: Date.now() - startedAt.getTime(),
-          successCount,
-          failedCount: failureCount,
-        });
-      }
-    } catch (error) {
-      dispatch({ type: "ATTEMPT_SETTLED", scheduleIds });
-      const axiosError = isAxiosError(error) ? error : null;
-      if (axiosError?.response?.status === 401) {
-        if (typeof window !== "undefined") window.location.href = "/login";
-      }
-      const errorMsg =
-        axiosError?.response?.data?.message ||
-        axiosError?.message ||
-        (error instanceof Error ? error.message : "Error tidak dikenal");
-      finishLog({
-        status: "success",
-        messages: [{ status: "error", message: errorMsg }],
-        statusCode: axiosError?.response?.status,
-        successCount: 0,
-        failureCount: 1,
-        affectedCourses: [],
-      });
-    }
-  }, []);
 
   const startWar = useCallback(async () => {
     const current = stateRef.current;
@@ -438,27 +424,146 @@ export function useSubmitWarEngine() {
       startedAt: Date.now(),
     });
 
-    let nextAttempt = current.attempt;
-    const attemptPromises: Promise<void>[] = [];
+    try {
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/x-ndjson",
+        },
+        body: JSON.stringify({
+          courses: targets.map((c) => ({ code: c.code, class: c.class })),
+          nim: activeUser?.nim || "",
+        }),
+      });
 
-    for (let i = 1; i <= TOTAL_ATTEMPTS; i++) {
-      if (i > 1 && stateRef.current.remaining.size === 0) break;
-      nextAttempt += 1;
-      attemptPromises.push(processAttempt(nextAttempt));
-      if (i < TOTAL_ATTEMPTS) {
-        await wait(DELAY_MS);
+      if (!response.ok || !response.body) {
+        if (response.status === 401 && typeof window !== "undefined") {
+          window.location.href = "/login";
+          return;
+        }
+        gooeyToast.error("Terjadi Kesalahan", {
+          description: "Gagal memulai perang KRS.",
+        });
+        dispatch({ type: "FINISH_WAR" });
+        return;
       }
-    }
 
-    await Promise.allSettled(attemptPromises);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let attemptStartTimes: Record<number, number> = {};
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let data: any;
+          try {
+            data = JSON.parse(line);
+          } catch (e) {
+            continue;
+          }
+
+          if (data.type === "event") {
+            const { name, attempt, result } = data;
+
+            if (name === "ATTEMPT_STARTED" && attempt) {
+              attemptStartTimes[attempt] = Date.now();
+              dispatch({ type: "ATTEMPT_STARTED", attempt });
+              if (activeUser) trackAttemptStarted(activeUser, attempt);
+            } else if (name === "ATTEMPT_FINISHED" && attempt && result) {
+              const startTime = attemptStartTimes[attempt] || Date.now();
+              const durationMs = Date.now() - startTime;
+              const rawMessages: string[] = Array.isArray(result.messages) ? result.messages : [];
+
+              let successCount = 0;
+              let failureCount = 0;
+              const affectedCourses: {
+                code: string;
+                class: string;
+                result: "success" | "error";
+              }[] = [];
+
+              const logMessages = rawMessages.map((msg) => {
+                const type = handleAlertType(msg) || "error";
+                if (type === "success") successCount++;
+                else failureCount++;
+                return { status: type, message: msg };
+              });
+
+              rawMessages.forEach((msg) => {
+                const parsed = extractCourseFromMessage(msg);
+                if (parsed) {
+                  const { isSuccess, code, klass, scheduleId } = parsed;
+                  if (isSuccess) {
+                    dispatch({ type: "COURSE_SUBMIT_SUCCESS", code, klass, scheduleId });
+                    affectedCourses.push({
+                      code: code || scheduleId || "",
+                      class: klass || "",
+                      result: "success",
+                    });
+                    if (activeUser) trackCourseSecured(activeUser, attempt);
+                  } else {
+                    dispatch({ type: "COURSE_SUBMIT_FAILED", code, klass, scheduleId });
+                    affectedCourses.push({
+                      code: code || scheduleId || "",
+                      class: klass || "",
+                      result: "error",
+                    });
+                    if (activeUser) trackCourseFailed(activeUser, attempt);
+                  }
+                }
+              });
+
+              dispatch({
+                type: "ATTEMPT_FINISHED",
+                attempt,
+                patch: {
+                  status: result.isSuccess !== false ? "completed" : "failed",
+                  messages: logMessages,
+                  statusCode: result.status_code || 200,
+                  successCount,
+                  failureCount,
+                  affectedCourses,
+                  durationMs,
+                  finishedAt: new Date().toISOString(),
+                },
+              });
+
+              if (activeUser) {
+                trackAttemptFinished(activeUser, {
+                  attempt,
+                  durationMs,
+                  successCount,
+                  failedCount: failureCount,
+                });
+              }
+            }
+          } else if (data.type === "error") {
+            gooeyToast.error("Terjadi Kesalahan", {
+              description: data.message || "Gagal submit.",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      gooeyToast.error("Terjadi Kesalahan", {
+        description: "Koneksi terputus saat submit.",
+      });
+    }
 
     const finalSync = await syncWithServer(stateRef.current.courses);
     dispatch({ type: "FINISH_WAR" });
 
     const preparedCount = finalSync.courses.length;
-    const successCount = finalSync.courses.filter(
-      (c) => c.saved_in_submit === true,
-    ).length;
+    const successCount = finalSync.courses.filter((c) => c.saved_in_submit === true).length;
 
     gooeyToast.success("Info Bosku", {
       description: "Perang berhasil diselesaikan",
@@ -466,7 +571,7 @@ export function useSubmitWarEngine() {
     if (activeUser) {
       trackWarCompleted(activeUser, { preparedCount, successCount });
     }
-  }, [processAttempt, syncWithServer]);
+  }, [syncWithServer]);
 
   const releaseCourses = useCallback(
     async (
@@ -552,8 +657,7 @@ export function useSubmitWarEngine() {
     [syncWithServer],
   );
 
-  // Hydrate from localStorage once, then run the initial "is the war open"
-  // sync — mirrors the original mount effect.
+  // Hydrate from localStorage once, then run the initial "is the war open" sync
   useEffect(() => {
     const saved = getLocalStorage(SAVED_SCHEDULE_KEY);
     if (saved && Array.isArray(saved)) {
@@ -577,7 +681,6 @@ export function useSubmitWarEngine() {
   }, [state.courses, state.isHydrated]);
 
   // Broadcast war-in-progress so /schedule and /adopt-schedule can lock
-  // dangerous actions while a war is running on this page.
   useEffect(() => {
     setLocalStorage(WAR_IN_PROGRESS_KEY, state.isSubmitting);
   }, [state.isSubmitting]);
@@ -595,6 +698,9 @@ export function useSubmitWarEngine() {
     remaining: state.remaining,
     attempt: state.attempt,
     startedAt: state.startedAt,
+    prepStatus: state.prepStatus,
+    prepMessage: state.prepMessage,
+    executionGranted: state.executionGranted,
     logs: state.logs,
     securedCount,
     totalCount,
@@ -603,3 +709,5 @@ export function useSubmitWarEngine() {
     releaseCourses,
   };
 }
+
+

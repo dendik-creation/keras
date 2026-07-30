@@ -28,6 +28,7 @@ export default function Page() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(true);
+  const [isReminderAccepted, setIsReminderAccepted] = useState(true);
   const router = useRouter();
 
   const handleDisclaimerChange = (value: boolean) => {
@@ -35,9 +36,17 @@ export default function Page() {
     setLocalStorage("disclaimer_accepted", value);
   };
 
+  const handleReminderChange = (value: boolean) => {
+    setIsReminderAccepted(value);
+    setLocalStorage("reminder_accepted", value);
+  };
+
   useEffect(() => {
     const accepted = localStorage.getItem("disclaimer_accepted") === "true";
     setIsDisclaimerAccepted(accepted);
+
+    const reminderAccepted = localStorage.getItem("reminder_accepted") === "true";
+    setIsReminderAccepted(reminderAccepted);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,6 +153,41 @@ export default function Page() {
                   >
                     <BadgeCheck className="w-4 h-4 mr-2" />
                     Saya Paham
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Reminder Dialog ── */}
+          <Dialog open={isDisclaimerAccepted && !isReminderAccepted}>
+            <DialogContent className="rounded-none border-2 border-black bg-white max-w-md">
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-3">
+                  <Image
+                    src="/logo.png"
+                    alt="KeRaS"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-contain flex-shrink-0"
+                  />
+                  <DialogTitle className="font-black uppercase tracking-tight text-black">
+                    Pengingat Untukmu
+                  </DialogTitle>
+                </div>
+                <div className="w-full h-0.5 bg-[#FF3000]" />
+                <DialogDescription className="text-[#555555] leading-relaxed pt-3 font-medium">
+                  Jumlah mahasiswa yang mengakses KeRaS semakin meningkat seiring waktu, sehingga efektivitas KeRaS akan menurun. Maka simpan ini untuk dirimu sendiri😹 dan orang sekitarmu
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    onClick={() => handleReminderChange(true)}
+                    className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
+                  >
+                    <BadgeCheck className="w-4 h-4 mr-2" />
+                    Saya Mengerti
                   </Button>
                 </DialogClose>
               </DialogFooter>

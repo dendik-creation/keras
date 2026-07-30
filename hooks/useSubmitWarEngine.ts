@@ -193,7 +193,7 @@ function warReducer(state: WarState, action: WarAction): WarState {
  * source of truth — localStorage is written to as a side effect of state
  * changes, never read back into the UI directly (except on first mount).
  */
-export function useSubmitWarEngine() {
+export function useSubmitWarEngine({ initialDelayMs }: { initialDelayMs?: number } = {}) {
   const [state, dispatch] = useReducer(warReducer, initialState);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -437,14 +437,15 @@ export function useSubmitWarEngine() {
       startedAt: Date.now(),
     });
 
-    const initialDelayStr =
-      process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS ||
-      process.env.SUBMIT_INITIAL_DELAY_MS;
-    if (initialDelayStr) {
-      const initialDelayMs = parseInt(initialDelayStr, 10);
-      if (!isNaN(initialDelayMs) && initialDelayMs > 0) {
-        await wait(initialDelayMs);
-      }
+    const finalInitialDelayMs =
+      initialDelayMs !== undefined
+        ? initialDelayMs
+        : (process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS
+            ? parseInt(process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS, 10)
+            : 0);
+
+    if (finalInitialDelayMs && !isNaN(finalInitialDelayMs) && finalInitialDelayMs > 0) {
+      await wait(finalInitialDelayMs);
     }
 
     let nextAttempt = current.attempt;
@@ -475,7 +476,7 @@ export function useSubmitWarEngine() {
     if (activeUser) {
       trackWarCompleted(activeUser, { preparedCount, successCount });
     }
-  }, [processAttempt, syncWithServer]);
+  }, [processAttempt, syncWithServer, initialDelayMs]);
 
   const releaseCourses = useCallback(
     async (

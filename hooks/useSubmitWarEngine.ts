@@ -193,7 +193,7 @@ function warReducer(state: WarState, action: WarAction): WarState {
  * source of truth — localStorage is written to as a side effect of state
  * changes, never read back into the UI directly (except on first mount).
  */
-export function useSubmitWarEngine({ initialDelayMs }: { initialDelayMs?: number } = {}) {
+export function useSubmitWarEngine() {
   const [state, dispatch] = useReducer(warReducer, initialState);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -320,6 +320,7 @@ export function useSubmitWarEngine({ initialDelayMs }: { initialDelayMs?: number
     try {
       const response = await axios.post("/api/submit", {
         schedule_ids: submitTargets.map((c) => c.schedule_submit_id as string),
+        nim: activeUser?.username || "",
       });
 
       const data = response.data;
@@ -437,17 +438,6 @@ export function useSubmitWarEngine({ initialDelayMs }: { initialDelayMs?: number
       startedAt: Date.now(),
     });
 
-    const finalInitialDelayMs =
-      initialDelayMs !== undefined
-        ? initialDelayMs
-        : (process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS
-            ? parseInt(process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS, 10)
-            : 0);
-
-    if (finalInitialDelayMs && !isNaN(finalInitialDelayMs) && finalInitialDelayMs > 0) {
-      await wait(finalInitialDelayMs);
-    }
-
     let nextAttempt = current.attempt;
     const attemptPromises: Promise<void>[] = [];
 
@@ -476,7 +466,7 @@ export function useSubmitWarEngine({ initialDelayMs }: { initialDelayMs?: number
     if (activeUser) {
       trackWarCompleted(activeUser, { preparedCount, successCount });
     }
-  }, [processAttempt, syncWithServer, initialDelayMs]);
+  }, [processAttempt, syncWithServer]);
 
   const releaseCourses = useCallback(
     async (

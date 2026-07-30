@@ -29,8 +29,8 @@ export function parseSyncCourses(
 }
 
 /** Validate the `schedule_ids` payload for submit (POST). */
-export function validateScheduleIds(body: unknown): string[] {
-  const { schedule_ids } = (body ?? {}) as { schedule_ids?: unknown };
+export function validateScheduleIds(body: unknown): { scheduleIds: string[]; nim: string } {
+  const { schedule_ids, nim } = (body ?? {}) as { schedule_ids?: unknown; nim?: string };
 
   if (
     !schedule_ids ||
@@ -40,7 +40,7 @@ export function validateScheduleIds(body: unknown): string[] {
     throw new ValidationError("Tidak ada jadwal yang dipilih.");
   }
 
-  return schedule_ids as string[];
+  return { scheduleIds: schedule_ids as string[], nim: nim || "unknown" };
 }
 
 /** Parse & validate the `courses` payload for release (DELETE). */

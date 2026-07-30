@@ -53,9 +53,7 @@ export async function syncSubmit(req: Request) {
 
   let result;
   try {
-    result = isWarTestMode()
-      ? await simulateSyncSchedules(sessionCookie.value, targetCourses)
-      : await syncSchedules(sessionCookie.value, targetCourses);
+    result = await syncSchedules(sessionCookie.value, targetCourses);
   } catch (error: any) {
     const mapped = httpErrorResponse(error);
     if (mapped) return mapped;
@@ -91,17 +89,22 @@ export async function syncSubmit(req: Request) {
   );
 }
 
+import { processThroughGate } from "@/lib/server/war-gate";
+import { ProductionSubmissionExecutor, TestSubmissionExecutor } from "./submit.executor";
+
 /** POST /api/submit — submit selected schedule ids ("perang submit"). */
 export async function postSubmit(req: Request) {
   try {
     const sessionCookie = await getSessionCookie();
     if (!sessionCookie) return unauthorized();
 
-    const scheduleIds = validateScheduleIds(await req.json());
+    const { scheduleIds, nim } = validateScheduleIds(await req.json());
+    const isTestMode = isWarTestMode();
+    const executor = isTestMode ? new TestSubmissionExecutor() : new ProductionSubmissionExecutor();
 
-    const result = isWarTestMode()
-      ? await simulateSubmitSchedules(sessionCookie.value, scheduleIds)
-      : await submitSchedules(sessionCookie.value, scheduleIds);
+    const result = await processThroughGate(nim, isTestMode, async () => {
+      return await executor.execute(sessionCookie.value, scheduleIds);
+    });
 
     return NextResponse.json({
       success: result.isSuccess,

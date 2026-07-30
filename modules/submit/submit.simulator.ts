@@ -104,40 +104,31 @@ export async function simulateSubmitSchedules(
   const messages: string[] = [];
 
   for (const scheduleId of scheduleIds) {
-    const parsed = parseSimScheduleId(scheduleId);
-    if (!parsed) continue;
-    const { code, klass } = parsed;
-    const key = courseKey(code, klass);
-
-    if (secured.has(key)) {
-      // Already secured earlier this session — production behaves the same way
-      // on a repeat submit, so no re-roll here.
-      messages.push(`Kelas Tersimpan : ${code} ${klass} - Mata kuliah sudah tersimpan`);
+    if (secured.has(scheduleId)) {
+      messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah sudah tersimpan`);
       continue;
     }
 
     const outcome = rollOutcome();
     switch (outcome) {
       case "success":
-        secured.add(key);
-        messages.push(`Kelas Tersimpan : ${code} ${klass} - Mata kuliah berhasil disimpan`);
+        secured.add(scheduleId);
+        messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah berhasil disimpan (Test Mode)`);
         break;
       case "class_full":
-        messages.push(`Gagal : ${code} ${klass} kelas penuh`);
+        messages.push(`Gagal : [ID ${scheduleId}] kelas penuh (Test Mode)`);
         break;
       case "time_conflict":
-        messages.push(`Gagal : ${code} ${klass} bentrok jadwal`);
+        messages.push(`Gagal : [ID ${scheduleId}] bentrok jadwal (Test Mode)`);
         break;
       case "server_busy":
-        messages.push(`Gagal : ${code} ${klass} server sibuk, coba lagi`);
+        messages.push(`Gagal : [ID ${scheduleId}] server sibuk, coba lagi (Test Mode)`);
         break;
       case "network_timeout":
-        // No message at all — mirrors a dropped response; course stays
-        // unsecured and gets naturally retried on the next attempt.
         break;
     }
 
-    logger.log("[WAR_TEST] submit outcome", { code, klass, outcome });
+    logger.log("[WAR_TEST] submit outcome", { scheduleId, outcome });
   }
 
   return {

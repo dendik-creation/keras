@@ -10,4 +10,31 @@ services:
       - HOSTNAME=0.0.0.0
     env_file:
       - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - keras_network
     restart: unless-stopped
+
+  redis:
+    container_name: keras_redis_prod
+    image: redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - keras_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  keras_network:
+    driver: bridge
+
+volumes:
+  redis_data_prod:

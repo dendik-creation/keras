@@ -41,12 +41,11 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   warTestMode: boolean;
-  initialDelayMs: number;
 };
 
-export default function SubmitClientPage({ warTestMode, initialDelayMs }: Props) {
+export default function SubmitClientPage({ warTestMode }: Props) {
   const isMobile = useIsMobile();
-  const war = useSubmitWarEngine({ initialDelayMs });
+  const war = useSubmitWarEngine();
   const [readyReleases, setReadyReleases] = useState<
     {
       course_code: string;

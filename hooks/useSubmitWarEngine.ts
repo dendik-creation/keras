@@ -250,7 +250,10 @@ export function useSubmitWarEngine() {
 
         dispatch({ type: "SYNC_COMPLETED", courses: updated });
         return { success: true, courses: updated };
-      } catch {
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          if (typeof window !== "undefined") window.location.href = "/login";
+        }
         dispatch({ type: "SYNC_FAILED" });
         return { success: false, courses };
       }
@@ -382,6 +385,9 @@ export function useSubmitWarEngine() {
     } catch (error) {
       dispatch({ type: "ATTEMPT_SETTLED", scheduleIds });
       const axiosError = isAxiosError(error) ? error : null;
+      if (axiosError?.response?.status === 401) {
+        if (typeof window !== "undefined") window.location.href = "/login";
+      }
       const errorMsg =
         axiosError?.response?.data?.message ||
         axiosError?.message ||
@@ -430,6 +436,16 @@ export function useSubmitWarEngine() {
       scheduleIds: targets.map((c) => c.schedule_id),
       startedAt: Date.now(),
     });
+
+    const initialDelayStr =
+      process.env.NEXT_PUBLIC_SUBMIT_INITIAL_DELAY_MS ||
+      process.env.SUBMIT_INITIAL_DELAY_MS;
+    if (initialDelayStr) {
+      const initialDelayMs = parseInt(initialDelayStr, 10);
+      if (!isNaN(initialDelayMs) && initialDelayMs > 0) {
+        await wait(initialDelayMs);
+      }
+    }
 
     let nextAttempt = current.attempt;
     const attemptPromises: Promise<void>[] = [];
@@ -511,7 +527,10 @@ export function useSubmitWarEngine() {
               description: "Gagal melepas jadwal yang dipilih",
             });
           }
-        } catch {
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response?.status === 401) {
+            if (typeof window !== "undefined") window.location.href = "/login";
+          }
           gooeyToast.error("Terjadi Kesalahan", {
             description: "Gagal melepas jadwal yang dipilih",
           });

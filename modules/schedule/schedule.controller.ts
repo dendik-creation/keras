@@ -44,11 +44,12 @@ export async function getSchedule() {
         );
         send({ type: "done", data });
       } catch (error: any) {
+        const status = isHttpError(error) ? error.status : 500;
         logger.error(
           `[schedule] GET /api/schedule: ERROR after ${Date.now() - start}ms —`,
           error.message,
         );
-        send({ type: "error", message: error.message });
+        send({ type: "error", message: error.message, status });
       } finally {
         controller.close();
       }

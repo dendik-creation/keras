@@ -78,7 +78,7 @@ export async function postGenerateSchedule(req: Request) {
               message: error.message,
               totalMs: Date.now() - startedAt,
             });
-            send({ type: "error", message: error.message, ...error.payload });
+            send({ type: "error", message: error.message, status: error.status, ...error.payload });
           } else {
             const detail = error instanceof Error ? error.message : String(error);
             logger.error("[schedule-ai] request crashed", {

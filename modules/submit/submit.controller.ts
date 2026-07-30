@@ -51,9 +51,25 @@ export async function syncSubmit(req: Request) {
     throw error;
   }
 
-  const result = isWarTestMode()
-    ? await simulateSyncSchedules(sessionCookie.value, targetCourses)
-    : await syncSchedules(sessionCookie.value, targetCourses);
+  let result;
+  try {
+    result = isWarTestMode()
+      ? await simulateSyncSchedules(sessionCookie.value, targetCourses)
+      : await syncSchedules(sessionCookie.value, targetCourses);
+  } catch (error: any) {
+    const mapped = httpErrorResponse(error);
+    if (mapped) return mapped;
+    
+    logger.error("SYNC ERROR:", error.message);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Terjadi kesalahan server saat sinkronisasi jadwal.",
+        detail: error.message,
+      },
+      { status: 500 },
+    );
+  }
 
   if (!result.warStarted) {
     return NextResponse.json(

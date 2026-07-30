@@ -17,6 +17,10 @@ export async function fetchOfferingCourses(
   onProgress: (done: number, total: number) => void,
 ): Promise<OfferingCourse[] | null> {
   const response = await fetch("/api/schedule");
+  if (response.status === 401) {
+    if (typeof window !== "undefined") window.location.href = "/login";
+    return null;
+  }
   if (!response.ok || !response.body) return null;
 
   const reader = response.body.getReader();
@@ -41,6 +45,9 @@ export async function fetchOfferingCourses(
       } else if (event.type === "done") {
         finalData = event.data;
       } else if (event.type === "error") {
+        if (event.status === 401 && typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         streamError = event.message;
       }
     }
@@ -70,6 +77,10 @@ export async function generateScheduleStream(
   });
 
   if (!response.ok || !response.body) {
+    if (response.status === 401) {
+      if (typeof window !== "undefined") window.location.href = "/login";
+      throw new Error("Sesi telah habis, silakan login kembali.");
+    }
     const errorBody = await response.json().catch(() => null);
     throw new Error(errorBody?.message || "Gagal menghasilkan jadwal. Silakan coba lagi.");
   }
@@ -96,6 +107,9 @@ export async function generateScheduleStream(
       } else if (event.type === "done") {
         finalCourses = event.data?.courses ?? [];
       } else if (event.type === "error") {
+        if (event.status === 401 && typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         streamError = event.message;
       }
     }

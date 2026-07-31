@@ -15,6 +15,7 @@ interface ScheduleBoardProps {
   isSubmitMode?: boolean;
   readyReleases?: { course_code: string; course_class: string }[];
   isSubmitting?: boolean;
+  conflictingCourseIds?: string[];
 }
 
 const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
@@ -28,6 +29,7 @@ export function ScheduleBoard(props: ScheduleBoardProps) {
     isSubmitMode = false,
     readyReleases = [],
     isSubmitting = false,
+    conflictingCourseIds = [],
   } = props;
   const shouldReduceMotion = useReducedMotion() ?? false;
   const activeCourses = courses ?? selectedCourses ?? [];
@@ -87,6 +89,7 @@ export function ScheduleBoard(props: ScheduleBoardProps) {
               readyReleases={readyReleases}
               isSubmitting={isSubmitting}
               shouldReduceMotion={shouldReduceMotion}
+              conflictingCourseIds={conflictingCourseIds}
             />
           );
         })}

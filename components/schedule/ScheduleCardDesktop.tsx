@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CourseSchedule } from "@/types/course_schedule";
 import { cn } from "@/lib/utils";
+import { BorderTrail } from "@/components/ui/BorderTrail";
 
 export interface ScheduleCardDesktopProps {
   course: CourseSchedule;
@@ -16,6 +17,7 @@ export interface ScheduleCardDesktopProps {
   isSelectedForRelease?: boolean;
   isSubmitting?: boolean;
   shouldReduceMotion?: boolean;
+  isConflicting?: boolean;
 }
 
 const cardVariants: Variants = {
@@ -60,6 +62,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
   isSelectedForRelease = false,
   isSubmitting = false,
   shouldReduceMotion = false,
+  isConflicting = false,
 }: ScheduleCardDesktopProps) {
   const springTransition: Transition = shouldReduceMotion
     ? { duration: 0 }
@@ -80,15 +83,18 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
       exit="exit"
       variants={activeVariants}
       transition={springTransition}
-      className="w-full"
+      className="w-full relative"
     >
       {isSubmitMode ? (
         <Card
           onClick={() => !isSubmitting && onCardClick?.(course)}
-          className={`relative border-2 pt-0 pb-6 border-black overflow-hidden bg-white shadow-none ${
-            isSubmitting ? "cursor-not-allowed opacity-90" : "cursor-pointer"
-          }`}
+          className={cn(
+            "relative border-2 pt-0 pb-6 overflow-hidden bg-white shadow-none",
+            isSubmitting ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+            isConflicting ? "border-[#FF3000] ring-2 ring-[#FF3000]" : "border-black"
+          )}
         >
+          {isConflicting && <BorderTrail duration={0.5} />}
           {isSelectedForRelease && (
             <div
               className={cn(
@@ -157,7 +163,11 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
           </CardContent>
         </Card>
       ) : (
-        <Card className="relative pt-0 pb-7 border-2 border-black overflow-hidden bg-white shadow-none min-h-[95px]">
+        <Card className={cn(
+          "relative pt-0 pb-7 border-2 overflow-hidden bg-white shadow-none min-h-[95px]",
+          isConflicting ? "border-[#FF3000] ring-2 ring-[#FF3000]" : "border-black"
+        )}>
+          {isConflicting && <BorderTrail duration={0.5} />}
           <CardContent className="p-3 flex flex-col justify-between min-h-[95px]">
             <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-black hover:bg-[#FF3000]">
               <button

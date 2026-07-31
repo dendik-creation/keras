@@ -225,6 +225,24 @@
     background: #FF3000 !important;
 }
 
+/* ─── SMOOTH RED BORDER PULSE/FADE ANIMATION ─── */
+@keyframes border-red-pulse {
+    0%, 100% {
+        opacity: 1;
+        border-color: #FF3000;
+        box-shadow: 0 0 12px rgba(255, 48, 0, 0.8), inset 0 0 8px rgba(255, 48, 0, 0.4);
+    }
+    50% {
+        opacity: 0.15;
+        border-color: rgba(255, 48, 0, 0.3);
+        box-shadow: 0 0 2px rgba(255, 48, 0, 0.1), inset 0 0 0px rgba(255, 48, 0, 0);
+    }
+}
+
+.animate-border-pulse {
+    animation: border-red-pulse 0.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -233,3 +251,4 @@
         transition-duration: 0.001ms !important;
     }
 }
+

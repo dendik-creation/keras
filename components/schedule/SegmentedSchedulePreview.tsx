@@ -18,6 +18,7 @@ interface SegmentedSchedulePreviewProps {
   readyReleases?: { course_code: string; course_class: string }[];
   isSubmitting?: boolean;
   className?: string;
+  conflictingCourseIds?: string[];
 }
 
 const DAYS = [
@@ -37,6 +38,7 @@ function SegmentedSchedulePreviewInner({
   readyReleases = [],
   isSubmitting = false,
   className,
+  conflictingCourseIds = [],
 }: SegmentedSchedulePreviewProps) {
   const [activeDay, setActiveDay] = useState<string>("senin");
   const activeCourses = courses ?? selectedCourses ?? [];
@@ -150,6 +152,11 @@ function SegmentedSchedulePreviewInner({
                     item.course_class === course.class,
                 );
 
+                const isConflicting = Boolean(
+                  conflictingCourseIds.includes(course.schedule_id) ||
+                  conflictingCourseIds.includes(`${course.code}-${course.class}`)
+                );
+
                 return (
                   <ScheduleCard
                     key={course.schedule_id || `${course.code}-${course.class}`}
@@ -159,6 +166,7 @@ function SegmentedSchedulePreviewInner({
                     isSubmitMode={isSubmitMode}
                     isSelectedForRelease={isSelectedForRelease}
                     isSubmitting={isSubmitting}
+                    isConflicting={isConflicting}
                   />
                 );
               })

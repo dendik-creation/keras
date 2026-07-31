@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CalendarCheck2, CalendarX2, Loader2, TriangleAlert, User } from "lucide-react";
@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { parseShareParams } from "@/helper/share_schedule";
-import { stampForAdoption } from "@/helper/frontend_helper";
+import { stampForAdoption, checkAllConflicts } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackScheduleAdopted } from "@/lib/analytics/events";
 import { useLocalStorageContext } from "@/providers/LocalStorageProvider";
 import { useAdoptScheduleFlow } from "@/hooks/useAdoptScheduleFlow";
 import AdoptConfirmDialog from "@/components/custom/AdoptConfirmDialog";
+import { BorderTrail } from "@/components/ui/BorderTrail";
+import { CourseSchedule } from "@/types/course_schedule";
+import { cn } from "@/lib/utils";
 
 const BLOCK_MESSAGES = {
   "program-mismatch":
@@ -40,6 +43,8 @@ export default function AdoptSchedulePage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
+  const [conflictingCourseIds, setConflictingCourseIds] = useState<string[]>([]);
+  const conflictTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Rule 1: guests must log in first — preserve where to return afterwards.
   useEffect(() => {
@@ -50,6 +55,12 @@ export default function AdoptSchedulePage() {
 
   useEffect(() => {
     setSearch(window.location.search);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+    };
   }, []);
 
   const share = useMemo(
@@ -70,6 +81,70 @@ export default function AdoptSchedulePage() {
     if (flow.redirectTo) router.replace(flow.redirectTo);
   }, [flow.redirectTo, router]);
 
+  // Compute conflicting courses between flow.matched and savedSchedule or internal matched
+  const existingConflicts = useMemo(() => {
+    if (flow.phase !== "ready" || !flow.matched.length) return [];
+    const conflicts: CourseSchedule[] = [];
+
+    // 1. Check against existing savedSchedule
+    if (savedSchedule && savedSchedule.length > 0) {
+      flow.matched.forEach((m) => {
+        const found = checkAllConflicts(m, savedSchedule);
+        found.forEach((c) => {
+          if (!conflicts.some((x) => (x.schedule_id || `${x.code}-${x.class}`) === (c.schedule_id || `${c.code}-${c.class}`))) {
+            conflicts.push(c);
+          }
+        });
+      });
+    }
+
+    // 2. Check internal conflicts within flow.matched
+    for (let i = 0; i < flow.matched.length; i++) {
+      for (let j = i + 1; j < flow.matched.length; j++) {
+        const a = flow.matched[i];
+        const b = flow.matched[j];
+        const internalConflict = checkAllConflicts(a, [b]);
+        if (internalConflict.length > 0) {
+          if (!conflicts.some((x) => (x.schedule_id || `${x.code}-${x.class}`) === (a.schedule_id || `${a.code}-${a.class}`))) {
+            conflicts.push(a);
+          }
+          if (!conflicts.some((x) => (x.schedule_id || `${x.code}-${x.class}`) === (b.schedule_id || `${b.code}-${b.class}`))) {
+            conflicts.push(b);
+          }
+        }
+      }
+    }
+
+    return conflicts;
+  }, [flow.phase, flow.matched, savedSchedule]);
+
+  const triggerConflictHighlight = () => {
+    if (existingConflicts.length > 0) {
+      const ids = existingConflicts.map(
+        (c) => c.schedule_id || `${c.code}-${c.class}`,
+      );
+      setConflictingCourseIds(ids);
+
+      gooeyToast.error("Jadwal Bentrok", {
+        description: `Terdapat ${existingConflicts.length} mata kuliah bentrok dengan jadwalmu!`,
+      });
+
+      if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+      conflictTimerRef.current = setTimeout(() => {
+        setConflictingCourseIds([]);
+      }, 2000);
+    }
+  };
+
+  // Trigger highlight loop on ready phase if conflicts exist
+  const hasTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (flow.phase === "ready" && existingConflicts.length > 0 && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
+      triggerConflictHighlight();
+    }
+  }, [flow.phase, existingConflicts]);
+
   const handleReject = () => {
     router.push("/schedule");
   };
@@ -89,6 +164,13 @@ export default function AdoptSchedulePage() {
       description: `${toSave.length} mata kuliah berhasil disalin ke jadwalmu`,
     });
     router.push("/schedule");
+  };
+
+  const handleOpenDialog = () => {
+    if (existingConflicts.length > 0) {
+      triggerConflictHighlight();
+    }
+    setDialogOpen(true);
   };
 
   const showLoader =
@@ -179,7 +261,7 @@ export default function AdoptSchedulePage() {
       )}
 
       {!showLoader && flow.phase === "ready" && (
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-4 text-center max-w-4xl w-full">
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-[0.9]">
             Siap <span className="text-[#FF3000]">Adopsi</span>
           </h1>
@@ -192,32 +274,61 @@ export default function AdoptSchedulePage() {
             {flow.matched.reduce((acc, c) => acc + Number(c.sks || 0), 0)}{" "}
             SKS).
           </p>
+
+          {existingConflicts.length > 0 && (
+            <div
+              onClick={triggerConflictHighlight}
+              className="w-full flex items-center gap-2 border-2 border-[#FF3000] bg-[#FF3000]/10 p-3 text-xs font-bold text-black cursor-pointer hover:bg-[#FF3000]/20 transition-colors"
+            >
+              <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0" />
+              <span>
+                Perhatian: Terdapat {existingConflicts.length} jadwal yang bentrok dengan jadwal tersimpanmu. Klik untuk highlight!
+              </span>
+            </div>
+          )}
+
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {flow.matched.map((c) => (
-              <div
-                key={c.schedule_id}
-                className="flex items-center justify-between gap-3 border-2 border-black bg-[#F2F2F2] px-3 py-2 text-left"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-black">
-                    {c.course}
-                  </p>
-                  <p className="truncate text-xs text-[#555555] font-medium">
-                    {c.lecture || "-"}
-                  </p>
-                  <p className="truncate text-xs text-[#555555] font-medium">
-                    {c.day || "-"} | {c.hour || "-"} | {c.classroom || "-"}
-                  </p>
-                </div>
-                <Badge
-                  variant="outline"
-                  className="rounded-none border-2 border-black bg-white text-xs flex-shrink-0"
+            {flow.matched.map((c) => {
+              const id = c.schedule_id || `${c.code}-${c.class}`;
+              const isConflicting = conflictingCourseIds.includes(id);
+
+              return (
+                <div
+                  key={c.schedule_id || `${c.code}-${c.class}`}
+                  onClick={() => isConflicting && triggerConflictHighlight()}
+                  className={cn(
+                    "relative flex items-center justify-between gap-3 border-2 px-3 py-2 text-left bg-[#F2F2F2] transition-colors overflow-hidden",
+                    isConflicting ? "border-[#FF3000] ring-2 ring-[#FF3000]" : "border-black"
+                  )}
                 >
-                  {c.code} • {c.class}
-                </Badge>
-              </div>
-            ))}
+                  {isConflicting && <BorderTrail duration={0.5} />}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-black">
+                      {c.course}
+                    </p>
+                    <p className="truncate text-xs text-[#555555] font-medium">
+                      {c.lecture || "-"}
+                    </p>
+                    <p className="truncate text-xs text-[#555555] font-medium">
+                      {c.day || "-"} | {c.hour || "-"} | {c.classroom || "-"}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "rounded-none border-2 text-xs flex-shrink-0",
+                      isConflicting
+                        ? "border-[#FF3000] bg-[#FF3000] text-white"
+                        : "border-black bg-white text-black"
+                    )}
+                  >
+                    {c.code} • {c.class}
+                  </Badge>
+                </div>
+              );
+            })}
           </div>
+
           <div className="flex flex-col sm:flex-row gap-3 mt-2">
             <Button
               onClick={handleReject}
@@ -228,7 +339,7 @@ export default function AdoptSchedulePage() {
               Gak Jadi
             </Button>
             <Button
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpenDialog}
               disabled={isWarInProgress}
               className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 h-12 px-8"
             >

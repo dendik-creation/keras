@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { CourseSchedule } from "@/types/course_schedule";
 import {
   checkConflict,
+  checkAllConflicts,
   fetchOfferingCourses,
   parseTimeRange,
   stampForAdoption,
@@ -96,8 +97,16 @@ export default function Page() {
   const [openGenerateAi, setOpenGenerateAi] = useState(false);
   const [openImportAi, setOpenImportAi] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
+  const [conflictingCourseIds, setConflictingCourseIds] = useState<string[]>([]);
+  const conflictTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const [resumeAdopt, setResumeAdopt] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    return () => {
+      if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (syncState === "completed") {
@@ -220,11 +229,25 @@ export default function Page() {
         (c) => c.code === course.code,
       );
 
-      const conflict = checkConflict(course, selectedCourses);
-      if (conflict) {
-        gooeyToast.error(
-          `Jadwal bentrok dengan kelas ${conflict.class} ${conflict.course}`,
+      const conflicts = checkAllConflicts(course, selectedCourses);
+      if (conflicts.length > 0) {
+        const conflictMsg = conflicts
+          .map((c) => `${c.class} ${c.course}`)
+          .join(", ");
+        gooeyToast.error("Jadwal Bentrok", {
+          description: `Bentrok dengan kelas ${conflictMsg}`,
+        });
+
+        const ids = conflicts.map(
+          (c) => c.schedule_id || `${c.code}-${c.class}`,
         );
+        setConflictingCourseIds(ids);
+
+        if (conflictTimerRef.current) clearTimeout(conflictTimerRef.current);
+        conflictTimerRef.current = setTimeout(() => {
+          setConflictingCourseIds([]);
+        }, 2000);
+
         return;
       }
       newSelection = [...selectedCourses];
@@ -466,8 +489,8 @@ export default function Page() {
               Aksi Jadwal{" "}
               <ChevronDown className="w-4 h-4 ml-1 text-[#FF3000]" />
             </Button>
-            
-            <ActionDrawer 
+
+            <ActionDrawer
               open={openMobileSheet}
               onOpenChange={setOpenMobileSheet}
               actions={actionItems}
@@ -692,6 +715,7 @@ export default function Page() {
             <SegmentedSchedulePreview
               selectedCourses={selectedCourses}
               onRemoveCourse={handleSelectCourse}
+              conflictingCourseIds={conflictingCourseIds}
             />
           </div>
 
@@ -989,6 +1013,7 @@ export default function Page() {
                     <ScheduleBoard
                       selectedCourses={selectedCourses}
                       onRemoveCourse={handleSelectCourse}
+                      conflictingCourseIds={conflictingCourseIds}
                     />
                   </div>
                 </div>

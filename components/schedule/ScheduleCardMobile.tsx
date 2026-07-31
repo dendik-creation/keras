@@ -25,6 +25,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { BorderTrail } from "@/components/ui/BorderTrail";
 
 export interface ScheduleCardMobileProps {
   course: CourseSchedule;
@@ -34,6 +35,7 @@ export interface ScheduleCardMobileProps {
   isSelectedForRelease?: boolean;
   isSubmitting?: boolean;
   shouldReduceMotion?: boolean;
+  isConflicting?: boolean;
 }
 
 const cardVariants: Variants = {
@@ -68,6 +70,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
   isSelectedForRelease = false,
   isSubmitting = false,
   shouldReduceMotion = false,
+  isConflicting = false,
 }: ScheduleCardMobileProps) {
   const cardKey = course.schedule_id || `${course.code}-${course.class}`;
   const { activeSwipedId, setActiveSwipedId } = useSwipedCardContext();
@@ -212,10 +215,13 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
         {isSubmitMode ? (
           <Card
             onClick={() => !isSubmitting && onCardClick?.(course)}
-            className={`relative border-2 border-black overflow-hidden bg-white shadow-none ${
-              isSubmitting ? "cursor-not-allowed opacity-90" : "cursor-pointer"
-            }`}
+            className={cn(
+              "relative border-2 overflow-hidden bg-white shadow-none",
+              isSubmitting ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+              isConflicting ? "border-[#FF3000] ring-2 ring-[#FF3000]" : "border-black"
+            )}
           >
+            {isConflicting && <BorderTrail duration={0.5} />}
             {isSelectedForRelease && (
               <div
                 className={cn(
@@ -269,12 +275,16 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
           /* Mobile Swipe Container with Reveal Background */
           <div
             ref={containerRef}
-            className="relative overflow-hidden w-full border-2 border-black bg-[#E53935] select-none"
+            className={cn(
+              "relative overflow-hidden w-full border-2 bg-[#E53935] select-none",
+              isConflicting ? "border-[#FF3000] ring-2 ring-[#FF3000]" : "border-black"
+            )}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           >
+            {isConflicting && <BorderTrail duration={0.5} />}
             {/* Stationary Red Background Delete Reveal Area */}
             <div
               onClick={() => setShowConfirmDialog(true)}

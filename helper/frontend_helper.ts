@@ -220,3 +220,24 @@ export const checkConflict = (
   }
   return null;
 };
+
+export const checkAllConflicts = (
+  target: CourseSchedule,
+  selected: CourseSchedule[],
+): CourseSchedule[] => {
+  const targetTime = parseTimeRange(target.hour);
+  const conflicts: CourseSchedule[] = [];
+
+  for (const item of selected) {
+    if (item.code === target.code) continue;
+
+    if (item.day.toLowerCase() === target.day.toLowerCase()) {
+      const itemTime = parseTimeRange(item.hour);
+      if (targetTime.start < itemTime.end && targetTime.end > itemTime.start) {
+        conflicts.push(item);
+      }
+    }
+  }
+  return conflicts;
+};
+

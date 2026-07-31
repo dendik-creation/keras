@@ -14,6 +14,7 @@ export interface ScheduleCardProps {
   isSelectedForRelease?: boolean;
   isSubmitting?: boolean;
   shouldReduceMotion?: boolean;
+  isConflicting?: boolean;
 }
 
 export const ScheduleCard = memo(function ScheduleCard(props: ScheduleCardProps) {

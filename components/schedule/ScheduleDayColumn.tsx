@@ -15,6 +15,7 @@ interface ScheduleDayColumnProps {
   readyReleases?: { course_code: string; course_class: string }[];
   isSubmitting?: boolean;
   shouldReduceMotion?: boolean;
+  conflictingCourseIds?: string[];
 }
 
 const emptyStateVariants = {
@@ -32,6 +33,7 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
   readyReleases = [],
   isSubmitting = false,
   shouldReduceMotion = false,
+  conflictingCourseIds = [],
 }: ScheduleDayColumnProps) {
   const transitionConfig: Transition = shouldReduceMotion
     ? { duration: 0 }
@@ -65,6 +67,11 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
                   item.course_class === course.class,
               );
 
+              const isConflicting = Boolean(
+                conflictingCourseIds.includes(course.schedule_id) ||
+                conflictingCourseIds.includes(`${course.code}-${course.class}`)
+              );
+
               return (
                 <ScheduleCard
                   key={course.schedule_id || `${course.code}-${course.class}`}
@@ -75,6 +82,7 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
                   isSelectedForRelease={isSelectedForRelease}
                   isSubmitting={isSubmitting}
                   shouldReduceMotion={shouldReduceMotion}
+                  isConflicting={isConflicting}
                 />
               );
             })

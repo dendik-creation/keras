@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { Path } from "react-hook-form";
-import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Loader2, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { useGenerateSchedule, AI_STEP_COUNT } from "@/hooks/useGenerateSchedule";
 import type { AiPreference } from "@/modules/schedule-ai/schedule-ai.types";
+import { buildExternalAiPrompt } from "@/modules/schedule-ai/external-prompt";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 import StepBasic from "@/components/custom/schedule-ai/StepBasic";
 import StepTime from "@/components/custom/schedule-ai/StepTime";
 import StepCourse from "@/components/custom/schedule-ai/StepCourse";
@@ -29,6 +31,7 @@ type GenerateScheduleDialogProps = {
   onOpenChange: (value: boolean) => void;
   offeringCourses: OfferingCourse[];
   onGenerated: (courses: CourseSchedule[]) => void;
+  onCopyPrompt?: () => void;
 };
 
 const STEP_TITLES = [
@@ -54,6 +57,7 @@ export default function GenerateScheduleDialog({
   onOpenChange,
   offeringCourses,
   onGenerated,
+  onCopyPrompt,
 }: GenerateScheduleDialogProps) {
   const { form, step, goNext, goBack, reset, generate, loading, error } =
     useGenerateSchedule(offeringCourses, onGenerated);
@@ -72,6 +76,20 @@ export default function GenerateScheduleDialog({
     }
     const success = await generate();
     if (success) onOpenChange(false);
+  };
+
+  const handleCopyPrompt = () => {
+    const values = form.getValues();
+    const promptText = buildExternalAiPrompt(offeringCourses, values);
+    try {
+      navigator.clipboard.writeText(promptText);
+    } catch {}
+    gooeyToast.success("Prompt AI berhasil disalin", {
+      description:
+        "Lempar prompt ini ke AI pilihanmu (GPT, Gemini, Claude, dll.) dan kembalilah kesini sesuai respon AI yang diberikan kepadamu",
+    });
+    onOpenChange(false);
+    onCopyPrompt?.();
   };
 
   return (
@@ -130,7 +148,7 @@ export default function GenerateScheduleDialog({
           </p>
         )}
 
-        <DialogFooter className="flex-row justify-between sm:justify-between">
+        <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
           <Button
             type="button"
             variant="outline"
@@ -141,29 +159,42 @@ export default function GenerateScheduleDialog({
             <ChevronLeft className="w-4 h-4" />
             Kembali
           </Button>
-          <Button
-            type="button"
-            className="rounded-none"
-            disabled={loading}
-            onClick={handlePrimaryAction}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Membuat Jadwal...
-              </>
-            ) : isLastStep ? (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Buat Jadwal
-              </>
-            ) : (
-              <>
-                Lanjut
-                <ChevronRight className="w-4 h-4" />
-              </>
+          <div className="flex items-center gap-2">
+            {isLastStep && !loading && (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-none border-2 border-black font-bold"
+                onClick={handleCopyPrompt}
+              >
+                <Copy className="w-4 h-4 mr-1" />
+                Salin Prompt AI
+              </Button>
             )}
-          </Button>
+            <Button
+              type="button"
+              className="rounded-none"
+              disabled={loading}
+              onClick={handlePrimaryAction}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Membuat Jadwal...
+                </>
+              ) : isLastStep ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Buat Jadwal
+                </>
+              ) : (
+                <>
+                  Lanjut
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

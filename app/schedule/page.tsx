@@ -16,6 +16,7 @@ import {
   SearchX,
   Share2,
   Sparkles,
+  Copy,
 } from "lucide-react";
 
 import AppLayout from "@/components/partials/AppLayout";
@@ -54,6 +55,8 @@ import { reconcileSavedSchedule } from "@/modules/schedule/reconcile_saved_sched
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import ShareScheduleDialog from "@/components/custom/ShareScheduleDialog";
 import GenerateScheduleDialog from "@/components/custom/schedule-ai/GenerateScheduleDialog";
+import ImportAiResultDialog from "@/components/custom/schedule-ai/ImportAiResultDialog";
+import { buildExternalAiPrompt } from "@/modules/schedule-ai/external-prompt";
 import { AppLoader } from "@/components/ui/app-loader";
 import RollingNumber from "@/components/ui/rolling-number";
 import AuthAccess from "@/components/middleware_wrapper/AuthAccess";
@@ -91,6 +94,7 @@ export default function Page() {
   const [openRemoveSchedule, setOpenRemoveSchedule] = useState(false);
   const [openShareSchedule, setOpenShareSchedule] = useState(false);
   const [openGenerateAi, setOpenGenerateAi] = useState(false);
+  const [openImportAi, setOpenImportAi] = useState(false);
   const [selectedCourses, setSelectedCourses] = useState<CourseSchedule[]>([]);
   const [resumeAdopt, setResumeAdopt] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -275,6 +279,29 @@ export default function Page() {
     setOpenGenerateAi(true);
   };
 
+  const handleCopyAiPrompt = (event?: React.SyntheticEvent | Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (data.length === 0) {
+      gooeyToast.error("Gagal Menyalin Prompt", {
+        description: "Data mata kuliah tidak tersedia. Perbarui ketersediaan jadwal dulu.",
+      });
+      return;
+    }
+
+    const promptText = buildExternalAiPrompt(data);
+    try {
+      navigator.clipboard.writeText(promptText);
+    } catch {}
+
+    gooeyToast.success("Prompt AI berhasil disalin", {
+      description:
+        "Tempelkan ke AI pilihan Anda. Setelah AI memberikan hasil, salin hasil tersebut lalu tempelkan pada dialog yang akan terbuka.",
+    });
+
+    setOpenImportAi(true);
+  };
+
   const handleSaveKRS = () => {
     if (isWarInProgress) {
       warLockToast();
@@ -345,6 +372,16 @@ export default function Page() {
       onClick: (e: React.MouseEvent) => {
         setOpenMobileSheet(false);
         openGenerateAiDialog(e);
+      },
+    },
+    {
+      id: "copy-ai-prompt",
+      title: "Salin Prompt AI",
+      icon: <Copy className="w-4 h-4" />,
+      variant: "default" as const,
+      onClick: (e: React.MouseEvent) => {
+        setOpenMobileSheet(false);
+        handleCopyAiPrompt(e);
       },
     },
     {
@@ -912,6 +949,13 @@ export default function Page() {
                             Buat dengan AI
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onSelect={handleCopyAiPrompt}
+                            className="flex items-center gap-2"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Salin Prompt AI
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onSelect={openShareScheduleDialog}
                             className="flex items-center gap-2"
                           >
@@ -965,12 +1009,27 @@ export default function Page() {
           open={openGenerateAi}
           onOpenChange={setOpenGenerateAi}
           offeringCourses={data}
+          onCopyPrompt={() => setOpenImportAi(true)}
           onGenerated={(courses) => {
             const stamped = stampForAdoption(courses);
             setSelectedCourses(stamped);
             setSavedSchedule(stamped);
             gooeyToast.success("Jadwal AI Berhasil Diterapkan", {
               description: "Jadwal otomatis tersimpan",
+            });
+          }}
+        />
+
+        <ImportAiResultDialog
+          open={openImportAi}
+          onOpenChange={setOpenImportAi}
+          offeringCourses={data}
+          onImport={(courses) => {
+            const stamped = stampForAdoption(courses);
+            setSelectedCourses(stamped);
+            setSavedSchedule(stamped);
+            gooeyToast.success("Jadwal AI Berhasil Diimpor", {
+              description: `${courses.length} mata kuliah berhasil dimuat`,
             });
           }}
         />

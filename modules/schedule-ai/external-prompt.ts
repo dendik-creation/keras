@@ -39,7 +39,7 @@ const GOAL_INDONESIAN_LABELS: Record<OptimizationGoal, string> = {
 
 /**
  * Builds an optimized Bahasa Indonesia prompt for external AI providers
- * (ChatGPT, Claude, Gemini, DeepSeek, GLM, etc.) using available course catalog and preferences.
+ * (ChatGPT, Claude, Gemini, DeepSeek, GLM, Qwen, etc.) using available course catalog and preferences.
  */
 export function buildExternalAiPrompt(
   offeringCourses: OfferingCourse[],
@@ -118,14 +118,23 @@ export function buildExternalAiPrompt(
   const goalVal = isCustomPref ? GOAL_INDONESIAN_LABELS[prefObj.goal] || "Belum ditentukan" : "Belum ditentukan";
 
   return `### TUJUAN
-Kamu adalah asisten akademik yang bertugas membantu saya memilih kombinasi jadwal kuliah terbaik.
+Kamu adalah asisten akademik ahli yang bertugas merancang kombinasi jadwal kuliah terbaik dan bebas bentrok untuk mahasiswa.
 
-Tugas kamu:
-- Memilih kelas terbaik dari daftar mata kuliah yang tersedia.
-- Menghindari jadwal bentrok (hari dan jam sama).
-- Memilih hanya satu kelas untuk setiap mata kuliah yang diambil.
-- Mengikuti preferensi mahasiswa.
-- Apabila preferensi belum lengkap, tanyakan terlebih dahulu sebelum membuat jadwal.
+Tugas utama kamu:
+- Menganalisis katalog mata kuliah yang tersedia dan preferensi mahasiswa.
+- Menghasilkan beberapa pilihan rekomendasi jadwal yang paling optimal.
+- Mengutamakan jadwal yang valid, bebas bentrok, dan memenuhi kebutuhan mahasiswa.
+
+---
+
+### ATURAN WAJIB
+Kamu WAJIB mematuhi seluruh aturan berikut tanpa terkecuali:
+1. DILARANG membuat jadwal bentrok (waktu/jam yang sama pada hari yang sama).
+2. DILARANG memilih lebih dari satu kelas untuk mata kuliah yang sama.
+3. DILARANG mengarang, menambah, atau mengubah kode/kelas mata kuliah yang tidak ada di data katalog.
+4. DILARANG melewatkan mata kuliah wajib jika dipersyaratkan oleh preferensi mahasiswa.
+5. WAJIB melakukan verifikasi dan validasi mandiri terhadap seluruh jadwal sebelum memberikan jawaban.
+6. WAJIB mengoptimalkan jadwal berdasarkan efisiensi waktu, preferensi dosen, dan kenyamanan mahasiswa (bukan memilih secara acak).
 
 ---
 
@@ -135,19 +144,45 @@ ${courseLines.join("\n")}
 
 ---
 
-### CARA MENJAWAB
-1. Jika seluruh preferensi mahasiswa sudah diketahui (tidak ada nilai "Belum ditentukan"), langsung pilih kombinasi jadwal terbaik.
-2. Jika masih terdapat nilai "Belum ditentukan", JANGAN langsung membuat jadwal. Ajukan pertanyaan terlebih dahulu hingga preferensi cukup jelas.
-3. Ketika menghasilkan jadwal, kamu HANYA boleh mengeluarkan daftar course identifier yang dipisahkan koma.
-Strictly NO Markdown, NO penjelasan, NO bullet, NO kalimat tambahan, NO code block. Hanya daftar course identifier.
+### FORMAT JAWABAN
+1. Jika terdapat nilai "Belum ditentukan" pada bagian PREFERENSI MAHASISWA di bawah, DILARANG LANGSUNG MEMBUAT JADWAL. Ajukan pertanyaan singkat hanya untuk poin yang belum ditentukan tersebut dan tunggu jawaban dari mahasiswa.
+2. Jika seluruh preferensi sudah ditentukan, berikan minimal 3 pilihan rekomendasi jadwal (Rekomendasi 1: Paling Seimbang, Rekomendasi 2: Alternatif, Rekomendasi 3: Jadwal Padat).
+3. Setiap rekomendasi WAJIB ditulis dengan format berikut (gunakan code block bash untuk daftar identifier):
 
-Contoh output hasil jadwal:
-IFE101-A,IFE103-B,IFE107-A
+## Rekomendasi [Nomor]
+Alasan: [Penjelasan singkat alasan pemilihan rekomendasi]
+
+\`\`\`bash
+KODE1-KELAS1,KODE2-KELAS2,KODE3-KELAS3
+\`\`\`
+
+Contoh format keluaran:
+
+## Rekomendasi 1
+Alasan: Kombinasi jadwal paling seimbang dengan jeda kuliah minimal.
+
+\`\`\`bash
+IFE101-A,IFE103-B,IFE107-C
+\`\`\`
+
+## Rekomendasi 2
+Alasan: Hari kuliah lebih sedikit sehingga menghemat hari ke kampus.
+
+\`\`\`bash
+IFE101-B,IFE103-A,IFE107-C
+\`\`\`
+
+## Rekomendasi 3
+Alasan: Selesai kuliah lebih awal setiap harinya.
+
+\`\`\`bash
+IFE101-A,IFE103-C,IFE107-B
+\`\`\`
 
 ---
 
 ### PREFERENSI MAHASISWA
-Berikut adalah status preferensi saya saat ini:
+Berikut adalah status preferensi mahasiswa saat ini:
 
 1. Semester: ${semVal}
 2. Target SKS: ${sksVal}
@@ -170,7 +205,15 @@ Pilihan tujuan utama jika belum ditentukan:
 - Dosen terbaik
 - Kombinasi terbaik
 
-Jika masih terdapat nilai "Belum ditentukan" pada daftar preferensi di atas, tanyakan hanya bagian tersebut kepada saya sebelum membuat jadwal.`;
+PENTING:
+Lakukan verifikasi mandiri terhadap aturan berikut sebelum menjawab:
+[✓] Tidak ada jam & hari bentrok
+[✓] Tidak ada bentrok waktu
+[✓] Tepat satu kelas per mata kuliah
+[✓] Memenuhi seluruh preferensi mahasiswa
+[✓] Hanya menggunakan identifier resmi dari DATA MATA KULIAH
+
+Jika masih terdapat nilai "Belum ditentukan" pada daftar preferensi di atas, JANGAN buat rekomendasi jadwal terlebih dahulu. Ajukan pertanyaan terlebih dahulu kepada mahasiswa.`;
 }
 
 export type ParseAndReconstructResult = {
@@ -179,6 +222,15 @@ export type ParseAndReconstructResult = {
   errors: string[];
   warnings: string[];
   rawIdentifiers: string[];
+};
+
+export type RecommendationItem = {
+  id: string;
+  title: string;
+  reason: string;
+  rawText: string;
+  rawIdentifiers: string[];
+  reconstruction: ParseAndReconstructResult;
 };
 
 /**
@@ -288,7 +340,7 @@ export function reconstructScheduleFromCatalog(
     const conflict = checkConflict(match, foundCourses);
     if (conflict) {
       errors.push(
-        `Jadwal bentrok antara ${match.code}-${match.class} (${match.day} ${match.hour}) dan ${conflict.code}-${conflict.class} (${conflict.day} ${conflict.hour}).`,
+        `Jadwal bentrok antara ${match.code}-${match.class} "${match.course}" (${match.day} ${match.hour}) dan ${conflict.code}-${conflict.class} "${conflict.course}" (${conflict.day} ${conflict.hour}).`,
       );
       continue;
     }
@@ -323,3 +375,83 @@ export function parseAndReconstructSchedule(
   const identifiers = parseCourseIdentifiers(input);
   return reconstructScheduleFromCatalog(identifiers, offeringCourses);
 }
+
+/**
+ * Parses single or multiple recommendations from external AI responses.
+ * Detects code blocks (e.g. bash blocks) with accompanying reasons or headings.
+ */
+export function parseMultipleRecommendations(
+  input: string,
+  offeringCourses: OfferingCourse[],
+): RecommendationItem[] {
+  if (!input || !input.trim()) return [];
+
+  const codeBlockRegex = /```(?:bash|sh|text|)?\s*\n?([\s\S]*?)\n?```/gi;
+  const blocks: { rawCode: string; startIndex: number; endIndex: number }[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = codeBlockRegex.exec(input)) !== null) {
+    blocks.push({
+      rawCode: match[1].trim(),
+      startIndex: match.index,
+      endIndex: codeBlockRegex.lastIndex,
+    });
+  }
+
+  if (blocks.length === 0) {
+    const reconstruction = parseAndReconstructSchedule(input, offeringCourses);
+    return [
+      {
+        id: "rec-1",
+        title: "Rekomendasi 1",
+        reason: "Rekomendasi dari teks yang diimpor.",
+        rawText: input.trim(),
+        rawIdentifiers: reconstruction.rawIdentifiers,
+        reconstruction,
+      },
+    ];
+  }
+
+  const results: RecommendationItem[] = [];
+
+  blocks.forEach((block, idx) => {
+    const prevEnd = idx > 0 ? blocks[idx - 1].endIndex : 0;
+    const precedingText = input.substring(prevEnd, block.startIndex).trim();
+
+    let title = `Rekomendasi ${idx + 1}`;
+    const titleMatch = precedingText.match(/(?:#+\s*|\b)(Rekomendasi\s*#?\s*\d+|Pilihan\s*#?\s*\d+|Recommendation\s*#?\s*\d+)/i);
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].replace(/^#+\s*/, "").trim();
+    }
+
+    let reason = "";
+    const reasonMatch = precedingText.match(/(?:Alasan|Reason)\s*:\s*([^\n]+)/i);
+    if (reasonMatch && reasonMatch[1]) {
+      reason = reasonMatch[1].trim();
+    } else {
+      const lines = precedingText.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length > 0) {
+        reason = lines[lines.length - 1].replace(/^#+\s*/, "").trim();
+      }
+    }
+
+    if (!reason) {
+      reason = `Opsi rekomendasi ke-${idx + 1}`;
+    }
+
+    const identifiers = parseCourseIdentifiers(block.rawCode);
+    const reconstruction = reconstructScheduleFromCatalog(identifiers, offeringCourses);
+
+    results.push({
+      id: `rec-${idx + 1}`,
+      title: title || `Rekomendasi ${idx + 1}`,
+      reason,
+      rawText: block.rawCode,
+      rawIdentifiers: identifiers,
+      reconstruction,
+    });
+  });
+
+  return results;
+}
+

@@ -3,6 +3,7 @@ import {
   buildExternalAiPrompt,
   parseCourseIdentifiers,
   parseAndReconstructSchedule,
+  parseMultipleRecommendations,
 } from "@/modules/schedule-ai/external-prompt";
 import type { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 
@@ -44,17 +45,31 @@ const mockOffering: OfferingCourse[] = [
 ];
 
 describe("External AI Prompt Builder", () => {
-  it("generates a Bahasa Indonesia conversational prompt", () => {
+  it("generates a Bahasa Indonesia prompt with strict section ordering", () => {
     const prompt = buildExternalAiPrompt(mockOffering);
-    expect(prompt).toContain("TUJUAN");
-    expect(prompt).toContain("DATA MATA KULIAH");
-    expect(prompt).toContain("CARA MENJAWAB");
-    expect(prompt).toContain("PREFERENSI MAHASISWA");
+    expect(prompt).toContain("### TUJUAN");
+    expect(prompt).toContain("### ATURAN WAJIB");
+    expect(prompt).toContain("### DATA MATA KULIAH");
+    expect(prompt).toContain("### FORMAT JAWABAN");
+    expect(prompt).toContain("### PREFERENSI MAHASISWA");
+
+    // Check order: TUJUAN -> ATURAN WAJIB -> DATA MATA KULIAH -> FORMAT JAWABAN -> PREFERENSI MAHASISWA
+    const idxTujuan = prompt.indexOf("### TUJUAN");
+    const idxAturan = prompt.indexOf("### ATURAN WAJIB");
+    const idxData = prompt.indexOf("### DATA MATA KULIAH");
+    const idxFormat = prompt.indexOf("### FORMAT JAWABAN");
+    const idxPref = prompt.indexOf("### PREFERENSI MAHASISWA");
+
+    expect(idxTujuan).toBeLessThan(idxAturan);
+    expect(idxAturan).toBeLessThan(idxData);
+    expect(idxData).toBeLessThan(idxFormat);
+    expect(idxFormat).toBeLessThan(idxPref);
+
     expect(prompt).toContain("IFE101-A|3|Sen|08:00-10:30|Dosen A");
     expect(prompt).toContain("Belum ditentukan");
   });
 
-  it("injects known preferences dynamically", () => {
+  it("injects mandatory constraint rules and bash format instructions", () => {
     const prompt = buildExternalAiPrompt(mockOffering, {
       preferred_semester: "Semester 5",
       target_sks: { mode: "custom", value: 24 },
@@ -62,9 +77,12 @@ describe("External AI Prompt Builder", () => {
       latest_end: "15:00",
       goal: "balanced",
     });
+    expect(prompt).toContain("DILARANG membuat jadwal bentrok");
+    expect(prompt).toContain("DILARANG memilih lebih dari satu kelas");
+    expect(prompt).toContain("DILARANG mengarang, menambah, atau mengubah kode/kelas");
+    expect(prompt).toContain("```bash");
     expect(prompt).toContain("1. Semester: Semester 5");
     expect(prompt).toContain("2. Target SKS: 24 SKS");
-    expect(prompt).toContain("3. Jam kuliah paling awal: 08:00");
   });
 });
 
@@ -86,7 +104,7 @@ describe("Course Identifier Parser", () => {
   });
 });
 
-describe("Schedule Reconstruction", () => {
+describe("Schedule Reconstruction & Multi-Recommendation Parser", () => {
   it("reconstructs valid courses from catalog", () => {
     const res = parseAndReconstructSchedule("IFE101-A, IFE103-A, IFE107-B", mockOffering);
     expect(res.success).toBe(true);
@@ -96,6 +114,40 @@ describe("Schedule Reconstruction", () => {
       "IFE103-A",
       "IFE107-B",
     ]);
+  });
+
+  it("parses multi-recommendation bash output correctly", () => {
+    const input = `
+## Rekomendasi 1
+Alasan: Kombinasi paling seimbang dengan jeda kuliah minimal.
+\`\`\`bash
+IFE101-A,IFE103-A
+\`\`\`
+
+## Rekomendasi 2
+Alasan: Hari kuliah lebih sedikit.
+\`\`\`bash
+IFE101-B,IFE107-B
+\`\`\`
+    `;
+
+    const recs = parseMultipleRecommendations(input, mockOffering);
+    expect(recs.length).toBe(2);
+    expect(recs[0].title).toBe("Rekomendasi 1");
+    expect(recs[0].reason).toContain("seimbang");
+    expect(recs[0].reconstruction.success).toBe(true);
+    expect(recs[0].reconstruction.courses.length).toBe(2);
+
+    expect(recs[1].title).toBe("Rekomendasi 2");
+    expect(recs[1].reason).toContain("lebih sedikit");
+    expect(recs[1].reconstruction.success).toBe(true);
+  });
+
+  it("maintains backward compatibility with raw comma-separated lists", () => {
+    const recs = parseMultipleRecommendations("IFE101-A, IFE103-A", mockOffering);
+    expect(recs.length).toBe(1);
+    expect(recs[0].reconstruction.success).toBe(true);
+    expect(recs[0].rawIdentifiers).toEqual(["IFE101-A", "IFE103-A"]);
   });
 
   it("rejects unknown course codes", () => {

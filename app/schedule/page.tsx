@@ -1053,7 +1053,7 @@ export default function Page() {
             const stamped = stampForAdoption(courses);
             setSelectedCourses(stamped);
             setSavedSchedule(stamped);
-            gooeyToast.success("Jadwal AI Berhasil Diimpor", {
+            gooeyToast.success("Berhasil mengimpor jadwal", {
               description: `${courses.length} mata kuliah berhasil dimuat`,
             });
           }}

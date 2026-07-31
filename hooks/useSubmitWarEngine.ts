@@ -15,12 +15,16 @@ import { WAR_IN_PROGRESS_KEY } from "@/providers/LocalStorageProvider";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import {
   ActiveUser,
-  trackWarStarted,
-  trackAttemptStarted,
-  trackAttemptFinished,
-  trackCourseSecured,
-  trackCourseFailed,
-  trackWarCompleted,
+  trackWarSubmissionStarted,
+  trackWarSubmissionAttemptStarted,
+  trackWarSubmissionAttemptFinished,
+  trackWarSubmissionRetry,
+  trackWarSubmissionCompleted,
+  trackWarSubmissionFailed,
+  trackWarReadyCheckStarted,
+  trackWarReadyCheckCompleted,
+  trackWarReleaseSchedule,
+  trackWarSessionExpired,
 } from "@/lib/analytics/events";
 
 export const TOTAL_ATTEMPTS = 3;
@@ -391,6 +395,15 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  const getWarMode = useCallback((): "test" | "production" => {
+    return warTestModeProp ??
+      (typeof window !== "undefined" &&
+        (process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true" ||
+          (process.env as any).WAR_TEST_MODE === "true"))
+      ? "test"
+      : "production";
+  }, [warTestModeProp]);
+
   // --- Sync target courses against the KRS entry form ("is the war open?"
   // check, and the one final post-war sync). Returns the resulting courses
   // directly so callers don't have to race stateRef against React's commit.
@@ -448,6 +461,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
         return { success: true, courses: updated };
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
+          trackWarSessionExpired({ page: "/submit", action: "sync_check" });
           if (typeof window !== "undefined") window.location.href = "/login";
         }
         dispatch({ type: "SYNC_FAILED" });
@@ -456,6 +470,23 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
     },
     [],
   );
+
+  const checkWarStatus = useCallback(async () => {
+    const warMode = getWarMode();
+    const courses = stateRef.current.courses;
+    trackWarReadyCheckStarted({
+      war_mode: warMode,
+      total_courses: courses.length,
+    });
+    const startedAt = Date.now();
+    const result = await syncWithServer();
+    trackWarReadyCheckCompleted({
+      war_mode: warMode,
+      is_open: result.success,
+      duration_ms: Date.now() - startedAt,
+    });
+    return result;
+  }, [getWarMode, syncWithServer]);
 
   const startWar = useCallback(async () => {
     const current = stateRef.current;
@@ -483,12 +514,26 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
     }
 
     const activeUser = getLocalStorage("active_user") as ActiveUser | null;
-    if (activeUser) trackWarStarted(activeUser, current.courses.length);
+    const warMode = getWarMode();
+    const requestId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    trackWarSubmissionStarted({
+      request_id: requestId,
+      war_mode: warMode,
+      total_courses: current.courses.length,
+    });
+
+    const submissionStartedAt = Date.now();
+    let submissionCompletedFired = false;
+    let maxAttempt = 0;
 
     dispatch({
       type: "START_WAR",
       scheduleIds: targets.map((c) => c.schedule_id),
-      startedAt: Date.now(),
+      startedAt: submissionStartedAt,
     });
 
     try {
@@ -506,12 +551,21 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
 
       if (!response.ok || !response.body) {
         if (response.status === 401 && typeof window !== "undefined") {
+          trackWarSessionExpired({ page: "/submit", action: "submission" });
           window.location.href = "/login";
           return;
         }
         gooeyToast.error("Terjadi Kesalahan", {
           description: "Gagal memulai perang KRS.",
         });
+        trackWarSubmissionFailed({
+          request_id: requestId,
+          war_mode: warMode,
+          total_courses: current.courses.length,
+          duration_ms: Date.now() - submissionStartedAt,
+          error_message: `HTTP ${response.status}`,
+        });
+        submissionCompletedFired = true;
         dispatch({ type: "FINISH_WAR" });
         return;
       }
@@ -542,13 +596,31 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
             const { name, attempt, result } = data;
 
             if (name === "ATTEMPT_STARTED" && attempt) {
+              maxAttempt = Math.max(maxAttempt, attempt);
               attemptStartTimes[attempt] = Date.now();
               dispatch({ type: "ATTEMPT_STARTED", attempt });
-              if (activeUser) trackAttemptStarted(activeUser, attempt);
+
+              if (attempt > 1) {
+                trackWarSubmissionRetry({
+                  request_id: requestId,
+                  war_mode: warMode,
+                  retry_count: attempt - 1,
+                  attempt,
+                });
+              }
+
+              trackWarSubmissionAttemptStarted({
+                request_id: requestId,
+                war_mode: warMode,
+                attempt,
+                total_attempts: TOTAL_ATTEMPTS,
+              });
             } else if (name === "ATTEMPT_FINISHED" && attempt && result) {
               const startTime = attemptStartTimes[attempt] || Date.now();
               const durationMs = Date.now() - startTime;
-              const rawMessages: string[] = Array.isArray(result.messages) ? result.messages : [];
+              const rawMessages: string[] = Array.isArray(result.messages)
+                ? result.messages
+                : [];
 
               let successCount = 0;
               let failureCount = 0;
@@ -570,21 +642,29 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
                 if (parsed) {
                   const { isSuccess, code, klass, scheduleId } = parsed;
                   if (isSuccess) {
-                    dispatch({ type: "COURSE_SUBMIT_SUCCESS", code, klass, scheduleId });
+                    dispatch({
+                      type: "COURSE_SUBMIT_SUCCESS",
+                      code,
+                      klass,
+                      scheduleId,
+                    });
                     affectedCourses.push({
                       code: code || scheduleId || "",
                       class: klass || "",
                       result: "success",
                     });
-                    if (activeUser) trackCourseSecured(activeUser, attempt);
                   } else {
-                    dispatch({ type: "COURSE_SUBMIT_FAILED", code, klass, scheduleId });
+                    dispatch({
+                      type: "COURSE_SUBMIT_FAILED",
+                      code,
+                      klass,
+                      scheduleId,
+                    });
                     affectedCourses.push({
                       code: code || scheduleId || "",
                       class: klass || "",
                       result: "error",
                     });
-                    if (activeUser) trackCourseFailed(activeUser, attempt);
                   }
                 }
               });
@@ -604,29 +684,46 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
                 },
               });
 
-              if (activeUser) {
-                trackAttemptFinished(activeUser, {
-                  attempt,
-                  durationMs,
-                  successCount,
-                  failedCount: failureCount,
-                });
-              }
+              trackWarSubmissionAttemptFinished({
+                request_id: requestId,
+                war_mode: warMode,
+                attempt,
+                duration_ms: durationMs,
+                success_count: successCount,
+                failed_count: failureCount,
+              });
             } else if (name === "PHASE_SKIPPED" || name === "phase_skipped") {
               const targetPhase = data.phase || attempt;
               if (targetPhase) {
-                dispatch({ type: "PHASE_SKIPPED", phase: targetPhase, reason: data.reason });
+                dispatch({
+                  type: "PHASE_SKIPPED",
+                  phase: targetPhase,
+                  reason: data.reason,
+                });
               }
-            } else if (name === "SUBMISSION_FINISHED" || name === "submission_finished") {
-              dispatch({ type: "SUBMISSION_FINISHED", completedAtPhase: data.completedAtPhase });
+            } else if (
+              name === "SUBMISSION_FINISHED" ||
+              name === "submission_finished"
+            ) {
+              dispatch({
+                type: "SUBMISSION_FINISHED",
+                completedAtPhase: data.completedAtPhase,
+              });
             }
           } else if (data.type === "phase_skipped") {
             const targetPhase = data.phase || data.attempt;
             if (targetPhase) {
-              dispatch({ type: "PHASE_SKIPPED", phase: targetPhase, reason: data.reason });
+              dispatch({
+                type: "PHASE_SKIPPED",
+                phase: targetPhase,
+                reason: data.reason,
+              });
             }
           } else if (data.type === "submission_finished") {
-            dispatch({ type: "SUBMISSION_FINISHED", completedAtPhase: data.completedAtPhase });
+            dispatch({
+              type: "SUBMISSION_FINISHED",
+              completedAtPhase: data.completedAtPhase,
+            });
           } else if (data.type === "error") {
             gooeyToast.error("Terjadi Kesalahan", {
               description: data.message || "Gagal submit.",
@@ -635,6 +732,17 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
         }
       }
     } catch (error) {
+      if (!submissionCompletedFired) {
+        submissionCompletedFired = true;
+        trackWarSubmissionFailed({
+          request_id: requestId,
+          war_mode: warMode,
+          total_courses: current.courses.length,
+          duration_ms: Date.now() - submissionStartedAt,
+          error_message:
+            error instanceof Error ? error.message : "Koneksi terputus saat submit.",
+        });
+      }
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Koneksi terputus saat submit.",
       });
@@ -643,16 +751,33 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
     const finalSync = await syncWithServer(stateRef.current.courses);
     dispatch({ type: "FINISH_WAR" });
 
-    const preparedCount = finalSync.courses.length;
-    const successCount = finalSync.courses.filter((c) => c.saved_in_submit === true).length;
+    const totalCourses = finalSync.courses.length;
+    const successfulCourses = finalSync.courses.filter(
+      (c) => c.saved_in_submit === true,
+    ).length;
+    const failedCourses = Math.max(totalCourses - successfulCourses, 0);
+    const execDuration = Date.now() - submissionStartedAt;
+    const totalAttempts = maxAttempt || 1;
+    const retryCount = Math.max(totalAttempts - 1, 0);
 
     gooeyToast.success("Info Bosku", {
       description: "Perang berhasil diselesaikan",
     });
-    if (activeUser) {
-      trackWarCompleted(activeUser, { preparedCount, successCount });
+
+    if (!submissionCompletedFired) {
+      submissionCompletedFired = true;
+      trackWarSubmissionCompleted({
+        request_id: requestId,
+        war_mode: warMode,
+        total_courses: totalCourses,
+        successful_courses: successfulCourses,
+        failed_courses: failedCourses,
+        retry_count: retryCount,
+        total_attempts: totalAttempts,
+        execution_duration_ms: execDuration,
+      });
     }
-  }, [syncWithServer]);
+  }, [getWarMode, syncWithServer]);
 
   const releaseCourses = useCallback(
     async (
@@ -782,6 +907,11 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
 
       if (anyChange) {
         dispatch({ type: "COURSE_RELEASED", courses: nextCourses });
+        trackWarReleaseSchedule({
+          war_mode: isTestMode ? "test" : "production",
+          released_count: readyReleases.length,
+          remaining_count: nextCourses.length,
+        });
         await syncWithServer(nextCourses);
       }
       return anyChange;

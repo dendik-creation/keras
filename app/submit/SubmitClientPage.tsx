@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2,
   CheckCircle2,
@@ -43,12 +43,15 @@ import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
 import { SegmentedSchedulePreview } from "@/components/schedule/SegmentedSchedulePreview";
 import { cn } from "@/lib/utils";
 import { AttemptStatus } from "@/types/submit_log";
+import {
+  trackWarPageOpened,
+  trackWarScheduleLoaded,
+  trackWarValidationCompleted,
+} from "@/lib/analytics/events";
 
 type Props = {
   warTestMode: boolean;
 };
-
-
 
 function getStatusText(status: AttemptStatus): string {
   switch (status) {
@@ -113,6 +116,40 @@ function getBadgeStyle(status: AttemptStatus): string {
 export default function SubmitClientPage({ warTestMode }: Props) {
   const isMobile = useIsMobile();
   const war = useSubmitWarEngine(warTestMode);
+  const pageTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (!war.isHydrated || pageTrackedRef.current) return;
+    pageTrackedRef.current = true;
+    const warMode = warTestMode ? "test" : "production";
+    const totalCourses = war.courses.length;
+    const hasSchedule = totalCourses > 0;
+    const totalSks = war.courses.reduce(
+      (acc, curr) => acc + Number(curr.sks || 0),
+      0,
+    );
+
+    trackWarPageOpened({
+      war_mode: warMode,
+      total_courses: totalCourses,
+      has_schedule: hasSchedule,
+    });
+
+    trackWarScheduleLoaded({
+      war_mode: warMode,
+      total_courses: totalCourses,
+      total_sks: totalSks,
+      has_schedule: hasSchedule,
+    });
+
+    trackWarValidationCompleted({
+      war_mode: warMode,
+      total_courses: totalCourses,
+      is_valid: true,
+      validation_duration_ms: 0,
+    });
+  }, [war.isHydrated, war.courses, warTestMode]);
+
   const [readyReleases, setReadyReleases] = useState<
     {
       course_code: string;

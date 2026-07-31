@@ -199,34 +199,42 @@ export default function Page() {
   }, []);
 
   const handleSelectCourse = (course: CourseSchedule) => {
+    if (isWarInProgress) {
+      warLockToast();
+      return;
+    }
+    let newSelection: CourseSchedule[];
     const isSelected = selectedCourses.find(
       (c) => c.schedule_id === course.schedule_id,
     );
     if (isSelected) {
-      setSelectedCourses((prev) =>
-        prev.filter((c) => c.schedule_id !== course.schedule_id),
+      newSelection = selectedCourses.filter(
+        (c) => c.schedule_id !== course.schedule_id,
       );
-      return;
-    }
-    const sameCourseCodeIndex = selectedCourses.findIndex(
-      (c) => c.code === course.code,
-    );
-
-    const conflict = checkConflict(course, selectedCourses);
-    if (conflict) {
-      gooeyToast.error(
-        `Jadwal bentrok dengan kelas ${conflict.class} ${conflict.course}`,
+    } else {
+      const sameCourseCodeIndex = selectedCourses.findIndex(
+        (c) => c.code === course.code,
       );
-      return;
-    }
-    const newSelection = [...selectedCourses];
 
-    if (sameCourseCodeIndex !== -1) {
-      newSelection.splice(sameCourseCodeIndex, 1);
+      const conflict = checkConflict(course, selectedCourses);
+      if (conflict) {
+        gooeyToast.error(
+          `Jadwal bentrok dengan kelas ${conflict.class} ${conflict.course}`,
+        );
+        return;
+      }
+      newSelection = [...selectedCourses];
+
+      if (sameCourseCodeIndex !== -1) {
+        newSelection.splice(sameCourseCodeIndex, 1);
+      }
+
+      newSelection.push(course);
     }
 
-    newSelection.push(course);
-    setSelectedCourses(newSelection);
+    const stamped = stampForAdoption(newSelection);
+    setSelectedCourses(stamped);
+    setSavedSchedule(stamped);
   };
 
   const warLockToast = () =>
@@ -347,17 +355,6 @@ export default function Page() {
       onClick: (e: React.MouseEvent) => {
         setOpenMobileSheet(false);
         openShareScheduleDialog(e);
-      },
-    },
-    {
-      id: "save-schedule",
-      title: "Simpan Jadwal",
-      icon: <Save className="w-4 h-4" />,
-      variant: "default" as const,
-      disabled: isWarInProgress,
-      onClick: () => {
-        setOpenMobileSheet(false);
-        handleSaveKRS();
       },
     },
     {
@@ -907,14 +904,6 @@ export default function Page() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={handleSaveKRS}
-                            disabled={isWarInProgress}
-                            className="flex items-center gap-2"
-                          >
-                            <Save className="w-4 h-4" />
-                            Simpan Jadwal
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
                             onSelect={openGenerateAiDialog}
                             disabled={isWarInProgress}
                             className="flex items-center gap-2"
@@ -976,7 +965,14 @@ export default function Page() {
           open={openGenerateAi}
           onOpenChange={setOpenGenerateAi}
           offeringCourses={data}
-          onGenerated={setSelectedCourses}
+          onGenerated={(courses) => {
+            const stamped = stampForAdoption(courses);
+            setSelectedCourses(stamped);
+            setSavedSchedule(stamped);
+            gooeyToast.success("Jadwal AI Berhasil Diterapkan", {
+              description: "Jadwal otomatis tersimpan",
+            });
+          }}
         />
 
         <ConfirmDialog

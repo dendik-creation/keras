@@ -162,6 +162,8 @@ type WarAction =
   | { type: "EXECUTION_GRANTED"; message: string }
   | { type: "ATTEMPT_STARTED"; attempt: number }
   | { type: "ATTEMPT_FINISHED"; attempt: number; patch: Partial<SubmitLog> }
+  | { type: "PHASE_SKIPPED"; phase: number; reason?: string }
+  | { type: "SUBMISSION_FINISHED"; completedAtPhase?: number }
   | { type: "COURSE_SUBMIT_STARTED"; scheduleIds: string[] }
   | { type: "COURSE_SUBMIT_SUCCESS"; code?: string; klass?: string; scheduleId?: string }
   | { type: "COURSE_SUBMIT_FAILED"; code?: string; klass?: string; scheduleId?: string }
@@ -264,6 +266,54 @@ function warReducer(state: WarState, action: WarAction): WarState {
       };
     }
 
+    case "PHASE_SKIPPED": {
+      const { phase, reason } = action;
+      let logs = [...state.logs];
+      const logIndex = phase - 1;
+      if (logs[logIndex]) {
+        logs[logIndex] = {
+          ...logs[logIndex],
+          status: "skipped",
+          reason: reason || "no_remaining_courses",
+          messages: [
+            {
+              status: "info",
+              message: "Skipped: No remaining courses to submit.",
+            },
+          ],
+          finishedAt: new Date().toISOString(),
+        };
+        logWarUi(phase, "skipped");
+      }
+      return {
+        ...state,
+        logs,
+      };
+    }
+
+    case "SUBMISSION_FINISHED": {
+      let logs = state.logs.map((log) => {
+        if (log.status === "waiting" || log.status === "pending") {
+          return {
+            ...log,
+            status: "skipped" as AttemptStatus,
+            reason: "no_remaining_courses",
+            messages: [
+              {
+                status: "info" as const,
+                message: "Skipped: No remaining courses to submit.",
+              },
+            ],
+          };
+        }
+        return log;
+      });
+      return {
+        ...state,
+        logs,
+      };
+    }
+
     case "COURSE_SUBMIT_STARTED": {
       const inFlight = new Set(state.inFlight);
       action.scheduleIds.forEach((id) => inFlight.add(id));
@@ -306,8 +356,25 @@ function warReducer(state: WarState, action: WarAction): WarState {
     case "COURSE_RELEASED":
       return { ...state, courses: action.courses };
 
-    case "FINISH_WAR":
-      return { ...state, isSubmitting: false };
+    case "FINISH_WAR": {
+      const logs = state.logs.map((log) => {
+        if (log.status === "waiting" || log.status === "pending") {
+          return {
+            ...log,
+            status: "skipped" as AttemptStatus,
+            reason: "no_remaining_courses",
+            messages: [
+              {
+                status: "info" as const,
+                message: "Skipped: No remaining courses to submit.",
+              },
+            ],
+          };
+        }
+        return log;
+      });
+      return { ...state, isSubmitting: false, logs };
+    }
 
     default:
       return state;
@@ -319,7 +386,7 @@ function warReducer(state: WarState, action: WarAction): WarState {
  * source of truth — localStorage is written to as a side effect of state
  * changes, never read back into the UI directly (except on first mount).
  */
-export function useSubmitWarEngine() {
+export function useSubmitWarEngine(warTestModeProp?: boolean) {
   const [state, dispatch] = useReducer(warReducer, initialState);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -545,7 +612,21 @@ export function useSubmitWarEngine() {
                   failedCount: failureCount,
                 });
               }
+            } else if (name === "PHASE_SKIPPED" || name === "phase_skipped") {
+              const targetPhase = data.phase || attempt;
+              if (targetPhase) {
+                dispatch({ type: "PHASE_SKIPPED", phase: targetPhase, reason: data.reason });
+              }
+            } else if (name === "SUBMISSION_FINISHED" || name === "submission_finished") {
+              dispatch({ type: "SUBMISSION_FINISHED", completedAtPhase: data.completedAtPhase });
             }
+          } else if (data.type === "phase_skipped") {
+            const targetPhase = data.phase || data.attempt;
+            if (targetPhase) {
+              dispatch({ type: "PHASE_SKIPPED", phase: targetPhase, reason: data.reason });
+            }
+          } else if (data.type === "submission_finished") {
+            dispatch({ type: "SUBMISSION_FINISHED", completedAtPhase: data.completedAtPhase });
           } else if (data.type === "error") {
             gooeyToast.error("Terjadi Kesalahan", {
               description: data.message || "Gagal submit.",
@@ -578,6 +659,12 @@ export function useSubmitWarEngine() {
       readyReleases: { course_code: string; course_class: string }[],
     ): Promise<boolean> => {
       const courses = stateRef.current.courses;
+      const isTestMode =
+        warTestModeProp ??
+        (typeof window !== "undefined" &&
+          (process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true" ||
+            (process.env as any).WAR_TEST_MODE === "true"));
+
       const releasableCourses = readyReleases.filter((item) =>
         courses.some(
           (c) =>
@@ -598,6 +685,51 @@ export function useSubmitWarEngine() {
       let nextCourses = courses;
       let anyChange = false;
 
+      if (isTestMode) {
+        // WAR Test Mode: Pure local simulated state operation — ZERO network requests
+        if (releasableCourses.length > 0) {
+          nextCourses = nextCourses.map((course) => {
+            const shouldUpdate = releasableCourses.some(
+              (item) =>
+                item.course_code === course.code &&
+                item.course_class === course.class,
+            );
+            return shouldUpdate
+              ? {
+                  ...course,
+                  saved_in_submit: false,
+                  schedule_submit_id: `SIM-${course.code}-${course.class}`,
+                }
+              : course;
+          });
+          anyChange = true;
+          gooeyToast.success("Info Bosku", {
+            description: "Jadwal terpilih telah dilepaskan",
+          });
+        }
+
+        if (removableCourses.length > 0) {
+          nextCourses = nextCourses.filter(
+            (course) =>
+              !removableCourses.some(
+                (item) =>
+                  item.course_code === course.code &&
+                  item.course_class === course.class,
+              ),
+          );
+          anyChange = true;
+          gooeyToast.success("Info Bosku", {
+            description: "Jadwal terpilih telah dihapus",
+          });
+        }
+
+        if (anyChange) {
+          dispatch({ type: "COURSE_RELEASED", courses: nextCourses });
+        }
+        return anyChange;
+      }
+
+      // Production Mode: Call backend release endpoint
       if (releasableCourses.length > 0) {
         try {
           const response = await axios.delete("/api/submit", {
@@ -654,7 +786,7 @@ export function useSubmitWarEngine() {
       }
       return anyChange;
     },
-    [syncWithServer],
+    [syncWithServer, warTestModeProp],
   );
 
   // Hydrate from localStorage once, then run the initial "is the war open" sync

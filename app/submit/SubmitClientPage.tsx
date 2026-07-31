@@ -12,6 +12,7 @@ import {
   Search,
   PauseCircle,
   Clock,
+  SkipForward,
 } from "lucide-react";
 import ProgressBorder from "@/components/ProgressBorder";
 
@@ -64,6 +65,8 @@ function getStatusText(status: AttemptStatus): string {
       return "Failed";
     case "pending":
       return "Pending";
+    case "skipped":
+      return "Skipped";
     default:
       return status;
   }
@@ -82,6 +85,8 @@ function getBadgeIcon(status: AttemptStatus) {
       return <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />;
     case "failed":
       return <CircleX className="w-3.5 h-3.5 text-[#FF3000] shrink-0" />;
+    case "skipped":
+      return <SkipForward className="w-3.5 h-3.5 text-slate-600 shrink-0" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-black/60 shrink-0" />;
   }
@@ -97,6 +102,8 @@ function getBadgeStyle(status: AttemptStatus): string {
       return "bg-[#0066FF] text-white";
     case "failed":
       return "bg-[#FF3000] text-white";
+    case "skipped":
+      return "bg-slate-200 text-slate-800 border border-slate-400 font-bold";
     case "waiting":
     default:
       return "bg-[#E5E7EB] text-black border border-black/30";
@@ -105,7 +112,7 @@ function getBadgeStyle(status: AttemptStatus): string {
 
 export default function SubmitClientPage({ warTestMode }: Props) {
   const isMobile = useIsMobile();
-  const war = useSubmitWarEngine();
+  const war = useSubmitWarEngine(warTestMode);
   const [readyReleases, setReadyReleases] = useState<
     {
       course_code: string;
@@ -327,6 +334,18 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                           </AlertDescription>
                         </Alert>
                       )}
+                      {log.status === "skipped" && (
+                        <div className="py-2 px-2.5 border border-slate-300 bg-slate-100 space-y-1">
+                          <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <SkipForward className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                            <span>Skipped</span>
+                          </div>
+                          <div className="text-[10px] text-slate-600 leading-snug">
+                            Reason:<br />
+                            No remaining courses to submit.
+                          </div>
+                        </div>
+                      )}
 
                       {log.messages.map((msg, idx) => (
                         <div
@@ -507,7 +526,9 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                                 ? "border-black bg-white"
                                 : log.status === "failed"
                                   ? "border-[#FF3000] bg-red-50"
-                                  : "border-[#555555] bg-[#F2F2F2]"
+                                  : log.status === "skipped"
+                                    ? "border-slate-400 bg-slate-50"
+                                    : "border-[#555555] bg-[#F2F2F2]"
                             }`}
                           >
                             <AccordionTrigger className="hover:no-underline py-3">
@@ -564,6 +585,20 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                                     <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-bold">
                                       <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
                                       <span>Submitting payload to server...</span>
+                                    </AlertDescription>
+                                  </Alert>
+                                )}
+                                {log.status === "skipped" && (
+                                  <Alert className="py-2 bg-slate-100 border border-slate-300">
+                                    <AlertDescription className="text-xs text-slate-800 flex flex-col gap-1 font-medium">
+                                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                                        <SkipForward className="w-4 h-4 text-slate-700 shrink-0" />
+                                        <span>Skipped</span>
+                                      </div>
+                                      <div className="text-slate-700 pl-5 leading-relaxed">
+                                        Reason:<br />
+                                        No remaining courses to submit.
+                                      </div>
                                     </AlertDescription>
                                   </Alert>
                                 )}

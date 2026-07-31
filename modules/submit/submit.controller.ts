@@ -238,7 +238,31 @@ export async function postSubmit(req: Request) {
               const TOTAL_ATTEMPTS = 3;
 
               for (let attempt = 1; attempt <= TOTAL_ATTEMPTS; attempt++) {
-                if (currentRemaining.length === 0 && attempt > 1) break;
+                if (currentRemaining.length === 0 && attempt > 1) {
+                  for (let skippedPhase = attempt; skippedPhase <= TOTAL_ATTEMPTS; skippedPhase++) {
+                    send({
+                      type: "event",
+                      name: "PHASE_SKIPPED",
+                      phase: skippedPhase,
+                      reason: "no_remaining_courses",
+                    });
+                    send({
+                      type: "phase_skipped",
+                      phase: skippedPhase,
+                      reason: "no_remaining_courses",
+                    });
+                  }
+                  send({
+                    type: "submission_finished",
+                    completedAtPhase: attempt - 1,
+                  });
+                  send({
+                    type: "event",
+                    name: "SUBMISSION_FINISHED",
+                    completedAtPhase: attempt - 1,
+                  });
+                  break;
+                }
 
                 send({
                   type: "event",
@@ -258,6 +282,32 @@ export async function postSubmit(req: Request) {
 
                 if (Array.isArray(attemptResult.messages)) {
                   currentRemaining = filterSucceededScheduleIds(currentRemaining, attemptResult.messages, resolvedSchedules);
+                }
+
+                if (currentRemaining.length === 0 && attempt < TOTAL_ATTEMPTS) {
+                  for (let skippedPhase = attempt + 1; skippedPhase <= TOTAL_ATTEMPTS; skippedPhase++) {
+                    send({
+                      type: "event",
+                      name: "PHASE_SKIPPED",
+                      phase: skippedPhase,
+                      reason: "no_remaining_courses",
+                    });
+                    send({
+                      type: "phase_skipped",
+                      phase: skippedPhase,
+                      reason: "no_remaining_courses",
+                    });
+                  }
+                  send({
+                    type: "submission_finished",
+                    completedAtPhase: attempt,
+                  });
+                  send({
+                    type: "event",
+                    name: "SUBMISSION_FINISHED",
+                    completedAtPhase: attempt,
+                  });
+                  break;
                 }
 
                 if (attempt < TOTAL_ATTEMPTS && currentRemaining.length > 0) {

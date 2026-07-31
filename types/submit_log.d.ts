@@ -6,7 +6,8 @@ export type AttemptStatus =
   | "completed"
   | "failed"
   | "pending"
-  | "success";
+  | "success"
+  | "skipped";
 
 export type PreparationStatus =
   | "idle"
@@ -18,8 +19,9 @@ export type SubmitLog = {
   attempt: number;
   phase?: number;
   status: AttemptStatus;
+  reason?: string;
   messages: {
-    status: "success" | "error";
+    status: "success" | "error" | "info" | "skipped";
     message: string;
   }[];
   timestamp: string;

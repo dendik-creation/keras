@@ -121,7 +121,18 @@ const changelogHistories = [
     title: "Buat Jadwal dengan AI",
     changes: [
       "Buat jadwal dengan AI dengan formulir yang menyenangkan",
-      "Membantu mahasiswa membentuk jadwal berdasarkan preferensi"
+      "Membantu mahasiswa membentuk jadwal berdasarkan preferensi",
+      "Bisa pakai prompt untuk memandu AI dalam menghasilkan jadwal yang sesuai"
+    ],
+  },
+  {
+    version: "2.3.3",
+    date: "30 Jul 2026",
+    title: "Pengoptimalan Perang KRS",
+    changes: [
+      "Pengoptimalan antrian submit untuk mengurangi waktu tunggu",
+      "Mengurangi resiko rate limit yang diterapkan oleh server kampus",
+      "Perbaikan state management activity, schedules, dan release schedule dengan sinkronisasi informasi dari krs kampus",
     ],
   },
 ];

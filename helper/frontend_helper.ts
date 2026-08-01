@@ -6,6 +6,12 @@ import { setLocalStorage } from "@/helper/local_storage";
 export const SAVED_SCHEDULE_KEY = "krs_saved_schedule";
 export const OFFERING_COURSE_KEY = "offering_course";
 
+export const WAR_TEST_SCHEDULE_KEY = "war_test_schedule";
+export const WAR_TEST_OWNED_COURSES_KEY = "war_test_owned_courses";
+export const WAR_TEST_SECURED_COURSES_KEY = "war_test_secured_courses";
+export const WAR_TEST_SUBMISSION_HISTORY_KEY = "war_test_submission_history";
+export const WAR_TEST_RELEASE_HISTORY_KEY = "war_test_release_history";
+
 /**
  * Get scheduling: read the /api/schedule NDJSON stream to completion.
  * Backend keeps the connection alive with `progress` events during the

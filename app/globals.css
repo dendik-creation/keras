@@ -255,3 +255,10 @@
     }
 }
 
+/* ─── CONTRIBUTION GRID — shared keyframe, CSS-only, zero JS per frame ─── */
+@keyframes kg-blink {
+  0%, 100% { opacity: var(--kg-base); }
+  50%       { opacity: var(--kg-peak); }
+}
+
+

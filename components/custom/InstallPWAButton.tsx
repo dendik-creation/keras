@@ -12,15 +12,18 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-/** Hero CTA that triggers the native PWA install prompt (add to home screen). */
+/** Hero CTA / navbar compact button that triggers the native PWA install prompt. */
 export default function InstallPWAButton({
   className,
   source = "landing_hero",
   inverted,
+  simple,
 }: {
   className?: string;
   source?: string;
   inverted?: boolean;
+  /** Compact navbar variant — matches GithubStarButton scale. */
+  simple?: boolean;
 }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
     null,
@@ -69,12 +72,34 @@ export default function InstallPWAButton({
     });
   };
 
-  const base =
-    "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0";
-
   if (installed) {
     return null;
   }
+
+  // Compact navbar variant
+  if (simple) {
+    return (
+      <Button
+        variant="outline"
+        onClick={handleClick}
+        title="Install App"
+        className={cn(
+          "rounded-none border-2 transition-colors duration-200 font-bold tracking-widest",
+          inverted
+            ? "border-white bg-black text-white hover:bg-white hover:text-black"
+            : "border-black bg-white text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]",
+          className,
+        )}
+      >
+        <Download className="w-4 h-4" />
+        <span className="hidden lg:inline ml-1 text-xs">Install</span>
+      </Button>
+    );
+  }
+
+  // Full hero variant
+  const base =
+    "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0";
 
   return (
     <Button

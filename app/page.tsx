@@ -32,6 +32,7 @@ import Image from "next/image";
 import RotatingText from "@/components/RotatingText";
 import InstallPWAButton from "@/components/custom/InstallPWAButton";
 import GithubStarButton from "@/components/custom/GithubStarButton";
+import ContributionGrid from "@/components/landing/ContributionGrid";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -136,6 +137,7 @@ export default function Page() {
       reveal(".gsap-hero-label");
       reveal(".gsap-hero-sub");
       reveal(".gsap-cta-btn");
+      reveal(".gsap-hero-preview");
 
       reveal(".gsap-statement-label", "#statement");
       reveal(".gsap-statement-body", "#statement");
@@ -185,16 +187,7 @@ export default function Page() {
         transformOrigin: "50% 50%",
       });
 
-      gsap.to(".swiss-numeral", {
-        yPercent: 8,
-        ease: "none",
-        scrollTrigger: {
-          trigger: "#hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
+      // swiss-numeral removed — decorative bg numeral replaced by low-opacity watermark
     },
     { scope: containerRef },
   );
@@ -210,7 +203,9 @@ export default function Page() {
       </div>
 
       {/* ─── NAV & HERO WRAPPER (DARK MODE) ─── */}
-      <div className="w-full bg-black text-white">
+      <div className="w-full bg-[#050505] text-white h-screen overflow-hidden relative">
+        {/* ─── CONTRIBUTION GRID AMBIENT BG ─── */}
+        <ContributionGrid />
         {/* ─── NAV ─── */}
         <nav className="gsap-nav opacity-0 relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-white/20">
           <div className="flex items-center gap-3">
@@ -245,79 +240,120 @@ export default function Page() {
               <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
             </Link>
           </div>
+          <div className="flex gap-3 items-center">
           <GithubStarButton inverted />
+          <InstallPWAButton inverted simple />
+          </div>
         </nav>
 
-      {/* ─── 00. HERO — asymmetric editorial composition ─── */}
+      {/* ─── 00. HERO — centered editorial composition ─── */}
       <section
         id="hero"
-        className="relative z-10  overflow-hidden px-6 pt-16 pb-10 max-w-7xl mx-auto"
+        className="relative z-10 overflow-hidden px-6 pt-20 pb-0 max-w-7xl mx-auto"
       >
-        {/* Bleeding outline numeral — background typography */}
-        <span
-          aria-hidden="true"
-          className="swiss-numeral pointer-events-none select-none absolute -top-16 -right-10 md:right-0 text-[16rem] sm:text-[22rem] md:text-[30rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_rgba(255,255,255,0.08)]"
-        >
-          00
-        </span>
 
-        <div className="gsap-hero-label opacity-0 mb-10 relative">
-          <SectionLabel index="00" label="Versi 2 Kayaknya" inverted />
-        </div>
+        {/* Headline — centered, two-line, orange on line 2 only */}
+        <h1 className="text-center text-[3.2rem] leading-[0.85] sm:text-6xl md:text-[5rem] lg:text-[7rem] xl:text-[5.5rem] font-black tracking-tighter text-white mb-8">
+          <span data-reveal-mask className="block overflow-hidden">
+            Adios
+          </span>
+          <span
+            data-reveal-mask
+            className="block overflow-hidden mt-2"
+          >
+            <RotatingText
+              texts={["KRS Ribet", "Penuh Drama", "Manualan"]}
+              mainClassName="text-[#FF3000] overflow-hidden justify-center rounded-none"
+              staggerFrom={"last"}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-120%" }}
+              staggerDuration={0.02}
+              splitLevelClassName="overflow-hidden"
+              transition={{ type: "", damping: 30, stiffness: 400 }}
+              rotationInterval={2200}
+            />
+          </span>
+        </h1>
 
-        <div className="relative grid lg:grid-cols-12 gap-y-10">
-          <h1 className="lg:col-span-8 text-[3.4rem] leading-[0.82] sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase text-white -mx-1">
-            <span data-reveal-mask className="block overflow-hidden">
-              Adios
-            </span>
-            <span
-              data-reveal-mask
-              className="flex items-center overflow-hidden mt-1 sm:text-6xl md:text-7xl lg:text-8xl"
-            >
-              <RotatingText
-                texts={["KRS Ribet", "Penuh Drama", "Manualan"]}
-                mainClassName="text-[#FF3000] overflow-hidden justify-start rounded-none"
-                staggerFrom={"last"}
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "-120%" }}
-                staggerDuration={0.02}
-                splitLevelClassName="overflow-hidden"
-                transition={{ type: "", damping: 30, stiffness: 400 }}
-                rotationInterval={2200}
-              />
-            </span>
-          </h1>
+        {/* Description — centered, max 600px, below headline */}
+        <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-white/70 leading-relaxed font-medium text-center mx-auto mb-8 max-w-[600px]">
+          Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
+          <span className="text-white font-black">KeRaS</span> hadir
+          sebagai solusi objektif, cepat, jelas, tanpa drama.
+        </p>
 
-          {/* Offset right column, pinned by a vertical rule — asymmetric weight */}
-          <div className="lg:col-span-4 lg:col-start-9 flex gap-6 lg:pt-6">
-            <div className="w-0.5 bg-[#FF3000] shrink-0" aria-hidden="true" />
-            <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-white/70 leading-relaxed font-medium">
-              Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
-              <span className="text-white font-black">KeRaS</span> hadir
-              sebagai solusi objektif, cepat, jelas, tanpa drama.
-            </p>
-          </div>
-        </div>
-
-        <div className="gsap-cta-btn opacity-0 relative w-full lg:w-fit mt-14">
-          <div className="flex flex-col sm:flex-row gap-0 border-2 border-white">
+        {/* CTA — GitHub-inspired horizontal layout */}
+        <div className="gsap-cta-btn opacity-0 flex flex-col items-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
             <Link href="/login">
-              <Button className="rounded-none w-full bg-white text-black hover:bg-[#FF3000] hover:text-white uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0">
-                Aku Nak Coba <ArrowRight className="w-5 h-5 ml-2" />
+              <Button className="rounded-none w-full sm:w-auto bg-[#FF3000] text-white hover:bg-white hover:text-black uppercase font-black tracking-widest h-12 px-8 text-sm transition-colors duration-200 border-0">
+                Mulai Sekarang <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <a href="#security">
-              <Button className="rounded-none bg-black text-white hover:bg-white hover:text-black uppercase font-black tracking-widest h-16 px-10 text-base transition-colors duration-200 border-0 sm:border-l-2 border-t-2 sm:border-t-0 border-white w-full sm:w-auto">
-                Nasib Datamu
-              </Button>
-            </a>
           </div>
-          <InstallPWAButton className="w-full" inverted />
         </div>
 
-        {/* Bottom rule + scroll cue + rotating marker — replaces boxed composition */}
-        <div className="relative mt-16 flex items-center justify-between">
+        {/* Product Preview — responsive image placeholders */}
+        {/* ────────────────────────────────────────────────────────────────
+          To swap: replace the placeholder <div> content inside each
+          .hero-preview-desktop or .hero-preview-mobile with an <Image />
+          using the same aspect ratio class.
+        ──────────────────────────────────────────────────────────────── */}
+        <div className="gsap-hero-preview opacity-0">
+
+          {/* ── Desktop ─ md+ ── */}
+          <div className="hero-preview-desktop hidden md:block w-[88%] mx-auto">
+            {/* Browser chrome */}
+            <div className="border-2 border-white/15 rounded-t-md px-4 py-2.5 flex items-center gap-2 bg-white/[0.04]">
+              <div className="flex gap-1.5 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/40 block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500/40 block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/40 block" />
+              </div>
+              <span className="flex-1 mx-3 text-[10px] font-mono text-white/70 bg-white/5 px-3 py-1 rounded-sm truncate">
+                keras.dendikcreation.dev/schedule
+              </span>
+            </div>
+            {/* Screenshot — inside browser frame */}
+            <div className="relative border-x-2 border-b-2 border-white/15 rounded-b-md overflow-hidden aspect-video">
+              <Image
+                src="/landing_images/hero_desktop.png"
+                alt="KeRaS Desktop — Schedule Generator"
+                fill
+                className="object-cover object-top"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* ── Mobile ─ < md ── */}
+          <div className="hero-preview-mobile block md:hidden w-96 mx-auto">
+            <div className="border-2 border-white/15 rounded-[2rem] overflow-hidden">
+              {/* Notch */}
+              <div className="bg-white/[0.04] px-6 py-3 flex justify-center border-b border-white/10">
+                <div className="w-14 h-1 bg-white/20 rounded-full" />
+              </div>
+              {/* Screenshot — inside phone frame */}
+              <div className="relative aspect-[9/20]">
+                <Image
+                  src="/landing_images/hero_mobile.png"
+                  alt="KeRaS Mobile — Schedule Generator"
+                  fill
+                  className="object-cover object-top"
+                />
+              </div>
+              {/* Home bar */}
+              <div className="bg-white/[0.04] px-6 py-3 flex justify-center border-t border-white/10">
+                <div className="w-20 h-1 bg-white/20 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom rule + scroll cue + rotating marker */}
+        <div className="relative mt-12 flex items-center justify-between">
           <div
             data-rule
             className="h-0.5 bg-white/20 flex-1 mr-6"
@@ -626,7 +662,7 @@ export default function Page() {
                 <Github className="w-4 h-4" /> kasih star 😁
               </Button>
             </a>
-            
+
             <div className="flex items-center gap-6">
               <Link href="/changelog" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
                 Changelog

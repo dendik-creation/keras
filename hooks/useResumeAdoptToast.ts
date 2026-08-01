@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { OfferingCourse } from "@/types/course_schedule";
+import { getLocalStorage, removeLocalStorage } from "@/helper/local_storage";
 
 type UseResumeAdoptToastArgs = {
   /** Raw `?resumeAdopt=` value, still URI-encoded. Null on normal /schedule visits. */
@@ -26,7 +27,24 @@ export function useResumeAdoptToast({
   const readyToastShown = useRef(false);
 
   useEffect(() => {
-    if (!resumeAdopt || !isHydrated) return;
+    if (!isHydrated) return;
+
+    const pendingStorage = getLocalStorage("krs_pending_schedule_adoption");
+    let targetResume = resumeAdopt;
+
+    if (!targetResume && pendingStorage?.resumePath) {
+      targetResume = pendingStorage.resumePath;
+    }
+
+    if (!targetResume) return;
+
+    let cleanPath = targetResume;
+    if (cleanPath.includes("resumeAdopt=")) {
+      const match = cleanPath.match(/resumeAdopt=([^&]+)/);
+      if (match && match[1]) {
+        cleanPath = decodeURIComponent(match[1]);
+      }
+    }
 
     const hasOffering = !!offeringCourse && offeringCourse.length > 0;
 
@@ -54,8 +72,12 @@ export function useResumeAdoptToast({
       description: "Lanjutkan proses adopsi jadwal yang dibagikan ke kamu.",
       action: {
         label: "Lanjutkan Adopsi",
-        onClick: () => router.push(decodeURIComponent(resumeAdopt)),
+        onClick: () => {
+          removeLocalStorage("krs_pending_schedule_adoption");
+          router.push(cleanPath);
+        },
       },
     });
   }, [resumeAdopt, isHydrated, offeringCourse, router]);
 }
+

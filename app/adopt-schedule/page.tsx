@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { parseShareParams } from "@/helper/share_schedule";
+import { setLocalStorage, removeLocalStorage } from "@/helper/local_storage";
 import { stampForAdoption, checkAllConflicts } from "@/helper/frontend_helper";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { trackScheduleAdopted } from "@/lib/analytics/events";
@@ -78,8 +79,23 @@ export default function AdoptSchedulePage() {
   });
 
   useEffect(() => {
-    if (flow.redirectTo) router.replace(flow.redirectTo);
-  }, [flow.redirectTo, router]);
+    if (!flow.redirectTo || !isHydrated) return;
+    setLocalStorage("krs_pending_schedule_adoption", {
+      resumePath: flow.redirectTo,
+      createdAt: Date.now(),
+    });
+    router.replace(flow.redirectTo);
+
+    const timer = setTimeout(() => {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/schedule")
+      ) {
+        window.location.href = flow.redirectTo!;
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [flow.redirectTo, isHydrated, router]);
 
   // Compute conflicting courses between flow.matched and savedSchedule or internal matched
   const existingConflicts = useMemo(() => {
@@ -146,6 +162,7 @@ export default function AdoptSchedulePage() {
   }, [flow.phase, existingConflicts]);
 
   const handleReject = () => {
+    removeLocalStorage("krs_pending_schedule_adoption");
     router.push("/schedule");
   };
 
@@ -157,6 +174,7 @@ export default function AdoptSchedulePage() {
       });
       return;
     }
+    removeLocalStorage("krs_pending_schedule_adoption");
     const toSave = stampForAdoption(flow.matched);
     setSavedSchedule(toSave);
     trackScheduleAdopted(toSave.length, flow.hasExisting);

@@ -116,7 +116,7 @@
         scroll-behavior: smooth !important;
         border-radius: 0 !important;
     }
-    html, body {
+    html {
         overflow-x: hidden;
     }
     body {

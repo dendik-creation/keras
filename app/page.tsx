@@ -189,7 +189,7 @@ export default function Page() {
       </div>
 
       {/* ─── NAV & HERO WRAPPER (DARK MODE) ─── */}
-      <div className="w-full bg-[#050505] text-white h-screen overflow-hidden relative">
+      <div className="w-full bg-[#050505] text-white min-h-screen overflow-hidden relative">
         {/* ─── CONTRIBUTION GRID AMBIENT BG ─── */}
         <ContributionGrid />
         {/* ─── NAV ─── */}

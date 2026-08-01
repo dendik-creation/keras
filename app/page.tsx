@@ -34,6 +34,7 @@ import InstallPWAButton from "@/components/custom/InstallPWAButton";
 import GithubStarButton from "@/components/custom/GithubStarButton";
 import ContributionGrid from "@/components/landing/ContributionGrid";
 import CenterFlow from "@/components/landing/CenterFlow";
+import MagicBento from "@/components/landing/MagicBento";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -140,22 +141,7 @@ export default function Page() {
       reveal(".gsap-cta-btn");
       reveal(".gsap-hero-preview");
 
-      // CenterFlow handles its own GSAP animations internally
-
-      reveal(".gsap-features-label", "#features");
-      reveal(".gsap-feat-a", ".gsap-feat-grid", 0);
-      gsap.fromTo(
-        ".gsap-feat-b",
-        { x: 32, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.6,
-          ease: "power2.out",
-          stagger: 0.1,
-          scrollTrigger: { trigger: ".gsap-feat-grid", start: "top 80%" },
-        },
-      );
+      // CenterFlow and FeatureShowcase handle their own GSAP animations internally
 
       gsap.fromTo(
         ".gsap-word",
@@ -356,130 +342,34 @@ export default function Page() {
       {/* ─── 01. CENTER FLOW — orchestration architecture diagram ─── */}
       <CenterFlow />
 
-      {/* ─── 02. FEATURES — asymmetric weighted grid ─── */}
+      {/* ─── 02. FEATURES — Magic Bento Grid ─── */}
       <section
         id="features"
-        className="relative z-10 px-6 py-20 md:py-28 max-w-7xl mx-auto"
+        className="relative z-10 px-6 py-20 md:py-28 max-w-7xl mx-auto bg-white text-black"
       >
-        <div className="gsap-features-label opacity-0 mb-14 flex items-end justify-between gap-6">
-          <SectionLabel index="02" label="Fitur Utama" />
+        <div className="mb-12 flex items-end justify-between gap-6">
+          <SectionLabel index="02" label="FITUR UTAMA" />
           <div data-rule className="hidden md:block h-0.5 bg-black flex-1 mb-1.5" />
         </div>
 
-        <div className="gsap-feat-grid grid md:grid-cols-12 border-2 border-black">
-          {/* Unified View — double weight */}
-          <article className="gsap-feat-a opacity-0 md:col-span-8 md:row-span-2 bg-white md:border-r-2 border-b-2 md:border-b-0 border-black p-8 md:p-14 group hover:bg-[#FF3000] transition-colors duration-200 flex flex-col">
-            <div className="flex items-start justify-between mb-10">
-              <div className="w-14 h-14 border-2 border-black flex items-center justify-center group-hover:border-white transition-colors duration-200">
-                <LayoutDashboard className="w-7 h-7 text-black group-hover:text-white transition-colors duration-200" />
-              </div>
-              <span className="text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
-                01
-              </span>
-            </div>
-            <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-black group-hover:text-white mb-4 transition-colors duration-200">
-              Unified View
-            </h3>
-            <p className="text-[#555555] group-hover:text-white/90 leading-relaxed font-medium max-w-md transition-colors duration-200">
-              Lihat semua jadwal mata kuliah yang tersedia dalam satu tampilan
-              terpadu. Tidak perlu bolak-balik cek detail kelas, semua
-              informasi ada di depan mata.
-            </p>
-            <div
-              aria-hidden="true"
-              className="mt-auto pt-12 flex justify-end"
-            >
-              <LayoutDashboard
-                strokeWidth={1}
-                className="w-24 h-24 md:w-36 md:h-36 text-black/5 group-hover:text-white/15 transition-colors duration-200"
-              />
-            </div>
-          </article>
-
-          {/* Perang KRS */}
-          <article className="gsap-feat-b opacity-0 md:col-span-4 bg-black p-8 md:p-10 group hover:bg-[#FF3000] transition-colors duration-200 border-b-2 md:border-b-2 border-black">
-            <div className="flex items-start justify-between mb-8">
-              <div className="w-12 h-12 border-2 border-white flex items-center justify-center">
-                <Swords className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
-                02
-              </span>
-            </div>
-            <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white mb-3">
-              Perang KRS
-            </h3>
-            <p className="text-white/70 group-hover:text-white leading-snug font-medium text-sm">
-              Cukup satu klik, jadwal yang kamu siapkan terkirim cepat ke
-              sistem universitas tanpa klik satu-satu.{" "}
-              <sup>
-                <a
-                  href="#note-2"
-                  className="text-[#FF3000] group-hover:text-white hover:underline font-bold"
-                >
-                  2
-                </a>
-              </sup>
-            </p>
-          </article>
-
-          {/* Zero Database */}
-          <article className="gsap-feat-b opacity-0 md:col-span-4 bg-[#F2F2F2] swiss-dots border-t-0 md:border-t-2 border-black p-8 md:p-10 group hover:bg-black transition-colors duration-200">
-            <div className="flex items-start justify-between mb-8">
-              <div className="w-12 h-12 border-2 border-black group-hover:border-white flex items-center justify-center transition-colors duration-200">
-                <ShieldCheck className="w-6 h-6 text-black group-hover:text-white transition-colors duration-200" />
-              </div>
-              <span className="text-xs font-black tracking-widest text-[#FF3000]">
-                03
-              </span>
-            </div>
-            <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black group-hover:text-white mb-3 transition-colors duration-200">
-              Zero Database
-            </h3>
-            <p className="text-[#555555] group-hover:text-white/80 leading-snug font-medium text-sm transition-colors duration-200">
-              Kami tidak menyimpan data pribadimu. Semua informasi diproses
-              secara temporer untuk menjaga privasimu tetap aman.
-            </p>
-          </article>
-
-          {/* Realtime Scrapping — double weight, mirrors first */}
-          <article className="gsap-feat-a opacity-0 md:col-span-12 bg-white border-t-2 border-black p-8 md:p-12 group hover:bg-[#FF3000] transition-colors duration-200 grid md:grid-cols-12 md:items-center gap-6">
-            <div className="md:col-span-2 flex items-center justify-between md:justify-start gap-4">
-              <div className="w-14 h-14 border-2 border-black group-hover:border-white flex items-center justify-center transition-colors duration-200 shrink-0">
-                <TextSearch className="w-7 h-7 text-black group-hover:text-white transition-colors duration-200" />
-              </div>
-              <span className="md:hidden text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
-                04
-              </span>
-            </div>
-            <h3 className="md:col-span-3 text-3xl md:text-4xl font-black uppercase tracking-tight text-black group-hover:text-white transition-colors duration-200">
-              Realtime
-              <br />
-              Scrapping
-            </h3>
-            <p className="md:col-span-6 text-[#555555] group-hover:text-white/90 leading-relaxed font-medium transition-colors duration-200">
-              List jadwal mata kuliah yang kamu dapatkan selalu terbaru untuk
-              memastikan kamu tidak tertinggal ingpo.{" "}
-              <sup>
-                <a
-                  href="#note-3"
-                  className="text-[#FF3000] group-hover:text-white font-bold"
-                >
-                  3
-                </a>
-              </sup>
-            </p>
-            <span className="hidden md:block md:col-span-1 text-right text-xs font-black tracking-widest text-[#FF3000] group-hover:text-white transition-colors duration-200">
-              04
-            </span>
-          </article>
-        </div>
+        <MagicBento
+          textAutoHide={true}
+          enableStars={true}
+          enableSpotlight={true}
+          enableBorderGlow={true}
+          enableTilt={true}
+          enableMagnetism={true}
+          clickEffect={true}
+          spotlightRadius={300}
+          particleCount={12}
+          glowColor="255, 48, 0"
+        />
       </section>
 
       {/* ─── LARGE TYPOGRAPHY INTERSTITIAL — the breathing pause, no number ─── */}
       <section
         id="word"
-        className="relative z-10 border-y-2 border-black px-6 py-24 md:py-40 max-w-7xl mx-auto flex items-center justify-center"
+        className="relative z-10 border-b-2 border-black px-6 py-24 md:py-40 max-w-7xl mx-auto flex items-center justify-center"
       >
         <h2 className="gsap-word opacity-0 text-center text-6xl sm:text-8xl md:text-[10rem] font-black uppercase tracking-tighter leading-none">
           Objektif<span className="text-[#FF3000]">.</span>
@@ -640,29 +530,6 @@ export default function Page() {
           </div>
 
           <div className="w-full h-0.5 bg-white/20" />
-
-          <div className="w-full flex flex-col items-start gap-2">
-            <small
-              className="text-sm text-white/50 font-medium leading-tight"
-              id="note-1"
-            >
-              1. Bergantung terhadap ketersediaan kelas yang dibuka universitas.
-            </small>
-            <small
-              className="text-sm text-white/50 font-medium leading-tight"
-              id="note-2"
-            >
-              2. Peningkatan peluang bergantung pada performa sistem dari situs
-              resmi universitas.
-            </small>
-            <small
-              className="text-sm text-white/50 font-medium leading-tight"
-              id="note-3"
-            >
-              3. Trigger manual dari mahasiswa untuk mendapatkan jadwal
-              terbaru.
-            </small>
-          </div>
           <div className="w-full flex flex-col items-start gap-2">
             <small
               className="text-sm text-white/50 font-medium leading-tight"

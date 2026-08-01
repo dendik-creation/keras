@@ -384,7 +384,7 @@ export default function CenterFlow() {
     <section
       ref={sectionRef}
       id="center-flow"
-      className="relative z-10 border-b-2 border-black px-6 py-20 lg:py-32 max-w-7xl mx-auto overflow-hidden bg-white"
+      className="relative z-10 px-6 py-20 lg:py-32 max-w-7xl mx-auto overflow-hidden bg-white"
     >
       {/* Main 2-column balanced layout on desktop (45% left / 55% right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">

@@ -500,7 +500,7 @@ export default function Page() {
           <h3 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter text-white max-w-3xl leading-[0.92]">
             KRS-an jadi
             <br />
-            lebih tenang,
+            <span className="text-[#FF3000]">lebih tenang</span>,
             <br />
             kelas incaran pun{" "}
             <span className="text-[#FF3000]">aman.</span>
@@ -529,12 +529,11 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="w-full h-0.5 bg-white/20" />
           <div className="w-full flex flex-col items-start gap-2">
             <small
               className="text-sm text-white/50 font-medium leading-tight"
             >
-              Part of <a href="https://dendikcreation.dev?utm_source=keras?utm_medium=page?utm_campaign=page_load" target="_blank" className="text-white hover:text-[#FF3000]">dendik-creation</a>
+              Part of <a href="https://dendikcreation.dev?utm_source=keras?utm_medium=page?utm_campaign=page_load" target="_blank" className="text-white hover:text-[#FF3000]">dendik-creation</a> projects
             </small>
           </div>
         </div>

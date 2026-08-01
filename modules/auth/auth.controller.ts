@@ -40,7 +40,7 @@ export async function login(req: Request) {
     await setSessionCookie(result.sessionValue);
 
     let user = result.user;
-    
+
     if (credentials.avatarFetched) {
       user.avatarFetched = credentials.avatarFetched;
       user.avatarUrl = credentials.avatarUrl;

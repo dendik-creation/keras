@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "benchmark": "bun tests/benchmark-submit.ts"
+    "benchmark": "bun tests/benchmark-submit.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -307,6 +307,64 @@ function parseReleaseAlert(htmlContent: string): string {
   return alertText;
 }
 
+/**
+ * Classify a failure message as permanent (non-retryable) or transient.
+ * Permanent failures: class full, schedule conflict, duplicate enrollment,
+ * validation errors. Wave 2 skips courses whose only failures are permanent.
+ */
+export function isPermanentFailure(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("penuh") ||           // class full
+    lower.includes("bentrok") ||         // schedule conflict
+    lower.includes("sudah tersimpan") || // duplicate enrollment
+    lower.includes("sudah diambil") ||   // already enrolled
+    lower.includes("tidak valid") ||     // validation error
+    lower.includes("invalid") ||
+    lower.includes("duplikat") ||
+    lower.includes("duplicate")
+  );
+}
+
+/**
+ * From the remaining schedule IDs, remove those whose failure messages are
+ * all permanent (no point retrying them in Wave 2).
+ */
+export function filterRetryableScheduleIds(
+  remaining: string[],
+  messages: string[],
+  schedules?: { code: string; class: string; schedule_submit_id: string }[]
+): string[] {
+  // Build a map: scheduleId -> whether any of its failure messages are permanent
+  const permanentIds = new Set<string>();
+
+  messages.forEach((msg) => {
+    const isFailMsg = msg.toLowerCase().startsWith("gagal");
+    if (!isFailMsg) return;
+
+    if (!isPermanentFailure(msg)) return; // transient — keep retrying
+
+    // Try to identify which schedule ID this message belongs to
+    const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
+    if (simMatch) {
+      permanentIds.add(simMatch[1]);
+      return;
+    }
+
+    // Production format: "Gagal : CODE CLASS ..." — match via schedules map
+    const courseMatch = msg.match(/Gagal\s*:\s*([A-Z0-9]+)\s+([A-Z0-9]+)/i);
+    if (courseMatch && schedules) {
+      const [, code, klass] = courseMatch;
+      const found = schedules.find((s) => s.code === code && s.class === klass);
+      if (found && found.schedule_submit_id) {
+        permanentIds.add(found.schedule_submit_id);
+      }
+    }
+  });
+
+  return remaining.filter((id) => !permanentIds.has(id));
+}
+
 /** Filter out schedule IDs that succeeded in attempt messages. */
 export function filterSucceededScheduleIds(
   currentRemaining: string[],

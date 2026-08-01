@@ -8,6 +8,7 @@ import {
 } from "@/modules/submit/submit.validator";
 import {
   filterSucceededScheduleIds,
+  filterRetryableScheduleIds,
   releaseSchedules,
   syncSchedules,
 } from "@/modules/submit/submit.service";
@@ -15,6 +16,7 @@ import {
   simulateReleaseSchedules,
   simulateSubmitSchedules,
   simulateSyncSchedules,
+  resetSimulatedSession,
 } from "@/modules/submit/submit.simulator";
 import { isWarTestMode } from "@/lib/server/war-test-mode";
 import { logger } from "@/lib/logger";
@@ -153,21 +155,59 @@ export async function postSubmit(req: Request) {
 
       const executor = isTestMode ? new TestSubmissionExecutor() : new ProductionSubmissionExecutor();
 
-      const result = await processThroughGate(
+      // Wave 1: up to 2 attempts inside the priority gate.
+      // Gate releases after Wave 1 → normal students proceed immediately.
+      let wave1Remaining = [...scheduleIds];
+      let wave1Result: any = null;
+      let allMessages: string[] = [];
+
+      await processThroughGate(
         nim,
         isTestMode,
         payloadStr,
         async () => {
-          return await executor.execute(sessionCookie.value, scheduleIds);
+          logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            if (wave1Remaining.length === 0 && attempt > 1) break;
+            const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
+            wave1Result = attemptResult;
+            if (Array.isArray(attemptResult.messages)) {
+              allMessages = [...allMessages, ...attemptResult.messages];
+              wave1Remaining = filterSucceededScheduleIds(wave1Remaining, attemptResult.messages);
+            }
+            if (wave1Remaining.length === 0) break;
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 300));
+          }
+          logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Completed\nremainingCount=${wave1Remaining.length}`);
+          return wave1Result;
         },
         requestStartTime,
         requestId
       );
 
+      // Gate released — normal students can proceed.
+      // Wave 2: one recovery attempt in background for retryable failures only.
+      const wave2Ids = filterRetryableScheduleIds(wave1Remaining, allMessages);
+      if (wave2Ids.length > 0) {
+        // Fire-and-forget — do not await; normal queue is already unblocked.
+        (async () => {
+          try {
+            logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 2 Started\nids=${wave2Ids.join(",")}`);
+            const wave2Result = await executor.execute(sessionCookie.value, wave2Ids);
+            if (Array.isArray(wave2Result.messages)) {
+              allMessages = [...allMessages, ...wave2Result.messages];
+            }
+            logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 2 Completed`);
+          } catch (e: any) {
+            logger.error(`[war-gate] Wave 2 error: requestId=${requestId}`, e?.message);
+          }
+        })();
+      }
+
       return NextResponse.json({
-        success: result.isSuccess,
-        messages: result.messages,
-        status_code: result.statusCode,
+        success: wave1Result?.isSuccess ?? true,
+        messages: wave1Result?.messages ?? [],
+        status_code: wave1Result?.statusCode ?? 200,
       });
     }
 
@@ -228,30 +268,33 @@ export async function postSubmit(req: Request) {
           const executor = isTestMode ? new TestSubmissionExecutor() : new ProductionSubmissionExecutor();
 
           let finalResult: any = null;
+          // Track remaining and all messages for Wave 2 classification.
+          let wave1Remaining = [...scheduleIds];
+          let allMessages: string[] = [];
 
+          // Wave 1: up to 2 attempts inside the priority gate.
+          // Gate releases after this block → normal students proceed immediately.
           await processThroughGate(
             nim,
             isTestMode,
             payloadStr,
             async () => {
-              let currentRemaining = [...scheduleIds];
-              const TOTAL_ATTEMPTS = 3;
+              logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
+              const WAVE1_ATTEMPTS = 2;
 
-              for (let attempt = 1; attempt <= TOTAL_ATTEMPTS; attempt++) {
-                if (currentRemaining.length === 0 && attempt > 1) {
-                  for (let skippedPhase = attempt; skippedPhase <= TOTAL_ATTEMPTS; skippedPhase++) {
-                    send({
-                      type: "event",
-                      name: "PHASE_SKIPPED",
-                      phase: skippedPhase,
-                      reason: "no_remaining_courses",
-                    });
-                    send({
-                      type: "phase_skipped",
-                      phase: skippedPhase,
-                      reason: "no_remaining_courses",
-                    });
-                  }
+              for (let attempt = 1; attempt <= WAVE1_ATTEMPTS; attempt++) {
+                if (wave1Remaining.length === 0 && attempt > 1) {
+                  send({
+                    type: "event",
+                    name: "PHASE_SKIPPED",
+                    phase: attempt,
+                    reason: "no_remaining_courses",
+                  });
+                  send({
+                    type: "phase_skipped",
+                    phase: attempt,
+                    reason: "no_remaining_courses",
+                  });
                   send({
                     type: "submission_finished",
                     completedAtPhase: attempt - 1,
@@ -270,7 +313,7 @@ export async function postSubmit(req: Request) {
                   attempt,
                 });
 
-                const attemptResult = await executor.execute(sessionCookie.value, currentRemaining);
+                const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
                 finalResult = attemptResult;
 
                 send({
@@ -281,23 +324,22 @@ export async function postSubmit(req: Request) {
                 });
 
                 if (Array.isArray(attemptResult.messages)) {
-                  currentRemaining = filterSucceededScheduleIds(currentRemaining, attemptResult.messages, resolvedSchedules);
+                  allMessages = [...allMessages, ...attemptResult.messages];
+                  wave1Remaining = filterSucceededScheduleIds(wave1Remaining, attemptResult.messages, resolvedSchedules);
                 }
 
-                if (currentRemaining.length === 0 && attempt < TOTAL_ATTEMPTS) {
-                  for (let skippedPhase = attempt + 1; skippedPhase <= TOTAL_ATTEMPTS; skippedPhase++) {
-                    send({
-                      type: "event",
-                      name: "PHASE_SKIPPED",
-                      phase: skippedPhase,
-                      reason: "no_remaining_courses",
-                    });
-                    send({
-                      type: "phase_skipped",
-                      phase: skippedPhase,
-                      reason: "no_remaining_courses",
-                    });
-                  }
+                if (wave1Remaining.length === 0 && attempt < WAVE1_ATTEMPTS) {
+                  send({
+                    type: "event",
+                    name: "PHASE_SKIPPED",
+                    phase: attempt + 1,
+                    reason: "no_remaining_courses",
+                  });
+                  send({
+                    type: "phase_skipped",
+                    phase: attempt + 1,
+                    reason: "no_remaining_courses",
+                  });
                   send({
                     type: "submission_finished",
                     completedAtPhase: attempt,
@@ -310,11 +352,12 @@ export async function postSubmit(req: Request) {
                   break;
                 }
 
-                if (attempt < TOTAL_ATTEMPTS && currentRemaining.length > 0) {
+                if (attempt < WAVE1_ATTEMPTS && wave1Remaining.length > 0) {
                   await new Promise((r) => setTimeout(r, 300));
                 }
               }
 
+              logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Completed\nremainingCount=${wave1Remaining.length}`);
               send({ type: "event", name: "SUBMISSION_COMPLETED" });
               return finalResult;
             },
@@ -324,6 +367,24 @@ export async function postSubmit(req: Request) {
               send({ type: "event", name: eventName, ...meta });
             }
           );
+
+          // Gate released — normal students can proceed now.
+          // Wave 2: one recovery attempt for retryable failures, fire-and-forget.
+          const wave2Ids = filterRetryableScheduleIds(wave1Remaining, allMessages, resolvedSchedules);
+          if (wave2Ids.length > 0) {
+            (async () => {
+              try {
+                logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 2 Started\nids=${wave2Ids.join(",")}`);
+                const wave2Result = await executor.execute(sessionCookie.value, wave2Ids);
+                if (Array.isArray(wave2Result.messages)) {
+                  allMessages = [...allMessages, ...wave2Result.messages];
+                }
+                logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 2 Completed`);
+              } catch (e: any) {
+                logger.error(`[war-gate] Wave 2 error: requestId=${requestId}`, e?.message);
+              }
+            })();
+          }
 
           send({
             type: "done",
@@ -363,11 +424,22 @@ export async function postSubmit(req: Request) {
   }
 }
 
-/** DELETE /api/submit — release (drop) saved courses. */
+/** DELETE /api/submit — release (drop) saved courses or reset simulation session. */
 export async function deleteSubmit(req: Request) {
   try {
     const sessionCookie = await getSessionCookie();
     if (!sessionCookie) return unauthorized();
+
+    const url = new URL(req.url);
+    if (url.searchParams.get("reset") === "true") {
+      if (isWarTestMode()) {
+        resetSimulatedSession(sessionCookie.value);
+      }
+      return NextResponse.json({
+        success: true,
+        message: "Simulasi berhasil di-reset",
+      });
+    }
 
     const targetCourses = parseDeleteCourses(await req.json());
 

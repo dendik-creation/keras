@@ -129,12 +129,12 @@ export default function ContributionGrid() {
       aria-hidden="true"
       className="pointer-events-none absolute bottom-0 left-0 right-0 overflow-hidden"
       style={{
-        height: "42%",
+        height: "70%",
         // CSS mask: bottom opaque → top transparent — removes hard edge
         WebkitMaskImage:
-          "linear-gradient(to top, black 0%, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)",
+          "linear-gradient(to top, black 0%, black 20%, rgba(0,0,0,0.5) 70%, transparent 100%)",
         maskImage:
-          "linear-gradient(to top, black 0%, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)",
+          "linear-gradient(to top, black 0%, black 20%, rgba(0,0,0,0.5) 70%, transparent 100%)",
       }}
     >
       {/* ── Desktop grid — hidden below md ── */}

@@ -33,6 +33,7 @@ import RotatingText from "@/components/RotatingText";
 import InstallPWAButton from "@/components/custom/InstallPWAButton";
 import GithubStarButton from "@/components/custom/GithubStarButton";
 import ContributionGrid from "@/components/landing/ContributionGrid";
+import CenterFlow from "@/components/landing/CenterFlow";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -139,8 +140,7 @@ export default function Page() {
       reveal(".gsap-cta-btn");
       reveal(".gsap-hero-preview");
 
-      reveal(".gsap-statement-label", "#statement");
-      reveal(".gsap-statement-body", "#statement");
+      // CenterFlow handles its own GSAP animations internally
 
       reveal(".gsap-features-label", "#features");
       reveal(".gsap-feat-a", ".gsap-feat-grid", 0);
@@ -349,49 +349,12 @@ export default function Page() {
               </div>
             </div>
           </div>
-
-        </div>
-
-        {/* Bottom rule + scroll cue + rotating marker */}
-        <div className="relative mt-12 flex items-center justify-between">
-          <div
-            data-rule
-            className="h-0.5 bg-white/20 flex-1 mr-6"
-            aria-hidden="true"
-          />
-          <span className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 shrink-0">
-            Gulir <ArrowDown className="w-3.5 h-3.5" />
-          </span>
-          <div
-            className="swiss-rotate ml-6 w-10 h-10 border-2 border-white/20 rounded-full flex items-center justify-center shrink-0"
-            aria-hidden="true"
-          >
-            <div className="w-1.5 h-1.5 bg-[#FF3000] rounded-full absolute -top-0.5" />
-          </div>
         </div>
       </section>
       </div>
 
-      {/* ─── 01. EDITORIAL STATEMENT — whitespace as the content ─── */}
-      <section
-        id="statement"
-        className="relative z-10 border-b-2 border-black px-6 py-24 md:py-36 max-w-7xl mx-auto"
-      >
-        <div className="gsap-statement-label opacity-0 mb-10">
-          <SectionLabel index="01" label="Kenapa KeRaS" />
-        </div>
-        <p className="gsap-statement-body opacity-0 max-w-4xl text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.05]">
-          Keras{" "}
-          <span className="text-[#FF3000]">Mengamankan</span> 1 semester untukmu  <sup>
-            <a
-              href="#note-1"
-              className="text-[#FF3000] group-hover:text-white hover:underline text-sm font-bold"
-            >
-              1
-            </a>
-          </sup> {"& sedikit "} <span className="text-[#FF3000]">Sikma</span>😹
-        </p>
-      </section>
+      {/* ─── 01. CENTER FLOW — orchestration architecture diagram ─── */}
+      <CenterFlow />
 
       {/* ─── 02. FEATURES — asymmetric weighted grid ─── */}
       <section

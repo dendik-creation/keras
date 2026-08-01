@@ -1,7 +1,7 @@
 const changelogHistories = [
   {
     version: "1.0.0",
-    date: "1 Jan 2026",
+    date: "1 Feb 2026",
     title: "Rilis Pertama",
     changes: ["Rilis pertama kali untuk publik"],
   },

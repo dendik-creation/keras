@@ -116,6 +116,9 @@
         scroll-behavior: smooth !important;
         border-radius: 0 !important;
     }
+    html, body {
+        overflow-x: hidden;
+    }
     body {
         @apply bg-background text-foreground;
         background-color: #FFFFFF;

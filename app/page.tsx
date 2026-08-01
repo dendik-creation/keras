@@ -32,11 +32,8 @@ import Image from "next/image";
 import RotatingText from "@/components/RotatingText";
 import InstallPWAButton from "@/components/custom/InstallPWAButton";
 import GithubStarButton from "@/components/custom/GithubStarButton";
-import changelogHistories from "@/lib/changelog";
 
 gsap.registerPlugin(ScrollTrigger);
-
-const latestVersion = changelogHistories[0]?.version ?? "—";
 
 function SectionLabel({ index, label, inverted }: { index: string; label: string; inverted?: boolean }) {
   return (
@@ -77,7 +74,7 @@ export default function Page() {
 
       if (reduced) {
         gsap.set(
-          "[data-reveal], [data-reveal-mask], [data-rule], [data-line-grow]",
+          "[data-reveal], [data-reveal-mask], [data-rule]",
           { opacity: 1, y: 0, x: 0, clipPath: "inset(0 0 0 0)", scaleX: 1, scaleY: 1 },
         );
         return;
@@ -133,24 +130,7 @@ export default function Page() {
         );
       });
 
-      // Vertical rail grow — changelog spine
-      gsap.utils.toArray<HTMLElement>("[data-line-grow]").forEach((el) => {
-        gsap.fromTo(
-          el,
-          { scaleY: 0 },
-          {
-            scaleY: 1,
-            transformOrigin: "top",
-            ease: "none",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 75%",
-              end: "bottom 80%",
-              scrub: 0.4,
-            },
-          },
-        );
-      });
+
 
       reveal(".gsap-nav");
       reveal(".gsap-hero-label");
@@ -190,8 +170,7 @@ export default function Page() {
       reveal(".gsap-security-label", "#security");
       reveal(".gsap-security-col", "#security", 0.12);
 
-      reveal(".gsap-changelog-label", "#changelog");
-      reveal(".gsap-changelog-row", ".gsap-changelog-list", 0.06, 16);
+
 
       reveal(".gsap-analytics-content", "#analytics-preview");
 
@@ -223,7 +202,7 @@ export default function Page() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-white text-black selection:bg-[#FF3000] selection:text-white overflow-x-hidden font-sans"
+      className="min-h-screen bg-white text-black selection:bg-[#FF3000] selection:text-white font-sans"
     >
       {/* Scroll-progress rule */}
       <div className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-black/10">
@@ -251,13 +230,16 @@ export default function Page() {
             {[
               ["#features", "Fitur"],
               ["#security", "Keamanan"],
-              ["#changelog", "Changelog"],
             ].map(([href, label]) => (
               <a key={href} href={href} className="group relative py-1">
                 {label}
                 <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
               </a>
             ))}
+            <Link href="/changelog" className="group relative py-1">
+              Changelog
+              <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
+            </Link>
             <Link href="/analytics" className="group relative py-1">
               Analitik
               <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#FF3000] transition-all duration-200 group-hover:w-full" />
@@ -555,76 +537,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ─── 04. CHANGELOG — vertical editorial rail ─── */}
-      <section
-        id="changelog"
-        className="relative z-10 border-t-2 border-black px-6 py-20 md:py-28 max-w-7xl mx-auto"
-      >
-        <div className="gsap-changelog-label opacity-0 mb-16 md:mb-24">
-          <SectionLabel index="04" label="Changelog" />
-          <h2 className="mt-6 text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase text-black">
-            Perjalanan KeRaS
-            <span className="block text-[#FF3000]">Apa Aja Sih</span>
-          </h2>
-        </div>
-
-        <ol className="gsap-changelog-list relative pl-8 md:pl-12">
-          <div
-            data-line-grow
-            aria-hidden="true"
-            className="absolute left-0 top-1 bottom-1 w-0.5 bg-black origin-top"
-          />
-          {changelogHistories.map((item, idx) => {
-            const isLatest = idx === 0;
-            return (
-              <li
-                key={item.version}
-                className={`gsap-changelog-row opacity-0 relative pb-10 md:pb-14 last:pb-0 ${
-                  isLatest ? "" : ""
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`absolute -left-8 md:-left-12 top-1 w-3.5 h-3.5 rounded-full border-2 ${
-                    isLatest ? "bg-[#FF3000] border-[#FF3000]" : "bg-white border-black"
-                  }`}
-                />
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-4 gap-y-1 mb-2">
-                  <span className="text-xs font-black tracking-widest text-[#FF3000] tabular-nums">
-                    v{item.version}
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#555555]">
-                    {item.date}
-                  </span>
-                </div>
-                <h3
-                  className={`font-black uppercase tracking-tight mb-2 ${
-                    isLatest
-                      ? "text-3xl md:text-5xl"
-                      : "text-xl md:text-2xl text-black/80"
-                  }`}
-                >
-                  {item.title}
-                </h3>
-                <ul
-                  className={`space-y-1 max-w-2xl ${isLatest ? "text-base" : "text-sm"} text-[#555555] font-medium`}
-                >
-                  {item.changes.map((change, cIdx) => (
-                    <li key={cIdx} className="flex gap-2">
-                      <span className="text-[#FF3000] font-black shrink-0">
-                        —
-                      </span>
-                      {change}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-
-      {/* ─── 05. ANALYTICS PREVIEW — poster CTA, not a card ─── */}
+      {/* ─── 04. ANALYTICS PREVIEW — poster CTA, not a card ─── */}
       <section
         id="analytics-preview"
         className="relative z-10 border-t-2 border-black bg-black"
@@ -637,7 +550,7 @@ export default function Page() {
             <div className="md:col-span-8">
               <div className="mb-8 flex items-center gap-4">
                 <span className="text-[#FF3000] group-hover:text-white font-black text-sm tracking-widest tabular-nums transition-colors duration-200">
-                  05
+                  04
                 </span>
                 <div className="w-8 h-0.5 bg-[#FF3000] group-hover:bg-white transition-colors duration-200" />
                 <span className="text-xs font-bold uppercase tracking-widest text-white transition-colors duration-200">
@@ -715,6 +628,9 @@ export default function Page() {
             </a>
             
             <div className="flex items-center gap-6">
+              <Link href="/changelog" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+                Changelog
+              </Link>
               <Link href="/privacy" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
                 Privacy
               </Link>

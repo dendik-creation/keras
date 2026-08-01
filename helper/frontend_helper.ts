@@ -13,12 +13,34 @@ export const OFFERING_COURSE_KEY = "offering_course";
  * `{ type: "done", data }` object. Shared by /schedule and /adopt-schedule
  * so both pages run the exact same get-schedule action.
  */
+function redirectToLoginOn401() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("active_user");
+  localStorage.removeItem("session_check_plan_time");
+  sessionStorage.removeItem("app_initialized");
+  const pathname = window.location.pathname;
+  const search = window.location.search;
+  const currentUrl = pathname + search;
+  const callbackParam =
+    pathname && pathname !== "/login"
+      ? `?callbackUrl=${encodeURIComponent(currentUrl)}`
+      : "";
+  window.location.href = `/login${callbackParam}`;
+}
+
+/**
+ * Get scheduling: read the /api/schedule NDJSON stream to completion.
+ * Backend keeps the connection alive with `progress` events during the
+ * tens-of-seconds scrape; a plain buffered read never yields the final
+ * `{ type: "done", data }` object. Shared by /schedule and /adopt-schedule
+ * so both pages run the exact same get-schedule action.
+ */
 export async function fetchOfferingCourses(
   onProgress: (done: number, total: number) => void,
 ): Promise<OfferingCourse[] | null> {
   const response = await fetch("/api/schedule");
   if (response.status === 401) {
-    if (typeof window !== "undefined") window.location.href = "/login";
+    redirectToLoginOn401();
     return null;
   }
   if (!response.ok || !response.body) return null;
@@ -45,8 +67,8 @@ export async function fetchOfferingCourses(
       } else if (event.type === "done") {
         finalData = event.data;
       } else if (event.type === "error") {
-        if (event.status === 401 && typeof window !== "undefined") {
-          window.location.href = "/login";
+        if (event.status === 401) {
+          redirectToLoginOn401();
         }
         streamError = event.message;
       }
@@ -78,7 +100,7 @@ export async function generateScheduleStream(
 
   if (!response.ok || !response.body) {
     if (response.status === 401) {
-      if (typeof window !== "undefined") window.location.href = "/login";
+      redirectToLoginOn401();
       throw new Error("Sesi telah habis, silakan login kembali.");
     }
     const errorBody = await response.json().catch(() => null);
@@ -107,8 +129,8 @@ export async function generateScheduleStream(
       } else if (event.type === "done") {
         finalCourses = event.data?.courses ?? [];
       } else if (event.type === "error") {
-        if (event.status === 401 && typeof window !== "undefined") {
-          window.location.href = "/login";
+        if (event.status === 401) {
+          redirectToLoginOn401();
         }
         streamError = event.message;
       }

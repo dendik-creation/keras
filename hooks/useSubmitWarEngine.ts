@@ -462,7 +462,19 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           trackWarSessionExpired({ page: "/submit", action: "sync_check" });
-          if (typeof window !== "undefined") window.location.href = "/login";
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("active_user");
+            localStorage.removeItem("session_check_plan_time");
+            sessionStorage.removeItem("app_initialized");
+            const pathname = window.location.pathname;
+            const search = window.location.search;
+            const currentUrl = pathname + search;
+            const callbackParam =
+              pathname && pathname !== "/login"
+                ? `?callbackUrl=${encodeURIComponent(currentUrl)}`
+                : "";
+            window.location.href = `/login${callbackParam}`;
+          }
         }
         dispatch({ type: "SYNC_FAILED" });
         return { success: false, courses };
@@ -552,7 +564,17 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       if (!response.ok || !response.body) {
         if (response.status === 401 && typeof window !== "undefined") {
           trackWarSessionExpired({ page: "/submit", action: "submission" });
-          window.location.href = "/login";
+          localStorage.removeItem("active_user");
+          localStorage.removeItem("session_check_plan_time");
+          sessionStorage.removeItem("app_initialized");
+          const pathname = window.location.pathname;
+          const search = window.location.search;
+          const currentUrl = pathname + search;
+          const callbackParam =
+            pathname && pathname !== "/login"
+              ? `?callbackUrl=${encodeURIComponent(currentUrl)}`
+              : "";
+          window.location.href = `/login${callbackParam}`;
           return;
         }
         gooeyToast.error("Terjadi Kesalahan", {
@@ -882,7 +904,19 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
           }
         } catch (error) {
           if (axios.isAxiosError(error) && error.response?.status === 401) {
-            if (typeof window !== "undefined") window.location.href = "/login";
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("active_user");
+              localStorage.removeItem("session_check_plan_time");
+              sessionStorage.removeItem("app_initialized");
+              const pathname = window.location.pathname;
+              const search = window.location.search;
+              const currentUrl = pathname + search;
+              const callbackParam =
+                pathname && pathname !== "/login"
+                  ? `?callbackUrl=${encodeURIComponent(currentUrl)}`
+                  : "";
+              window.location.href = `/login${callbackParam}`;
+            }
           }
           gooeyToast.error("Terjadi Kesalahan", {
             description: "Gagal melepas jadwal yang dipilih",

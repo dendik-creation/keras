@@ -1,7 +1,6 @@
 "use client";
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useSessionCheck } from "@/hooks/useSessionCheck";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import GuardLoader from "@/components/middleware_wrapper/GuardLoader";
@@ -13,6 +12,14 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isValidating || isAuthenticated) return;
 
+    const pathname = window.location.pathname;
+    const search = window.location.search;
+    const currentUrl = pathname + search;
+    const callbackParam =
+      pathname && pathname !== "/login"
+        ? `?callbackUrl=${encodeURIComponent(currentUrl)}`
+        : "";
+
     if (sessionIssue?.reason === "questionnaire_required") {
       gooeyToast.warning("Isi Kuesioner Dulu Wok", {
         description:
@@ -22,14 +29,14 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
           onClick: () => window.open(sessionIssue.questionnaireUrl, "_blank"),
         },
       });
-      router.push("/login");
+      router.push(`/login${callbackParam}`);
       return;
     }
 
     gooeyToast.error("Gak Bisa Akses", {
       description: "Silakan login terlebih dahulu",
     });
-    router.push("/login");
+    router.push(`/login${callbackParam}`);
   }, [isValidating, isAuthenticated, sessionIssue, router]);
 
   if (isValidating) {
@@ -40,3 +47,4 @@ export default function AuthAccess({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

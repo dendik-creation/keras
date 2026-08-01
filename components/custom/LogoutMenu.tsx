@@ -21,15 +21,17 @@ const LogoutMenu = () => {
 
   const handleSignOut = async () => {
     try {
-      const response = await axios.post("/api/logout");
-      if (response.status === 200) {
-        removeLocalStorage("active_user");
-        removeLocalStorage("session_check_plan_time");
-        resetAnalytics();
-        window.location.href = "/login";
-      }
+      await axios.post("/api/logout");
     } catch (error) {
       logger.error("Logout failed:", error);
+    } finally {
+      removeLocalStorage("active_user");
+      removeLocalStorage("session_check_plan_time");
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
+      resetAnalytics();
+      window.location.href = "/login";
     }
     setOpen(false);
   };

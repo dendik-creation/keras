@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import { getLocalStorage, removeLocalStorage } from "@/helper/local_storage";
 
 type UserData = {
   name: string;
   nim: string;
   major?: string;
   degree?: string;
+  avatarUrl?: string | null;
+  avatarFetched?: boolean;
 };
 
 type SessionIssue = {
@@ -21,6 +23,8 @@ export const useSessionCheck = () => {
   const [sessionIssue, setSessionIssue] = useState<SessionIssue | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       let localUser: UserData | null = null;
       try {
@@ -30,61 +34,55 @@ export const useSessionCheck = () => {
         localUser = null;
       }
 
-      if (!localUser) {
-        setIsValidating(false);
-        setIsAuthenticated(false);
-        return;
-      }
-
-      const isNewBrowserSession =
-        typeof window !== "undefined" &&
-        !sessionStorage.getItem("app_initialized");
-
-      const currentTime = new Date().getTime();
-      const sessionCheckPlanTime = getLocalStorage("session_check_plan_time");
-      const planTime = sessionCheckPlanTime
-        ? parseInt(sessionCheckPlanTime, 10)
-        : 0;
-
-      if (!isNewBrowserSession && planTime > 0 && currentTime < planTime) {
-        setUser(localUser);
-        setIsAuthenticated(true);
-        setIsValidating(false);
-        return;
-      }
-
       try {
-        await axios.get("/api/session-check");
+        const response = await axios.get("/api/session-check");
 
-        // Update cache 15 menit
-        const nextCheckTime = currentTime + 15 * 60 * 1000;
-        setLocalStorage("session_check_plan_time", nextCheckTime.toString());
-        sessionStorage.setItem("app_initialized", "true");
-
-        setUser(localUser);
-        setIsAuthenticated(true);
+        if (response.status === 200 && response.data?.authenticated) {
+          if (!isMounted) return;
+          setUser(localUser);
+          setIsAuthenticated(true);
+          setSessionIssue(null);
+        } else {
+          throw new Error("Unauthenticated");
+        }
       } catch (error) {
+        if (!isMounted) return;
+
+        removeLocalStorage("active_user");
+        removeLocalStorage("session_check_plan_time");
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("app_initialized");
+        }
+
         const questionnaireUrl = axios.isAxiosError(error)
           ? error.response?.data?.questionnaireUrl
           : undefined;
+
         if (questionnaireUrl) {
           setSessionIssue({
             reason: "questionnaire_required",
             questionnaireUrl,
           });
-        } else if (typeof window !== "undefined") {
-          localStorage.removeItem("active_user");
-          localStorage.removeItem("session_check_plan_time");
+        } else {
+          setSessionIssue(null);
         }
+
         setIsAuthenticated(false);
         setUser(null);
       } finally {
-        setIsValidating(false);
+        if (isMounted) {
+          setIsValidating(false);
+        }
       }
     };
 
     checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { user, isAuthenticated, isValidating, sessionIssue };
 };
+

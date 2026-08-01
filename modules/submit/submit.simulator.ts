@@ -143,25 +143,24 @@ export async function simulateSubmitSchedules(
   };
 }
 
-/** Simulated DELETE /api/submit — release only courses this session actually secured. */
+/** Reset session simulation memory. */
+export function resetSimulatedSession(sessionValue: string): void {
+  securedBySession.delete(sessionValue);
+}
+
+/** Simulated DELETE /api/submit — release courses from simulated session. */
 export async function simulateReleaseSchedules(
   sessionValue: string,
   targetCourses: DeleteTargetCourse[],
 ): Promise<ReleaseResult> {
   const secured = getSecuredSet(sessionValue);
 
-  const matched = targetCourses.filter((target) =>
-    secured.has(courseKey(target.course_code, target.course_class)),
-  );
-
-  if (matched.length === 0) {
-    return { matched: false };
-  }
-
-  const deletedIds = matched.map((target) => {
+  const deletedIds = targetCourses.map((target) => {
     const key = courseKey(target.course_code, target.course_class);
+    const simId = simScheduleId(target.course_code, target.course_class);
     secured.delete(key);
-    return simScheduleId(target.course_code, target.course_class);
+    secured.delete(simId);
+    return simId;
   });
 
   logger.log("[WAR_TEST] release", { session: sessionValue.slice(0, 8), deletedIds });

@@ -753,6 +753,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
           remaining={war.remaining}
           isSubmitting={war.isSubmitting}
           startedAt={war.startedAt}
+          onReset={war.resetWarTest}
         />
       )}
     </AuthAccess>

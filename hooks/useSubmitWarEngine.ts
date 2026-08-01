@@ -5,11 +5,17 @@ import axios, { isAxiosError } from "axios";
 import { CourseSchedule, OfferingCourse } from "@/types/course_schedule";
 import { SubmitLog, AttemptStatus, PreparationStatus } from "@/types/submit_log";
 import { logger } from "@/lib/logger";
-import { getLocalStorage, setLocalStorage } from "@/helper/local_storage";
+import { getLocalStorage, setLocalStorage, removeLocalStorage } from "@/helper/local_storage";
 import {
   SAVED_SCHEDULE_KEY,
   OFFERING_COURSE_KEY,
+  WAR_TEST_SCHEDULE_KEY,
+  WAR_TEST_OWNED_COURSES_KEY,
+  WAR_TEST_SECURED_COURSES_KEY,
+  WAR_TEST_SUBMISSION_HISTORY_KEY,
+  WAR_TEST_RELEASE_HISTORY_KEY,
   backfillCourseSemesters,
+  stampForAdoption,
 } from "@/helper/frontend_helper";
 import { WAR_IN_PROGRESS_KEY } from "@/providers/LocalStorageProvider";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -158,6 +164,7 @@ const initialState: WarState = {
 
 type WarAction =
   | { type: "HYDRATE"; courses: CourseSchedule[] }
+  | { type: "RESTORE_LOGS"; logs: SubmitLog[] }
   | { type: "SYNC_STARTED" }
   | { type: "SYNC_COMPLETED"; courses: CourseSchedule[] }
   | { type: "SYNC_FAILED" }
@@ -179,6 +186,9 @@ function warReducer(state: WarState, action: WarAction): WarState {
   switch (action.type) {
     case "HYDRATE":
       return { ...state, courses: action.courses, isHydrated: true };
+
+    case "RESTORE_LOGS":
+      return { ...state, logs: action.logs };
 
     case "SYNC_STARTED":
       return { ...state, isFindingSchedule: true };
@@ -806,11 +816,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       readyReleases: { course_code: string; course_class: string }[],
     ): Promise<boolean> => {
       const courses = stateRef.current.courses;
-      const isTestMode =
-        warTestModeProp ??
-        (typeof window !== "undefined" &&
-          (process.env.NEXT_PUBLIC_WAR_TEST_MODE === "true" ||
-            (process.env as any).WAR_TEST_MODE === "true"));
+      const isTestMode = getWarMode() === "test";
 
       const releasableCourses = readyReleases.filter((item) =>
         courses.some(
@@ -833,8 +839,14 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       let anyChange = false;
 
       if (isTestMode) {
-        // WAR Test Mode: Pure local simulated state operation — ZERO network requests
         if (releasableCourses.length > 0) {
+          try {
+            await axios.delete("/api/submit", {
+              data: { courses: JSON.stringify(releasableCourses) },
+            });
+          } catch {
+            // non-fatal in test mode simulation
+          }
           nextCourses = nextCourses.map((course) => {
             const shouldUpdate = releasableCourses.some(
               (item) =>
@@ -850,6 +862,14 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
               : course;
           });
           anyChange = true;
+
+          const existingHistory = getLocalStorage(WAR_TEST_RELEASE_HISTORY_KEY) || [];
+          const newEntries = releasableCourses.map((r) => ({
+            ...r,
+            releasedAt: new Date().toISOString(),
+          }));
+          setLocalStorage(WAR_TEST_RELEASE_HISTORY_KEY, [...existingHistory, ...newEntries]);
+
           gooeyToast.success("Info Bosku", {
             description: "Jadwal terpilih telah dilepaskan",
           });
@@ -871,7 +891,18 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
         }
 
         if (anyChange) {
+          setLocalStorage(WAR_TEST_SCHEDULE_KEY, nextCourses);
+          const secured = nextCourses.filter((c) => c.saved_in_submit).map((c) => `${c.code}_${c.class}`);
+          const owned = nextCourses.map((c) => `${c.code}_${c.class}`);
+          setLocalStorage(WAR_TEST_SECURED_COURSES_KEY, secured);
+          setLocalStorage(WAR_TEST_OWNED_COURSES_KEY, owned);
+
           dispatch({ type: "COURSE_RELEASED", courses: nextCourses });
+          trackWarReleaseSchedule({
+            war_mode: "test",
+            released_count: readyReleases.length,
+            remaining_count: nextCourses.length,
+          });
         }
         return anyChange;
       }
@@ -942,7 +973,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       if (anyChange) {
         dispatch({ type: "COURSE_RELEASED", courses: nextCourses });
         trackWarReleaseSchedule({
-          war_mode: isTestMode ? "test" : "production",
+          war_mode: "production",
           released_count: readyReleases.length,
           remaining_count: nextCourses.length,
         });
@@ -950,31 +981,124 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
       }
       return anyChange;
     },
-    [syncWithServer, warTestModeProp],
+    [getWarMode, syncWithServer],
   );
 
-  // Hydrate from localStorage once, then run the initial "is the war open" sync
+  // Reset WAR Test Simulation — clears test storage, clears simulator session, clones fresh Prod snapshot
+  const resetWarTest = useCallback(async () => {
+    const isTestMode = getWarMode() === "test";
+    if (!isTestMode) return;
+
+    removeLocalStorage(WAR_TEST_SCHEDULE_KEY);
+    removeLocalStorage(WAR_TEST_OWNED_COURSES_KEY);
+    removeLocalStorage(WAR_TEST_SECURED_COURSES_KEY);
+    removeLocalStorage(WAR_TEST_SUBMISSION_HISTORY_KEY);
+    removeLocalStorage(WAR_TEST_RELEASE_HISTORY_KEY);
+
+    try {
+      await axios.delete("/api/submit?reset=true");
+    } catch {
+      // non-fatal
+    }
+
+    const prodSaved = getLocalStorage(SAVED_SCHEDULE_KEY);
+    let freshCourses: CourseSchedule[] = [];
+    if (prodSaved && Array.isArray(prodSaved)) {
+      const offeringCourse = getLocalStorage(OFFERING_COURSE_KEY) as OfferingCourse[] | null;
+      const patched = backfillCourseSemesters(prodSaved, offeringCourse);
+      freshCourses = stampForAdoption(patched);
+    }
+
+    setLocalStorage(WAR_TEST_SCHEDULE_KEY, freshCourses);
+    setLocalStorage(WAR_TEST_OWNED_COURSES_KEY, freshCourses.map((c) => `${c.code}_${c.class}`));
+    setLocalStorage(WAR_TEST_SECURED_COURSES_KEY, []);
+    setLocalStorage(WAR_TEST_SUBMISSION_HISTORY_KEY, []);
+    setLocalStorage(WAR_TEST_RELEASE_HISTORY_KEY, []);
+
+    dispatch({ type: "HYDRATE", courses: freshCourses });
+    dispatch({ type: "RESTORE_LOGS", logs: [] });
+    gooeyToast.success("Simulasi Reset", {
+      description: "Data WAR Test Mode telah dikembalikan ke snapshot produksi.",
+    });
+
+    await syncWithServer(freshCourses);
+  }, [getWarMode, syncWithServer]);
+
+  // Hydrate from localStorage once (isolated Test Mode storage vs Production storage)
   useEffect(() => {
-    const saved = getLocalStorage(SAVED_SCHEDULE_KEY);
-    if (saved && Array.isArray(saved)) {
-      const offeringCourse = getLocalStorage(OFFERING_COURSE_KEY) as
-        | OfferingCourse[]
-        | null;
-      const patched = backfillCourseSemesters(saved, offeringCourse);
-      if (patched !== saved) setLocalStorage(SAVED_SCHEDULE_KEY, patched);
-      dispatch({ type: "HYDRATE", courses: patched });
-      void syncWithServer(patched);
+    const isTestMode = getWarMode() === "test";
+
+    if (isTestMode) {
+      let testSaved = getLocalStorage(WAR_TEST_SCHEDULE_KEY);
+
+      if (!testSaved || !Array.isArray(testSaved)) {
+        // Clone Production snapshot ONCE upon initializing Test Mode
+        const prodSaved = getLocalStorage(SAVED_SCHEDULE_KEY);
+        if (prodSaved && Array.isArray(prodSaved)) {
+          const offeringCourse = getLocalStorage(OFFERING_COURSE_KEY) as OfferingCourse[] | null;
+          const patched = backfillCourseSemesters(prodSaved, offeringCourse);
+          testSaved = stampForAdoption(patched);
+        } else {
+          testSaved = [];
+        }
+        setLocalStorage(WAR_TEST_SCHEDULE_KEY, testSaved);
+        setLocalStorage(
+          WAR_TEST_OWNED_COURSES_KEY,
+          testSaved.map((c: CourseSchedule) => `${c.code}_${c.class}`),
+        );
+        setLocalStorage(
+          WAR_TEST_SECURED_COURSES_KEY,
+          testSaved.filter((c: CourseSchedule) => c.saved_in_submit).map((c: CourseSchedule) => `${c.code}_${c.class}`),
+        );
+        setLocalStorage(WAR_TEST_SUBMISSION_HISTORY_KEY, []);
+        setLocalStorage(WAR_TEST_RELEASE_HISTORY_KEY, []);
+      }
+
+      const testLogs = getLocalStorage(WAR_TEST_SUBMISSION_HISTORY_KEY);
+      if (Array.isArray(testLogs) && testLogs.length > 0) {
+        dispatch({ type: "RESTORE_LOGS", logs: testLogs });
+      }
+
+      dispatch({ type: "HYDRATE", courses: testSaved });
+      void syncWithServer(testSaved);
     } else {
-      dispatch({ type: "HYDRATE", courses: [] });
+      const saved = getLocalStorage(SAVED_SCHEDULE_KEY);
+      if (saved && Array.isArray(saved)) {
+        const offeringCourse = getLocalStorage(OFFERING_COURSE_KEY) as OfferingCourse[] | null;
+        const patched = backfillCourseSemesters(saved, offeringCourse);
+        if (patched !== saved) setLocalStorage(SAVED_SCHEDULE_KEY, patched);
+        dispatch({ type: "HYDRATE", courses: patched });
+        void syncWithServer(patched);
+      } else {
+        dispatch({ type: "HYDRATE", courses: [] });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // React state is the source of truth; localStorage is persistence only.
+  // React state persistence — strictly isolated by mode
   useEffect(() => {
     if (!state.isHydrated) return;
-    setLocalStorage(SAVED_SCHEDULE_KEY, state.courses);
-  }, [state.courses, state.isHydrated]);
+    const isTestMode = getWarMode() === "test";
+    if (isTestMode) {
+      setLocalStorage(WAR_TEST_SCHEDULE_KEY, state.courses);
+      const secured = state.courses.filter((c) => c.saved_in_submit).map((c) => `${c.code}_${c.class}`);
+      const owned = state.courses.map((c) => `${c.code}_${c.class}`);
+      setLocalStorage(WAR_TEST_SECURED_COURSES_KEY, secured);
+      setLocalStorage(WAR_TEST_OWNED_COURSES_KEY, owned);
+    } else {
+      setLocalStorage(SAVED_SCHEDULE_KEY, state.courses);
+    }
+  }, [state.courses, state.isHydrated, getWarMode]);
+
+  // Persist submission logs in Test Mode
+  useEffect(() => {
+    if (!state.isHydrated) return;
+    const isTestMode = getWarMode() === "test";
+    if (isTestMode) {
+      setLocalStorage(WAR_TEST_SUBMISSION_HISTORY_KEY, state.logs);
+    }
+  }, [state.logs, state.isHydrated, getWarMode]);
 
   // Broadcast war-in-progress so /schedule and /adopt-schedule can lock
   useEffect(() => {
@@ -1003,6 +1127,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
     checkWarStatus: syncWithServer,
     startWar,
     releaseCourses,
+    resetWarTest,
   };
 }
 

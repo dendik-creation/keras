@@ -11,6 +11,7 @@ type Props = {
   remaining: Set<string>;
   isSubmitting: boolean;
   startedAt: number | null;
+  onReset?: () => void;
 };
 
 /** Dev-only floating panel — only ever mounted when NEXT_PUBLIC_WAR_TEST_MODE="true". */
@@ -21,6 +22,7 @@ export default function WarTestDebugPanel({
   remaining,
   isSubmitting,
   startedAt,
+  onReset,
 }: Props) {
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -44,11 +46,23 @@ export default function WarTestDebugPanel({
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-72 border-2 border-black bg-white shadow-[4px_4px_0_0_#000] font-mono text-[11px]">
-      <div className="flex items-center gap-2 border-b-2 border-black bg-black px-3 py-1.5 text-white">
-        <Bug className="h-3.5 w-3.5" />
-        <span className="font-black uppercase tracking-widest">
-          War Test Mode
-        </span>
+      <div className="flex items-center justify-between border-b-2 border-black bg-black px-3 py-1.5 text-white">
+        <div className="flex items-center gap-2">
+          <Bug className="h-3.5 w-3.5" />
+          <span className="font-black uppercase tracking-widest">
+            War Test Mode
+          </span>
+        </div>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={isSubmitting}
+            className="text-[9px] bg-red-600 hover:bg-red-700 text-white font-bold px-1.5 py-0.5 border border-white uppercase"
+          >
+            Reset
+          </button>
+        )}
       </div>
       <div className="space-y-1.5 p-3">
         <Row label="Simulation" value="ON" />

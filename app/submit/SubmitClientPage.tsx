@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Loader2,
   CheckCircle2,
@@ -114,12 +115,27 @@ function getBadgeStyle(status: AttemptStatus): string {
 }
 
 export default function SubmitClientPage({ warTestMode }: Props) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const war = useSubmitWarEngine(warTestMode);
   const pageTrackedRef = useRef(false);
+  const hasWarnedRef = useRef(false);
 
   useEffect(() => {
-    if (!war.isHydrated || pageTrackedRef.current) return;
+    if (!war.isHydrated) return;
+
+    if (!war.courses || war.courses.length === 0) {
+      if (!hasWarnedRef.current) {
+        hasWarnedRef.current = true;
+        gooeyToast.error("Tidak boleh perang", {
+          description: "Siapkan jadwalmu terlebih dahulu",
+        });
+        router.push("/schedule");
+      }
+      return;
+    }
+
+    if (pageTrackedRef.current) return;
     pageTrackedRef.current = true;
     const warMode = warTestMode ? "test" : "production";
     const totalCourses = war.courses.length;
@@ -148,7 +164,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
       is_valid: true,
       validation_duration_ms: 0,
     });
-  }, [war.isHydrated, war.courses, warTestMode]);
+  }, [war.isHydrated, war.courses, warTestMode, router]);
 
   const [readyReleases, setReadyReleases] = useState<
     {
@@ -199,7 +215,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
     return war.courses.reduce((acc, curr) => acc + Number(curr.sks), 0);
   }, [war.courses]);
 
-  if (!war.isHydrated) return null;
+  if (!war.isHydrated || !war.courses || war.courses.length === 0) return null;
 
   return (
     <AuthAccess>

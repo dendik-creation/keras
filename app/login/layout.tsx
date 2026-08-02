@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Masuk",
   description:
     "Masuk ke KeRaS pakai sesi KRS-mu untuk mulai menyusun jadwal tanpa drama.",
+  robots: { index: false, follow: false },
 };
 
 export default function LoginLayout({

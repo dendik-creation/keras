@@ -5,8 +5,22 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Analitik — KeRaS",
+  title: "Analitik",
   description: "Statistik penggunaan KeRaS secara anonim",
+  alternates: {
+    canonical: "/analytics",
+  },
+  openGraph: {
+    title: "Analitik | KeRaS",
+    description: "Statistik penggunaan KeRaS secara anonim",
+    url: "/analytics",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Analitik | KeRaS",
+    description: "Statistik penggunaan KeRaS secara anonim",
+  }
 };
 
 const DASHBOARD_EMBED_URL =

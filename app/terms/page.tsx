@@ -9,7 +9,7 @@ import {
 } from "@/components/custom/legal";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions | KeRaS",
+  title: "Terms & Conditions",
   description: "Syarat dan ketentuan penggunaan platform KeRaS.",
   alternates: {
     canonical: "/terms",
@@ -18,6 +18,12 @@ export const metadata: Metadata = {
     title: "Terms & Conditions | KeRaS",
     description: "Syarat dan ketentuan penggunaan platform KeRaS.",
     url: "/terms",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms & Conditions | KeRaS",
+    description: "Syarat dan ketentuan penggunaan platform KeRaS.",
   }
 };
 

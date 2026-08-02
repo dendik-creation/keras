@@ -9,7 +9,7 @@ import {
 import changelogHistories from "@/lib/changelog";
 
 export const metadata: Metadata = {
-  title: "Changelog | KeRaS",
+  title: "Changelog",
   description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
   alternates: {
     canonical: "/changelog",
@@ -18,6 +18,12 @@ export const metadata: Metadata = {
     title: "Changelog | KeRaS",
     description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
     url: "/changelog",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Changelog | KeRaS",
+    description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
   }
 };
 

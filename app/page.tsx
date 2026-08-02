@@ -329,6 +329,7 @@ export default function Page() {
                   width={1080}
                   height={2400}
                   className="w-full h-auto object-top"
+                  priority
                 />
               </div>
               {/* Home bar */}

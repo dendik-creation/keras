@@ -11,7 +11,7 @@ import {
 import { Check, X } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | KeRaS",
+  title: "Privacy Policy",
   description: "Pelajari bagaimana KeRaS memproses data, menjaga privasi, dan menerapkan prinsip Zero Database.",
   alternates: {
     canonical: "/privacy",
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
     title: "Privacy Policy | KeRaS",
     description: "Pelajari bagaimana KeRaS memproses data, menjaga privasi, dan menerapkan prinsip Zero Database.",
     url: "/privacy",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | KeRaS",
+    description: "Pelajari bagaimana KeRaS memproses data, menjaga privasi, dan menerapkan prinsip Zero Database.",
   }
 };
 

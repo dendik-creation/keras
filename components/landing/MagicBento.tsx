@@ -678,7 +678,6 @@ const MagicBento: React.FC<MagicBentoProps> = ({
 
       <BentoCardGrid gridRef={gridRef}>
         {cards.map((card, index) => {
-          const IconComponent = card.icon;
           const baseClassName = `magic-bento-card ${textAutoHide ? "magic-bento-card--text-autohide" : ""} ${
             enableBorderGlow ? "magic-bento-card--border-glow" : ""
           }`;

@@ -49,23 +49,27 @@ describe("External AI Prompt Builder", () => {
     const prompt = buildExternalAiPrompt(mockOffering);
     expect(prompt).toContain("### TUJUAN");
     expect(prompt).toContain("### ATURAN WAJIB");
-    expect(prompt).toContain("### DATA MATA KULIAH");
+    expect(prompt).toContain("### COURSE LIST");
+    expect(prompt).toContain("### AVAILABLE CLASSES");
     expect(prompt).toContain("### FORMAT JAWABAN");
     expect(prompt).toContain("### PREFERENSI MAHASISWA");
 
-    // Check order: TUJUAN -> ATURAN WAJIB -> DATA MATA KULIAH -> FORMAT JAWABAN -> PREFERENSI MAHASISWA
+    // Check order: TUJUAN -> ATURAN WAJIB -> COURSE LIST -> AVAILABLE CLASSES -> FORMAT JAWABAN -> PREFERENSI MAHASISWA
     const idxTujuan = prompt.indexOf("### TUJUAN");
     const idxAturan = prompt.indexOf("### ATURAN WAJIB");
-    const idxData = prompt.indexOf("### DATA MATA KULIAH");
+    const idxCourseList = prompt.indexOf("### COURSE LIST");
+    const idxAvailable = prompt.indexOf("### AVAILABLE CLASSES");
     const idxFormat = prompt.indexOf("### FORMAT JAWABAN");
     const idxPref = prompt.indexOf("### PREFERENSI MAHASISWA");
 
     expect(idxTujuan).toBeLessThan(idxAturan);
-    expect(idxAturan).toBeLessThan(idxData);
-    expect(idxData).toBeLessThan(idxFormat);
+    expect(idxAturan).toBeLessThan(idxCourseList);
+    expect(idxCourseList).toBeLessThan(idxAvailable);
+    expect(idxAvailable).toBeLessThan(idxFormat);
     expect(idxFormat).toBeLessThan(idxPref);
 
-    expect(prompt).toContain("IFE101-A|3|Sen|08:00-10:30|Dosen A");
+    expect(prompt).toContain("IFE101 = Matematika");
+    expect(prompt).toContain("IFE101-A|3|Sen|08:00-10:30|Dosen A|Semester 5");
     expect(prompt).toContain("Belum ditentukan");
   });
 

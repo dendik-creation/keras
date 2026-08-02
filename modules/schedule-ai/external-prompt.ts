@@ -59,12 +59,19 @@ export function buildExternalAiPrompt(
   const coursesToInclude = candidateCourses.length > 0 ? candidateCourses : allCourses;
 
   // Build compact lines for each available course option
-  // Format: CODE-CLASS|sks|day|hour|lecturer
+  // Format: CODE-CLASS|sks|day|hour|lecturer|semester
   const courseLines = coursesToInclude.map((c) => {
     const dayAbbr = DAY_ABBR[c.day] || c.day;
     const hourStr = (c.hour || "").replace(/\s+/g, "");
-    return `${c.code}-${c.class}|${c.sks}|${dayAbbr}|${hourStr}|${c.lecture}`;
+    return `${c.code}-${c.class}|${c.sks}|${dayAbbr}|${hourStr}|${c.lecture}|${c.semester || ""}`;
   });
+
+  // Build course list for lookup
+  const uniqueCourses = new Map<string, string>();
+  coursesToInclude.forEach((c) => uniqueCourses.set(c.code, c.course));
+  const courseListLines = Array.from(uniqueCourses.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([code, name]) => `${code} = ${name}`);
 
   // Dynamic preference status
   const semVal = prefObj.preferred_semester ? prefObj.preferred_semester : "Belum ditentukan";
@@ -138,8 +145,11 @@ Kamu WAJIB mematuhi seluruh aturan berikut tanpa terkecuali:
 
 ---
 
-### DATA MATA KULIAH
-Format: KODE-KELAS|SKS|HARI|JAM|DOSEN
+### COURSE LIST
+${courseListLines.join("\n")}
+
+### AVAILABLE CLASSES
+Format: KODE-KELAS|SKS|HARI|JAM|DOSEN|SEMESTER
 ${courseLines.join("\n")}
 
 ---
@@ -211,7 +221,7 @@ Lakukan verifikasi mandiri terhadap aturan berikut sebelum menjawab:
 [✓] Tidak ada bentrok waktu
 [✓] Tepat satu kelas per mata kuliah
 [✓] Memenuhi seluruh preferensi mahasiswa
-[✓] Hanya menggunakan identifier resmi dari DATA MATA KULIAH
+[✓] Hanya menggunakan identifier resmi dari AVAILABLE CLASSES
 
 Jika masih terdapat nilai "Belum ditentukan" pada daftar preferensi di atas, JANGAN buat rekomendasi jadwal terlebih dahulu. Ajukan pertanyaan terlebih dahulu kepada mahasiswa.`;
 }

@@ -95,26 +95,30 @@ export default function CenterFlow() {
   // Desktop SVG Path Refs (Black Base)
   const dPathLeftRef = useRef<SVGPathElement>(null);
   const dPathRightARef = useRef<SVGPathElement>(null);
-  const dPathRightBRef = useRef<SVGPathElement>(null);
+  const dPathAToBRef = useRef<SVGPathElement>(null);
+  const dPathBToLeftRef = useRef<SVGPathElement>(null);
 
   // Desktop SVG Path Refs (Red Trail)
   const dPathLeftRedRef = useRef<SVGPathElement>(null);
   const dPathRightARedRef = useRef<SVGPathElement>(null);
-  const dPathRightBRedRef = useRef<SVGPathElement>(null);
+  const dPathAToBRedRef = useRef<SVGPathElement>(null);
+  const dPathBToLeftRedRef = useRef<SVGPathElement>(null);
 
   // Mobile SVG Path Refs (Black Base)
   const mPathLeftRef = useRef<SVGPathElement>(null);
   const mPathRightARef = useRef<SVGPathElement>(null);
-  const mPathRightBRef = useRef<SVGPathElement>(null);
+  const mPathAToBRef = useRef<SVGPathElement>(null);
+  const mPathBToLeftRef = useRef<SVGPathElement>(null);
 
   // Mobile SVG Path Refs (Red Trail)
   const mPathLeftRedRef = useRef<SVGPathElement>(null);
   const mPathRightARedRef = useRef<SVGPathElement>(null);
-  const mPathRightBRedRef = useRef<SVGPathElement>(null);
+  const mPathAToBRedRef = useRef<SVGPathElement>(null);
+  const mPathBToLeftRedRef = useRef<SVGPathElement>(null);
 
   // SVG Paths state
-  const [dPaths, setDPaths] = useState({ left: "", rightA: "", rightB: "" });
-  const [mPaths, setMPaths] = useState({ left: "", rightA: "", rightB: "" });
+  const [dPaths, setDPaths] = useState({ left: "", rightA: "", aToB: "", bToLeft: "" });
+  const [mPaths, setMPaths] = useState({ left: "", rightA: "", aToB: "", bToLeft: "" });
 
   // ─── Calculate SVG Paths ────────────────────────────────────────────────────
   const computePaths = useCallback(() => {
@@ -142,19 +146,27 @@ export default function CenterFlow() {
 
       const stExit = { x: stBox.right - ox, y: stBox.top - oy + stBox.height / 2 };
       const krEntry = { x: krBox.left - ox, y: krBox.top - oy + krBox.height / 2 };
-      const krExitA = { x: krBox.right - ox, y: krBox.top - oy + krBox.height * 0.3 };
-      const krExitB = { x: krBox.right - ox, y: krBox.top - oy + krBox.height * 0.7 };
-      const scEntry = { x: scBox.left - ox, y: scBox.top - oy + scBox.height / 2 };
-      const sbEntry = { x: sbBox.left - ox, y: sbBox.top - oy + sbBox.height / 2 };
+      const pLeft = `M ${stExit.x} ${stExit.y} L ${krEntry.x} ${krEntry.y}`;
 
-      const cp1X = (stExit.x + krEntry.x) / 2;
+      const krExitA = { x: krBox.right - ox, y: krBox.top - oy + krBox.height / 2 };
+      const scEntry = { x: scBox.left - ox, y: scBox.top - oy + scBox.height / 2 };
       const cp2AX = (krExitA.x + scEntry.x) / 2;
-      const cp2BX = (krExitB.x + sbEntry.x) / 2;
+      const pRightA = `M ${krExitA.x} ${krExitA.y} L ${cp2AX} ${krExitA.y} L ${cp2AX} ${scEntry.y} L ${scEntry.x} ${scEntry.y}`;
+
+      const scExit = { x: scBox.left - ox + scBox.width / 2, y: scBox.bottom - oy };
+      const sbEntryTop = { x: sbBox.left - ox + sbBox.width / 2, y: sbBox.top - oy };
+      const pAToB = `M ${scExit.x} ${scExit.y} L ${sbEntryTop.x} ${sbEntryTop.y}`;
+
+      const pBExit = { x: sbBox.left - ox + sbBox.width * 0.2, y: sbBox.bottom - oy };
+      const pBTarget = { x: stBox.left - ox + stBox.width / 2, y: stBox.bottom - oy };
+      const bottomY = sbBox.bottom - oy + 60;
+      const pBToLeft = `M ${pBExit.x} ${pBExit.y} L ${pBExit.x} ${bottomY} L ${pBTarget.x} ${bottomY} L ${pBTarget.x} ${pBTarget.y}`;
 
       setDPaths({
-        left: `M ${stExit.x} ${stExit.y} C ${cp1X} ${stExit.y}, ${cp1X} ${krEntry.y}, ${krEntry.x} ${krEntry.y}`,
-        rightA: `M ${krExitA.x} ${krExitA.y} C ${cp2AX} ${krExitA.y}, ${cp2AX} ${scEntry.y}, ${scEntry.x} ${scEntry.y}`,
-        rightB: `M ${krExitB.x} ${krExitB.y} C ${cp2BX} ${krExitB.y}, ${cp2BX} ${sbEntry.y}, ${sbEntry.x} ${sbEntry.y}`,
+        left: pLeft,
+        rightA: pRightA,
+        aToB: pAToB,
+        bToLeft: pBToLeft,
       });
     }
 
@@ -182,19 +194,28 @@ export default function CenterFlow() {
 
       const stExit = { x: stBox.left - ox + stBox.width / 2, y: stBox.bottom - oy };
       const krEntry = { x: krBox.left - ox + krBox.width / 2, y: krBox.top - oy };
-      const krExitA = { x: krBox.left - ox + krBox.width * 0.35, y: krBox.bottom - oy };
-      const krExitB = { x: krBox.left - ox + krBox.width * 0.65, y: krBox.bottom - oy };
-      const scEntry = { x: scBox.left - ox + scBox.width / 2, y: scBox.top - oy };
-      const sbEntry = { x: sbBox.left - ox + sbBox.width / 2, y: sbBox.top - oy };
+      const pLeft = `M ${stExit.x} ${stExit.y} L ${krEntry.x} ${krEntry.y}`;
 
-      const cp1Y = (stExit.y + krEntry.y) / 2;
-      const cp2AY = (krExitA.y + scEntry.y) / 2;
-      const cp2BY = (krExitB.y + sbEntry.y) / 2;
+      const krExit = { x: krBox.left - ox + krBox.width / 2, y: krBox.bottom - oy };
+      const scEntry = { x: scBox.left - ox + scBox.width / 2, y: scBox.top - oy };
+      const midY = (krExit.y + scEntry.y) / 2;
+      const pRightA = `M ${krExit.x} ${krExit.y} L ${krExit.x} ${midY} L ${scEntry.x} ${midY} L ${scEntry.x} ${scEntry.y}`;
+
+      const scExitRight = { x: scBox.right - ox, y: scBox.top - oy + scBox.height / 2 };
+      const sbEntryLeft = { x: sbBox.left - ox, y: sbBox.top - oy + sbBox.height / 2 };
+      const pAToB = `M ${scExitRight.x} ${scExitRight.y} L ${sbEntryLeft.x} ${sbEntryLeft.y}`;
+
+      const sbExitBottom = { x: sbBox.left - ox + sbBox.width * 0.2, y: sbBox.bottom - oy };
+      const stEntryLeft = { x: stBox.left - ox, y: stBox.top - oy + stBox.height / 2 };
+      const mBottomY = sbBox.bottom - oy + 40;
+      const mLeftX = Math.min(stBox.left, krBox.left, scBox.left) - ox - 30;
+      const pBToLeft = `M ${sbExitBottom.x} ${sbExitBottom.y} L ${sbExitBottom.x} ${mBottomY} L ${mLeftX} ${mBottomY} L ${mLeftX} ${stEntryLeft.y} L ${stEntryLeft.x} ${stEntryLeft.y}`;
 
       setMPaths({
-        left: `M ${stExit.x} ${stExit.y} C ${stExit.x} ${cp1Y}, ${krEntry.x} ${cp1Y}, ${krEntry.x} ${krEntry.y}`,
-        rightA: `M ${krExitA.x} ${krExitA.y} C ${krExitA.x} ${cp2AY}, ${scEntry.x} ${cp2AY}, ${scEntry.x} ${scEntry.y}`,
-        rightB: `M ${krExitB.x} ${krExitB.y} C ${krExitB.x} ${cp2BY}, ${sbEntry.x} ${cp2BY}, ${sbEntry.x} ${sbEntry.y}`,
+        left: pLeft,
+        rightA: pRightA,
+        aToB: pAToB,
+        bToLeft: pBToLeft,
       });
     }
   }, []);
@@ -226,15 +247,17 @@ export default function CenterFlow() {
 
     const pLeft = isDesktop ? dPathLeftRef.current : mPathLeftRef.current;
     const pRightA = isDesktop ? dPathRightARef.current : mPathRightARef.current;
-    const pRightB = isDesktop ? dPathRightBRef.current : mPathRightBRef.current;
+    const pAToB = isDesktop ? dPathAToBRef.current : mPathAToBRef.current;
+    const pBToLeft = isDesktop ? dPathBToLeftRef.current : mPathBToLeftRef.current;
 
     const pLeftRed = isDesktop ? dPathLeftRedRef.current : mPathLeftRedRef.current;
     const pRightARed = isDesktop ? dPathRightARedRef.current : mPathRightARedRef.current;
-    const pRightBRed = isDesktop ? dPathRightBRedRef.current : mPathRightBRedRef.current;
+    const pAToBRed = isDesktop ? dPathAToBRedRef.current : mPathAToBRedRef.current;
+    const pBToLeftRed = isDesktop ? dPathBToLeftRedRef.current : mPathBToLeftRedRef.current;
 
     const allNodes = [studentRef, kerasRef, schedRef, submitRef].filter(Boolean);
-    const allBasePaths = [pLeft, pRightA, pRightB].filter(Boolean);
-    const allRedPaths = [pLeftRed, pRightARed, pRightBRed].filter(Boolean);
+    const allBasePaths = [pLeft, pRightA, pAToB, pBToLeft].filter(Boolean);
+    const allRedPaths = [pLeftRed, pRightARed, pAToBRed, pBToLeftRed].filter(Boolean);
 
     if (reduced) {
       gsap.set(editorialNodes, { opacity: 1, y: 0 });
@@ -326,16 +349,14 @@ export default function CenterFlow() {
         );
       }
 
-      // 5. Fast Right connectors draw (KeRaS -> Outputs)
-      const rightPaths = [pRightA, pRightB].filter(Boolean);
-      if (rightPaths.length > 0) {
+      // 5. Fast RightA connector draw (KeRaS -> Pengelolaan Jadwal)
+      if (pRightA) {
         tl.to(
-          rightPaths,
+          pRightA,
           {
             strokeDashoffset: 0,
             duration: 0.4,
             ease: "power2.inOut",
-            stagger: 0.05,
           },
           "-=0.1"
         );
@@ -357,7 +378,22 @@ export default function CenterFlow() {
         );
       }
 
-      // 7. Reveal Red Looping Trail & start infinite flow animation
+      // 7. Loop connectors draw (RightA -> RightB -> Left)
+      const loopPaths = [pAToB, pBToLeft].filter(Boolean);
+      if (loopPaths.length > 0) {
+        tl.to(
+          loopPaths,
+          {
+            strokeDashoffset: 0,
+            duration: 0.5,
+            ease: "power2.inOut",
+            stagger: 0.1,
+          },
+          "-=0.1"
+        );
+      }
+
+      // 8. Reveal Red Looping Trail & start infinite flow animation
       tl.add(() => {
         if (allRedPaths.length > 0) {
           gsap.to(allRedPaths, {
@@ -460,8 +496,17 @@ export default function CenterFlow() {
                 className="cf-connector-desktop"
               />
               <path
-                ref={dPathRightBRef}
-                d={dPaths.rightB}
+                ref={dPathAToBRef}
+                d={dPaths.aToB}
+                fill="none"
+                stroke="#e5e5e5"
+                strokeWidth={2}
+                strokeLinecap="round"
+                className="cf-connector-desktop"
+              />
+              <path
+                ref={dPathBToLeftRef}
+                d={dPaths.bToLeft}
                 fill="none"
                 stroke="#e5e5e5"
                 strokeWidth={2}
@@ -491,8 +536,18 @@ export default function CenterFlow() {
                 className="cf-trail-desktop"
               />
               <path
-                ref={dPathRightBRedRef}
-                d={dPaths.rightB}
+                ref={dPathAToBRedRef}
+                d={dPaths.aToB}
+                fill="none"
+                stroke="#FF3000"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeDasharray="12 36"
+                className="cf-trail-desktop"
+              />
+              <path
+                ref={dPathBToLeftRedRef}
+                d={dPaths.bToLeft}
                 fill="none"
                 stroke="#FF3000"
                 strokeWidth={2.5}
@@ -568,8 +623,17 @@ export default function CenterFlow() {
                 className="cf-connector-mobile"
               />
               <path
-                ref={mPathRightBRef}
-                d={mPaths.rightB}
+                ref={mPathAToBRef}
+                d={mPaths.aToB}
+                fill="none"
+                stroke="#e5e5e5"
+                strokeWidth={2}
+                strokeLinecap="round"
+                className="cf-connector-mobile"
+              />
+              <path
+                ref={mPathBToLeftRef}
+                d={mPaths.bToLeft}
                 fill="none"
                 stroke="#e5e5e5"
                 strokeWidth={2}
@@ -599,8 +663,18 @@ export default function CenterFlow() {
                 className="cf-trail-mobile"
               />
               <path
-                ref={mPathRightBRedRef}
-                d={mPaths.rightB}
+                ref={mPathAToBRedRef}
+                d={mPaths.aToB}
+                fill="none"
+                stroke="#FF3000"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeDasharray="12 36"
+                className="cf-trail-mobile"
+              />
+              <path
+                ref={mPathBToLeftRedRef}
+                d={mPaths.bToLeft}
                 fill="none"
                 stroke="#FF3000"
                 strokeWidth={2.5}

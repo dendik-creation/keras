@@ -2,15 +2,6 @@
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { gsap } from "gsap";
-import {
-  LayoutDashboard,
-  Swords,
-  ShieldCheck,
-  TextSearch,
-  Share2,
-  Zap,
-  LucideIcon,
-} from "lucide-react";
 import "./MagicBento.css";
 
 const DEFAULT_PARTICLE_COUNT = 12;
@@ -22,51 +13,175 @@ export interface BentoCardData {
   color?: string;
   title: string;
   description: string;
-  icon: LucideIcon;
+  badges: string[];
+  preview: React.ReactNode;
 }
+
+const PreviewUnifiedSchedule = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs overflow-hidden group">
+    <div className="flex justify-between border-b border-black/10 pb-2 mb-2 font-mono font-bold">
+      <span>24 SKS</span>
+      <span>4 Jadwal</span>
+      <span>0 Bentrok</span>
+    </div>
+    <div className="flex-1 grid grid-cols-5 gap-1 relative h-full min-h-0">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:100%_10px]"></div>
+      {["M", "T", "W", "T", "F"].map((d, i) => (
+        <div key={i} className="flex flex-col gap-1 z-10 h-full">
+          <div className="text-black/40 font-bold text-center border-b border-black/10 pb-1 mb-1">{d}</div>
+          {i === 1 && <div className="w-full h-8 bg-black/5 border border-black/10"></div>}
+          {i === 2 && <div className="w-full h-12 bg-black/5 border border-black/10 transition-colors duration-300 group-hover:bg-[#FF3000] group-hover:border-[#FF3000]"></div>}
+          {i === 3 && <div className="w-full h-10 bg-black/5 border border-black/10"></div>}
+          {i === 4 && <div className="w-full h-8 bg-black/5 border border-black/10 mt-4"></div>}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PreviewPerangKRS = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs font-mono group">
+    <div className="font-bold mb-2">Rapid Submit</div>
+    <div className="flex items-center gap-2 mb-4">
+      <div className="flex-1 h-2 bg-black/10 relative overflow-hidden">
+        <div className="absolute top-0 left-0 h-full w-[80%] bg-[#FF3000] transition-transform duration-500 origin-left group-hover:scale-x-110"></div>
+      </div>
+      <span>100%</span>
+    </div>
+    <div className="grid grid-cols-3 gap-2 mt-auto">
+      <div>
+        <div className="text-black/40 mb-1">Latency</div>
+        <div className="font-bold">42ms</div>
+      </div>
+      <div>
+        <div className="text-black/40 mb-1">Retry</div>
+        <div className="font-bold">0</div>
+      </div>
+      <div>
+        <div className="text-black/40 mb-1">Status</div>
+        <div className="font-bold flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-[#FF3000] animate-pulse rounded-full"></span>
+          Submitting
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const PreviewZeroDB = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs font-mono group">
+    <div className="flex items-center justify-between h-full">
+      <div className="flex flex-col items-center justify-center gap-2 flex-1">
+        <div className="px-2 py-1 border border-black bg-black/5 font-bold">Data</div>
+        <div className="text-black/40">↓</div>
+        <div className="px-2 py-1 border border-black bg-black/5 font-bold transition-transform duration-300 group-hover:-translate-y-1">Browser</div>
+      </div>
+      <div className="w-px h-16 bg-black/10 mx-2"></div>
+      <div className="flex flex-col items-center justify-center gap-2 flex-1 opacity-40">
+        <div className="px-2 py-1 border border-dashed border-black text-center">Server</div>
+        <div className="font-bold text-center">Disabled</div>
+      </div>
+    </div>
+  </div>
+);
+
+const PreviewRealtime = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs font-mono group">
+    <div className="flex items-center gap-1 font-bold text-[#FF3000] mb-2">
+      <span className="w-1.5 h-1.5 bg-[#FF3000] animate-pulse rounded-full"></span>
+      Live
+    </div>
+    <div className="border-t border-black/10 my-2"></div>
+    <div className="flex flex-col gap-2 flex-1 justify-center">
+      <div className="flex justify-between text-black/40">
+        <span>Detected</span>
+        <span>↓</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Refreshing</span>
+        <span className="group-hover:animate-spin">⟳</span>
+      </div>
+      <div className="flex justify-between font-bold">
+        <span>Synchronized</span>
+        <span>2 sec ago</span>
+      </div>
+    </div>
+  </div>
+);
+
+const PreviewShare = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs group">
+    <div className="font-bold font-mono mb-2">Share Schedule</div>
+    <div className="flex items-center justify-between border border-black p-1 bg-black/5 mb-3">
+      <span className="font-mono truncate pl-1">keras.dendikcreation.dev/share-schedule/...</span>
+      <div className="px-2 py-1 bg-black text-white font-bold transition-colors group-hover:bg-[#FF3000] text-[10px]">
+        <span className="group-hover:hidden">Copy</span>
+        <span className="hidden group-hover:inline">Copied ✓</span>
+      </div>
+    </div>
+    <div className="flex justify-end items-center mt-auto">
+      <div className="flex -space-x-1">
+        <div className="w-4 h-4 border border-white bg-black/20"></div>
+        <div className="w-4 h-4 border border-white bg-black/40"></div>
+        <div className="w-4 h-4 border border-white bg-[#FF3000]"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const PreviewAnalytics = () => (
+  <div className="flex flex-col h-full w-full border border-black bg-white p-3 text-[10px] md:text-xs font-mono group">
+    <div className="text-black/40 mb-1 mt-auto">Unique Users in 30 Days</div>
+    <div className="flex items-end gap-1 h-12">
+      {[40, 60, 100, 80, 50].map((h, i) => (
+        <div key={i} className={`flex-1 bg-black/10 transition-all duration-300 ${i === 2 ? 'group-hover:bg-[#FF3000]' : ''}`} style={{ height: `${h}%` }}></div>
+      ))}
+    </div>
+  </div>
+);
 
 const DEFAULT_CARDS: BentoCardData[] = [
   {
     color: "#ffffff",
     title: "Unified Schedule View",
-    description:
-      "Susun jadwal mata kuliah dengan tampilan yang terpadu dan nyaman",
-    icon: LayoutDashboard,
+    description: "Susun jadwal mata kuliah dengan tampilan yang terpadu dan nyaman",
+    badges: ["Clean UI"],
+    preview: <PreviewUnifiedSchedule />,
   },
   {
     color: "#ffffff",
     title: "Perang KRS",
-    description:
-      "Rapid submit demi mengamankan jadwal kelasmu",
-    icon: Swords,
+    description: "Rapid submit demi mengamankan jadwal kelasmu",
+    badges: ["Cepat", "Sekali Klik"],
+    preview: <PreviewPerangKRS />,
   },
   {
     color: "#ffffff",
     title: "Zero Database",
-    description:
-      "Tidak ada data yang disimpan di server, semua di browser Anda",
-    icon: ShieldCheck,
+    description: "Tidak ada data yang disimpan di server, semua di browser Anda",
+    badges: ["Privacy First"],
+    preview: <PreviewZeroDB />,
   },
   {
     color: "#ffffff",
     title: "Jadwal Realtime",
-    description:
-      "Jadwal selalu terbaru ketika kamu meminta KeRaS untuk memperbaruinya",
-    icon: TextSearch,
+    description: "Jadwal selalu terbaru ketika kamu meminta KeRaS untuk memperbaruinya",
+    badges: ["REALTIME", "SYNC"],
+    preview: <PreviewRealtime />,
   },
   {
     color: "#ffffff",
     title: "Share Schedule",
-    description:
-      "Bagikan jadwalmu dengan temanmu untuk saling menjaga kelas",
-    icon: Share2,
+    description: "Bagikan jadwalmu dengan temanmu untuk saling menjaga kelas",
+    badges: ["SHARE"],
+    preview: <PreviewShare />,
   },
   {
     color: "#ffffff",
     title: "Instant Analytics",
-    description:
-      "Pantau distribusi waktu luang, total SKS, dan beban perkuliahan secara visual dan real-time.",
-    icon: Zap,
+    description: "Pantau distribusi analitik mulai dari jumlah users, sebaran prodi, dan lainnya",
+    badges: ["Reporting"],
+    preview: <PreviewAnalytics />,
   },
 ];
 
@@ -575,11 +690,9 @@ const MagicBento: React.FC<MagicBentoProps> = ({
             } as React.CSSProperties,
           };
 
-          const cardHeader = (
-            <div className="magic-bento-card__header">
-              <div className="magic-bento-card__icon">
-                <IconComponent className="w-5 h-5" />
-              </div>
+          const cardPreview = (
+            <div className="magic-bento-card__preview">
+              {card.preview}
             </div>
           );
 
@@ -587,6 +700,11 @@ const MagicBento: React.FC<MagicBentoProps> = ({
             <div className="magic-bento-card__content font-sans">
               <h2 className="magic-bento-card__title">{card.title}</h2>
               <p className="magic-bento-card__description">{card.description}</p>
+              <div className="magic-bento-card__badges">
+                {card.badges?.map((badge, i) => (
+                  <span key={i} className="magic-bento-badge">{badge}</span>
+                ))}
+              </div>
             </div>
           );
 
@@ -602,7 +720,7 @@ const MagicBento: React.FC<MagicBentoProps> = ({
                 clickEffect={clickEffect}
                 enableMagnetism={enableMagnetism}
               >
-                {cardHeader}
+                {cardPreview}
                 {cardContent}
               </ParticleCard>
             );
@@ -610,7 +728,7 @@ const MagicBento: React.FC<MagicBentoProps> = ({
 
           return (
             <div key={index} {...cardProps}>
-              {cardHeader}
+              {cardPreview}
               {cardContent}
             </div>
           );

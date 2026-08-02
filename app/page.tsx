@@ -302,12 +302,13 @@ export default function Page() {
               </span>
             </div>
             {/* Screenshot — inside browser frame */}
-            <div className="relative border-x-2 border-b-2 border-white/15 rounded-b-md overflow-hidden aspect-video">
+            <div className="relative border-x-2 border-b-2 border-white/15 rounded-b-md overflow-hidden">
               <Image
                 src="/landing_images/hero_desktop.png"
                 alt="KeRaS Desktop — Schedule Generator"
-                fill
-                className="object-cover object-top"
+                width={1920}
+                height={1080}
+                className="w-full h-auto object-top"
                 priority
               />
             </div>
@@ -321,12 +322,13 @@ export default function Page() {
                 <div className="w-14 h-1 bg-white/20 rounded-full" />
               </div>
               {/* Screenshot — inside phone frame */}
-              <div className="relative aspect-[9/20]">
+              <div className="relative">
                 <Image
                   src="/landing_images/hero_mobile.png"
                   alt="KeRaS Mobile — Schedule Generator"
-                  fill
-                  className="object-cover object-top"
+                  width={1080}
+                  height={2400}
+                  className="w-full h-auto object-top"
                 />
               </div>
               {/* Home bar */}

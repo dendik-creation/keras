@@ -40,10 +40,10 @@ const STATIC_LEVELS = [
 
 const ACCENT_COLOR     = "#FF3000";
 const ACCENT_PROB      = 0.008;   // ~0.8%
-const ANIMATED_PROB    = 0.03;    // 3% get CSS animation
+const ANIMATED_PROB    = 1.0;     // 100% get CSS animation
 const ANIM_DUR_MIN     = 6;       // seconds
-const ANIM_DUR_MAX     = 18;      // seconds
-const ANIM_DELAY_MAX   = 20;      // seconds — spreads animation starts
+const ANIM_DUR_MAX     = 6;       // seconds (uniform duration for sync)
+const ANIM_DELAY_MAX   = 0;       // seconds (zero delay for simultaneous start)
 
 // ─── SEEDED PRNG (Mulberry32) — deterministic, no hydration mismatch ─────────
 function mulberry32(seed: number) {
@@ -89,7 +89,7 @@ function generateCells(cols: number, rows: number): CellData[] {
   for (let i = 0; i < total; i++) {
     const isAccent = rng() < ACCENT_PROB;
     const staticOpacity = isAccent ? 0.07 : pickLevel(rng);
-    const animated = !isAccent && rng() < ANIMATED_PROB;
+    const animated = true;
     const kgBase = staticOpacity;
     const kgPeak = isAccent ? 0.55 : Math.min(0.20, staticOpacity * 4 + 0.06);
 
@@ -141,6 +141,7 @@ export default function ContributionGrid() {
       <GridLayer
         cells={desktopCells}
         cols={GRID.desktop.cols}
+        rows={GRID.desktop.rows}
         className="hidden md:block"
       />
 
@@ -148,6 +149,7 @@ export default function ContributionGrid() {
       <GridLayer
         cells={tabletCells}
         cols={GRID.tablet.cols}
+        rows={GRID.tablet.rows}
         className="hidden sm:block md:hidden"
       />
 
@@ -155,6 +157,7 @@ export default function ContributionGrid() {
       <GridLayer
         cells={mobileCells}
         cols={GRID.mobile.cols}
+        rows={GRID.mobile.rows}
         className="block sm:hidden"
       />
     </div>
@@ -165,10 +168,11 @@ export default function ContributionGrid() {
 interface GridLayerProps {
   cells: CellData[];
   cols: number;
+  rows: number;
   className?: string;
 }
 
-function GridLayer({ cells, cols, className }: GridLayerProps) {
+function GridLayer({ cells, cols, rows, className }: GridLayerProps) {
   const gridWidth = cols * STEP - GAP_PX;
 
   return (

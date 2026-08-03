@@ -116,7 +116,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
               <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-black text-white">
                 <div className="flex w-full justify-center items-center">
                   <p className="m-0 text-[10px] w-full text-center uppercase tracking-wide font-bold">
-                    Sudah punya
+                    Diamanakan
                   </p>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
               <div className="absolute bottom-0 left-0 w-full py-1 flex justify-center items-center transition-all bg-[#F2F2F2] text-black border-t-2 border-black">
                 <div className="flex w-full justify-center items-center">
                   <p className="m-0 text-[10px] w-full text-center uppercase tracking-wide font-bold">
-                    Belum punya
+                    Belum dapat
                   </p>
                 </div>
               </div>

@@ -17,6 +17,7 @@ const axiosScrapClient = axios.create({
   validateStatus: (status) => status >= 200 && status < 400,
   maxRedirects: 0,
   withCredentials: true,
+  timeout: 10000,
 });
 
 export { axiosScrapClient };

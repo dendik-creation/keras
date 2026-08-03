@@ -1,0 +1,23 @@
+export const WAR_CONFIG = {
+  MAX_CONCURRENCY: parseInt(process.env.WAR_MAX_CONCURRENCY || "50", 10),
+  MIN_CONCURRENCY: parseInt(process.env.WAR_MIN_CONCURRENCY || "10", 10),
+  
+  CIRCUIT_BREAKER_ENABLED: process.env.WAR_CIRCUIT_BREAKER_ENABLED !== "false",
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: parseInt(process.env.WAR_CIRCUIT_BREAKER_FAILURE_THRESHOLD || "20", 10),
+  CIRCUIT_BREAKER_RESET_MS: parseInt(process.env.WAR_CIRCUIT_BREAKER_RESET_MS || "5000", 10),
+  
+  MAX_RETRIES: parseInt(process.env.WAR_MAX_RETRIES || "3", 10),
+  RETRY_BACKOFF_MS: parseInt(process.env.WAR_RETRY_BACKOFF_MS || "1000", 10),
+  RETRY_JITTER: process.env.WAR_RETRY_JITTER !== "false",
+  
+  VERIFY_MAX_ATTEMPTS: parseInt(process.env.WAR_VERIFY_MAX_ATTEMPTS || "3", 10),
+  VERIFY_INTERVAL_MS: parseInt(process.env.WAR_VERIFY_INTERVAL_MS || "2000", 10),
+  
+  SUBMISSION_LEASE_SECONDS: parseInt(process.env.WAR_SUBMISSION_LEASE_SECONDS || "60", 10),
+  
+  TIMEOUT_MIN_MS: parseInt(process.env.WAR_TIMEOUT_MIN_MS || "8000", 10),
+  TIMEOUT_MAX_MS: parseInt(process.env.WAR_TIMEOUT_MAX_MS || "15000", 10),
+  
+  ADAPTIVE_CONCURRENCY: process.env.WAR_ADAPTIVE_CONCURRENCY !== "false",
+  ADAPTIVE_TIMEOUT: process.env.WAR_ADAPTIVE_TIMEOUT !== "false",
+};

@@ -15,20 +15,8 @@ const formatTimestamp = () => {
 };
 
 export const logger = {
-  log: (...args: unknown[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(formatTimestamp(), ...args);
-    }
-  },
-  info: (...args: unknown[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.info(formatTimestamp(), ...args);
-    }
-  },
-  warn: (...args: unknown[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(formatTimestamp(), ...args);
-    }
-  },
+  log: (...args: unknown[]) => console.log(formatTimestamp(), ...args),
+  info: (...args: unknown[]) => console.info(formatTimestamp(), ...args),
+  warn: (...args: unknown[]) => console.warn(formatTimestamp(), ...args),
   error: (...args: unknown[]) => console.error(formatTimestamp(), ...args),
 };

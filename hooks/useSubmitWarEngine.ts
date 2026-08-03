@@ -662,43 +662,52 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
                 result: "success" | "error";
               }[] = [];
 
-              const logMessages = rawMessages.map((msg) => {
-                const type = handleAlertType(msg) || "error";
-                if (type === "success") successCount++;
-                else failureCount++;
-                return { status: type, message: msg };
-              });
-
-              rawMessages.forEach((msg) => {
-                const parsed = extractCourseFromMessage(msg);
-                if (parsed) {
-                  const { isSuccess, code, klass, scheduleId } = parsed;
-                  if (isSuccess) {
-                    dispatch({
-                      type: "COURSE_SUBMIT_SUCCESS",
-                      code,
-                      klass,
-                      scheduleId,
-                    });
-                    affectedCourses.push({
-                      code: code || scheduleId || "",
-                      class: klass || "",
-                      result: "success",
-                    });
-                  } else {
-                    dispatch({
-                      type: "COURSE_SUBMIT_FAILED",
-                      code,
-                      klass,
-                      scheduleId,
-                    });
-                    affectedCourses.push({
-                      code: code || scheduleId || "",
-                      class: klass || "",
-                      result: "error",
-                    });
+              const logMessages: { status: "success" | "error" | "info" | "skipped"; message: string }[] = [];
+              rawMessages.forEach((msgObj: any) => {
+                const isObj = typeof msgObj === "object" && msgObj !== null && "type" in msgObj;
+                const statusType = isObj ? (msgObj.type === "success" ? "success" : "error") : (handleAlertType(msgObj) || "error");
+                
+                const items = isObj && Array.isArray(msgObj.items) ? msgObj.items : [msgObj];
+                items.forEach((item: string) => {
+                  if (typeof item !== "string") return;
+                  
+                  if (statusType === "success") successCount++;
+                  else failureCount++;
+                  
+                  const prefix = statusType === "success" ? "Kelas Tersimpan : " : "Gagal : ";
+                  const fullMsg = isObj ? `${prefix}${item}` : item;
+                  logMessages.push({ status: statusType, message: fullMsg });
+                  
+                  const parsed = extractCourseFromMessage(fullMsg);
+                  if (parsed) {
+                    const { isSuccess, code, klass, scheduleId } = parsed;
+                    if (isSuccess) {
+                      dispatch({
+                        type: "COURSE_SUBMIT_SUCCESS",
+                        code,
+                        klass,
+                        scheduleId,
+                      });
+                      affectedCourses.push({
+                        code: code || scheduleId || "",
+                        class: klass || "",
+                        result: "success",
+                      });
+                    } else {
+                      dispatch({
+                        type: "COURSE_SUBMIT_FAILED",
+                        code,
+                        klass,
+                        scheduleId,
+                      });
+                      affectedCourses.push({
+                        code: code || scheduleId || "",
+                        class: klass || "",
+                        result: "error",
+                      });
+                    }
                   }
-                }
+                });
               });
 
               dispatch({

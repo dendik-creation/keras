@@ -20,6 +20,11 @@ import {
 } from "@/modules/submit/submit.simulator";
 import { isWarTestMode } from "@/lib/server/war-test-mode";
 import { logger } from "@/lib/logger";
+import { generateIdempotencyKey, acquireSubmissionLease, releaseSubmissionLease } from "./submit.lease";
+import { ResilienceEngine } from "./submit.resilience";
+import { RetryEngine } from "./submit.retry";
+import { StateMachine } from "./submit.state";
+import { WAR_CONFIG } from "./submit.config";
 
 const httpErrorResponse = (error: unknown) => {
   if (isHttpError(error)) {
@@ -114,12 +119,75 @@ export async function postSubmit(req: Request) {
     const acceptHeader = req.headers.get("accept") || "";
     const isStreamMode = body.stream !== false && (acceptHeader.includes("application/x-ndjson") || acceptHeader.includes("*/*") || acceptHeader === "");
 
+    const cbState = await ResilienceEngine.getState();
+    if (cbState === "OPEN") {
+      const msg = "Upstream Busy: Server universitas sedang tidak stabil. Coba lagi dalam beberapa saat.";
+      if (isStreamMode) {
+        // Stream handled below, but we could return early. However, stream needs a stream response.
+        // We'll throw an error and let the catch block handle it (which sends standard JSON).
+        // Let's just return JSON for early rejection.
+        return NextResponse.json({ success: false, message: msg }, { status: 503 });
+      } else {
+        return NextResponse.json({ success: false, message: msg }, { status: 503 });
+      }
+    }
+
+    const verifySchedules = async (
+      sessionValue: string, 
+      wave1RemainingIds: string[], 
+      currentResolvedSchedules?: { code: string; class: string; schedule_submit_id: string }[],
+      attemptResult?: any
+    ) => {
+      if (!currentResolvedSchedules || currentResolvedSchedules.length === 0) return;
+      
+      const checkCourses = currentResolvedSchedules.filter(s => wave1RemainingIds.includes(s.schedule_submit_id)).map(s => ({ code: s.code, class: s.class }));
+      if (checkCourses.length === 0) return;
+      
+      let verifiedIds: string[] = [];
+      const MAX_VERIFY = WAR_CONFIG.VERIFY_MAX_ATTEMPTS;
+      
+      for (let vAttempt = 1; vAttempt <= MAX_VERIFY; vAttempt++) {
+        await new Promise(r => setTimeout(r, WAR_CONFIG.VERIFY_INTERVAL_MS));
+        try {
+          const syncResult = isTestMode
+            ? await simulateSyncSchedules(sessionValue, checkCourses)
+            : await syncSchedules(sessionValue, checkCourses);
+            
+          if (syncResult.warStarted && syncResult.schedules) {
+            syncResult.schedules.forEach(s => {
+              if (s.schedule_submit_id === "") {
+                const match = currentResolvedSchedules.find(rs => rs.code === s.code && rs.class === s.class);
+                if (match && match.schedule_submit_id && !verifiedIds.includes(match.schedule_submit_id)) {
+                  verifiedIds.push(match.schedule_submit_id);
+                }
+              }
+            });
+            
+            // If all remaining are verified, break early
+            if (verifiedIds.length === wave1RemainingIds.length) break;
+          }
+        } catch (e: any) {
+          logger.error(`Error during verification attempt ${vAttempt}`, e?.message);
+        }
+      }
+      
+      if (verifiedIds.length > 0 && attemptResult) {
+        const verifyMessage = {
+          type: "success",
+          title: "BERHASIL",
+          items: verifiedIds.map(id => `[ID ${id}] Mata kuliah berhasil diverifikasi`)
+        };
+        attemptResult.messages = [...(attemptResult.messages || []), verifyMessage];
+        attemptResult.isSuccess = true;
+      }
+    };
+
     if (!isStreamMode) {
       let scheduleIds: string[] = [];
+      let targetCourses = body.courses;
+      let resolvedSchedules: { code: string; class: string; schedule_submit_id: string }[] | undefined;
 
-      if (body.courses && Array.isArray(body.courses)) {
-        const targetCourses = body.courses;
-        
+      if (targetCourses && Array.isArray(targetCourses)) {
         logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nSubmit page scraped`);
         const syncResult = isTestMode
           ? await simulateSyncSchedules(sessionCookie.value, targetCourses)
@@ -128,6 +196,7 @@ export async function postSubmit(req: Request) {
         logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nCheckbox values extracted`);
 
         if (syncResult.warStarted) {
+          resolvedSchedules = syncResult.schedules;
           scheduleIds = syncResult.schedules
             .map(s => s.schedule_submit_id)
             .filter(id => id !== "");
@@ -149,7 +218,17 @@ export async function postSubmit(req: Request) {
         );
       }
 
-      const params = new URLSearchParams();
+      const idempotencyKey = generateIdempotencyKey(nim, sessionCookie.value, scheduleIds);
+      const lockAcquired = await acquireSubmissionLease(idempotencyKey);
+      if (!lockAcquired) {
+        return NextResponse.json(
+          { success: false, message: "Pengajuan sedang diproses. Jangan submit berulang-ulang." },
+          { status: 429 }
+        );
+      }
+
+      try {
+        const params = new URLSearchParams();
       scheduleIds.forEach((id) => params.append("makul[]", id));
       const payloadStr = params.toString();
 
@@ -159,7 +238,7 @@ export async function postSubmit(req: Request) {
       // Gate releases after Wave 1 → normal students proceed immediately.
       let wave1Remaining = [...scheduleIds];
       let wave1Result: any = null;
-      let allMessages: string[] = [];
+      let allMessages: any[] = [];
 
       await processThroughGate(
         nim,
@@ -167,16 +246,25 @@ export async function postSubmit(req: Request) {
         payloadStr,
         async () => {
           logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
-          for (let attempt = 1; attempt <= 2; attempt++) {
+          const WAVE1_ATTEMPTS_NON_STREAM = 3;
+          for (let attempt = 1; attempt <= WAVE1_ATTEMPTS_NON_STREAM; attempt++) {
             if (wave1Remaining.length === 0 && attempt > 1) break;
             const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
+            
+            if (attemptResult.statusCode === 504) {
+              await verifySchedules(sessionCookie.value, wave1Remaining, resolvedSchedules, attemptResult);
+            }
+            
             wave1Result = attemptResult;
             if (Array.isArray(attemptResult.messages)) {
               allMessages = [...allMessages, ...attemptResult.messages];
-              wave1Remaining = filterSucceededScheduleIds(wave1Remaining, attemptResult.messages);
+              wave1Remaining = filterSucceededScheduleIds(wave1Remaining, attemptResult.messages, resolvedSchedules);
             }
             if (wave1Remaining.length === 0) break;
-            if (attempt < 2) await new Promise((r) => setTimeout(r, 300));
+            if (attempt < WAVE1_ATTEMPTS_NON_STREAM) {
+              const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 500, 5000);
+              await new Promise((r) => setTimeout(r, delay));
+            }
           }
           logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Completed\nremainingCount=${wave1Remaining.length}`);
           return wave1Result;
@@ -204,11 +292,14 @@ export async function postSubmit(req: Request) {
         })();
       }
 
-      return NextResponse.json({
-        success: wave1Result?.isSuccess ?? true,
-        messages: wave1Result?.messages ?? [],
-        status_code: wave1Result?.statusCode ?? 200,
-      });
+        return NextResponse.json({
+          success: wave1Result?.isSuccess ?? true,
+          messages: wave1Result?.messages ?? [],
+          status_code: wave1Result?.statusCode ?? 200,
+        });
+      } finally {
+        await releaseSubmissionLease(idempotencyKey);
+      }
     }
 
     const encoder = new TextEncoder();
@@ -261,7 +352,17 @@ export async function postSubmit(req: Request) {
             return;
           }
 
-          const params = new URLSearchParams();
+          const idempotencyKey = generateIdempotencyKey(nim, sessionCookie.value, scheduleIds);
+          const lockAcquired = await acquireSubmissionLease(idempotencyKey);
+          if (!lockAcquired) {
+            send({ type: "error", message: "Pengajuan sedang diproses. Jangan submit berulang-ulang.", status: 429 });
+            controller.close();
+            return;
+          }
+
+          let leaseReleased = false;
+          try {
+            const params = new URLSearchParams();
           scheduleIds.forEach((id) => params.append("makul[]", id));
           const payloadStr = params.toString();
 
@@ -270,7 +371,7 @@ export async function postSubmit(req: Request) {
           let finalResult: any = null;
           // Track remaining and all messages for Wave 2 classification.
           let wave1Remaining = [...scheduleIds];
-          let allMessages: string[] = [];
+          let allMessages: any[] = [];
 
           // Wave 1: up to 2 attempts inside the priority gate.
           // Gate releases after this block → normal students proceed immediately.
@@ -280,7 +381,7 @@ export async function postSubmit(req: Request) {
             payloadStr,
             async () => {
               logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
-              const WAVE1_ATTEMPTS = 2;
+              const WAVE1_ATTEMPTS = 3;
 
               for (let attempt = 1; attempt <= WAVE1_ATTEMPTS; attempt++) {
                 if (wave1Remaining.length === 0 && attempt > 1) {
@@ -315,6 +416,12 @@ export async function postSubmit(req: Request) {
 
                 const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
                 finalResult = attemptResult;
+
+                if (attemptResult.statusCode === 504) {
+                  send({ type: "event", name: "UNKNOWN_COMMIT_STATE", message: "Koneksi terputus, status tidak diketahui..." });
+                  send({ type: "event", name: "VERIFYING", message: "Memverifikasi status KRS..." });
+                  await verifySchedules(sessionCookie.value, wave1Remaining, resolvedSchedules, attemptResult);
+                }
 
                 send({
                   type: "event",
@@ -353,7 +460,8 @@ export async function postSubmit(req: Request) {
                 }
 
                 if (attempt < WAVE1_ATTEMPTS && wave1Remaining.length > 0) {
-                  await new Promise((r) => setTimeout(r, 300));
+                  const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 500, 5000);
+                  await new Promise((r) => setTimeout(r, delay));
                 }
               }
 
@@ -386,12 +494,18 @@ export async function postSubmit(req: Request) {
             })();
           }
 
-          send({
-            type: "done",
-            success: finalResult?.isSuccess ?? true,
-            messages: finalResult?.messages ?? [],
-            status_code: finalResult?.statusCode ?? 200,
-          });
+            send({
+              type: "done",
+              success: finalResult?.isSuccess ?? true,
+              messages: finalResult?.messages ?? [],
+              status_code: finalResult?.statusCode ?? 200,
+            });
+          } finally {
+            if (!leaseReleased) {
+              await releaseSubmissionLease(idempotencyKey);
+              leaseReleased = true;
+            }
+          }
         } catch (error: any) {
           const message = error?.message || "Terjadi kesalahan server saat submit.";
           send({ type: "error", message, status: 500 });

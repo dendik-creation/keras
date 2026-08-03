@@ -3,6 +3,8 @@ import { getRedisClient } from "./redis";
 import { logger } from "@/lib/logger";
 import { envVariable } from "@/lib/utils";
 import { EventEmitter } from "events";
+import { ResilienceEngine } from "@/modules/submit/submit.resilience";
+
 
 const warEvents = new EventEmitter();
 warEvents.setMaxListeners(0);
@@ -124,7 +126,7 @@ export async function processThroughGate(
   const GATE_TIMEOUT_MS = envVariable.WAR_PRIORITY_GATE_TIMEOUT_MS || 10000;
   const DISCOVERY_WINDOW_MS = envVariable.WAR_PRIORITY_DISCOVERY_WINDOW_MS || 2000;
   const LOOP_TIMEOUT_MS = 60000;
-  const TTL = envVariable.WAR_PENDING_PAYLOAD_TTL_SECONDS || 60;
+  const TTL = envVariable.WAR_PENDING_PAYLOAD_TTL_SECONDS || 3600;
   const PRIORITY_NIMS = (envVariable.WAR_PRIORITY_NIMS || "")
     .split(",")
     .map((n: string) => n.trim());
@@ -184,8 +186,14 @@ export async function processThroughGate(
   let discoveryStartedLogged = false;
 
   while (Date.now() - startTime < LOOP_TIMEOUT_MS) {
-    const firstInQueue = await redis.zrange(queueKey, 0, 0);
-    const isMyTurn = firstInQueue.length > 0 && firstInQueue[0] === requestId;
+    const CONCURRENCY_LIMIT = await ResilienceEngine.getAdaptiveConcurrency();
+    if (CONCURRENCY_LIMIT === 0) {
+      // Circuit breaker is open. Wait heavily before checking again.
+      await waitForStateChange(2000);
+      continue;
+    }
+    const topInQueue = await redis.zrange(queueKey, 0, CONCURRENCY_LIMIT - 1);
+    const isMyTurn = topInQueue.includes(requestId);
 
     if (isMyTurn) {
       const processingKey = `${queuePrefix}${isPriority ? "priority" : "normal"}:processing`;
@@ -257,77 +265,72 @@ export async function processThroughGate(
       }
 
       if (canExecute) {
-        const lockAcquired = await redis.set(processingKey, "1", "PX", 10000, "NX");
-        if (lockAcquired) {
-          const queueWaitDuration = Math.round(performance.now() - queueWaitStartTime);
+        const queueWaitDuration = Math.round(performance.now() - queueWaitStartTime);
 
-          if (isPriority) {
-            const pRank = typeof redis.zrank === "function" ? await redis.zrank(queueKey, requestId) : 0;
-            const queuePosition = pRank !== null && pRank !== undefined ? pRank : 0;
-            logWarGate(ctx, "Priority execution granted", {
-              queuePosition,
-              executionLatency: `${queueWaitDuration}ms`,
+        if (isPriority) {
+          const pRank = typeof redis.zrank === "function" ? await redis.zrank(queueKey, requestId) : 0;
+          const queuePosition = pRank !== null && pRank !== undefined ? pRank : 0;
+          logWarGate(ctx, "Priority execution granted", {
+            queuePosition,
+            executionLatency: `${queueWaitDuration}ms`,
+          });
+          onGateEvent?.("EXECUTION_GRANTED", {
+            executionType: "priority",
+            queuePosition,
+            executionLatency: `${queueWaitDuration}ms`,
+          });
+          await redis.incr(priorityRunningKey);
+          logWarGate(ctx, "Submitting payload");
+          try {
+            result = await executeSubmit();
+          } finally {
+            const totalProcessingTime = Math.round(performance.now() - requestStartTime);
+            logWarGate(ctx, "Submission completed", {
+              totalProcessingTime: `${totalProcessingTime}ms`,
             });
-            onGateEvent?.("EXECUTION_GRANTED", {
-              executionType: "priority",
-              queuePosition,
-              executionLatency: `${queueWaitDuration}ms`,
-            });
-            await redis.incr(priorityRunningKey);
-            logWarGate(ctx, "Submitting payload");
-            try {
-              result = await executeSubmit();
-            } finally {
-              const totalProcessingTime = Math.round(performance.now() - requestStartTime);
-              logWarGate(ctx, "Submission completed", {
-                totalProcessingTime: `${totalProcessingTime}ms`,
+
+            const pRunningAfter = await redis.decr(priorityRunningKey);
+            await redis.zrem(queueKey, requestId);
+
+            const pCountAfter = await redis.zcard(priorityQueueKey);
+            if (pCountAfter === 0 && pRunningAfter === 0) {
+              logWarGate(ctx, "Priority gate released", {
+                reason: "priority_completed",
               });
-
-              const pRunningAfter = await redis.decr(priorityRunningKey);
-              await redis.zrem(queueKey, requestId);
-
-              const pCountAfter = await redis.zcard(priorityQueueKey);
-              if (pCountAfter === 0 && pRunningAfter === 0) {
-                logWarGate(ctx, "Priority gate released", {
-                  reason: "priority_completed",
-                });
-              }
-
-              await redis.del(payloadKey);
-              await redis.del(processingKey);
-              await redis.publish("war:events", "state_changed").catch(() => {});
-              executed = true;
             }
-          } else {
-            logWarGate(ctx, "Normal execution granted", {
-              blockedDuration: `${blockedDuration}ms`,
-              queueWaitDuration: `${queueWaitDuration}ms`,
-              reason: releaseReason,
-            });
-            onGateEvent?.("EXECUTION_GRANTED", {
-              executionType: "normal",
-              blockedDuration: `${blockedDuration}ms`,
-              queueWaitDuration: `${queueWaitDuration}ms`,
-              reason: releaseReason,
-            });
-            logWarGate(ctx, "Submitting payload");
-            try {
-              result = await executeSubmit();
-            } finally {
-              const totalProcessingTime = Math.round(performance.now() - requestStartTime);
-              logWarGate(ctx, "Submission completed", {
-                totalProcessingTime: `${totalProcessingTime}ms`,
-              });
 
-              await redis.zrem(queueKey, requestId);
-              await redis.del(payloadKey);
-              await redis.del(processingKey);
-              await redis.publish("war:events", "state_changed").catch(() => {});
-              executed = true;
-            }
+            await redis.del(payloadKey);
+            await redis.publish("war:events", "state_changed").catch(() => {});
+            executed = true;
           }
-          break;
+        } else {
+          logWarGate(ctx, "Normal execution granted", {
+            blockedDuration: `${blockedDuration}ms`,
+            queueWaitDuration: `${queueWaitDuration}ms`,
+            reason: releaseReason,
+          });
+          onGateEvent?.("EXECUTION_GRANTED", {
+            executionType: "normal",
+            blockedDuration: `${blockedDuration}ms`,
+            queueWaitDuration: `${queueWaitDuration}ms`,
+            reason: releaseReason,
+          });
+          logWarGate(ctx, "Submitting payload");
+          try {
+            result = await executeSubmit();
+          } finally {
+            const totalProcessingTime = Math.round(performance.now() - requestStartTime);
+            logWarGate(ctx, "Submission completed", {
+              totalProcessingTime: `${totalProcessingTime}ms`,
+            });
+
+            await redis.zrem(queueKey, requestId);
+            await redis.del(payloadKey);
+            await redis.publish("war:events", "state_changed").catch(() => {});
+            executed = true;
+          }
         }
+        break;
       }
     }
 

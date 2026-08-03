@@ -19,9 +19,15 @@ export type SyncResult =
       }[];
     };
 
+export type SubmitMessage = {
+  type: "success" | "warning" | "error";
+  title: string;
+  items: string[];
+};
+
 export type SubmitResult = {
   isSuccess: boolean;
-  messages: string[];
+  messages: SubmitMessage[];
   statusCode: number;
 };
 
@@ -107,51 +113,6 @@ export async function syncSchedules(
 }
 
 
-/** Parse submit-result alerts into prefixed success/fail messages. */
-function parseSubmitMessages(htmlContent: string): string[] {
-  const $ = cheerio.load(htmlContent);
-  const messages: string[] = [];
-
-  $(".alert[role='alert']").each((_, el) => {
-    const $alert = $(el);
-    const $lists = $alert.find("ul");
-
-    if ($lists.length > 0) {
-      $lists.each((__, ul) => {
-        const $ul = $(ul);
-
-        const headerText = $ul.prev("p").text().trim().toUpperCase();
-
-        let prefix = "";
-        if (headerText.includes("BERHASIL")) {
-          prefix = "Kelas Tersimpan : ";
-        } else if (
-          headerText.includes("BENTROK") ||
-          headerText.includes("GAGAL") ||
-          headerText.includes("PENUH")
-        ) {
-          prefix = "Gagal : ";
-        }
-
-        $ul.find("li").each((___, li) => {
-          const liText = $(li).text().trim();
-          if (liText) {
-            messages.push(`${prefix}${liText}`);
-          }
-        });
-      });
-    } else {
-      const divContent = $alert.find("div");
-      if (divContent.length > 0) {
-        messages.push(divContent.text().trim());
-      } else {
-        messages.push($alert.text().trim());
-      }
-    }
-  });
-
-  return messages;
-}
 
 /**
  * Release (drop) the target courses from the student's saved KRS.
@@ -317,8 +278,6 @@ export function isPermanentFailure(message: string): boolean {
   return (
     lower.includes("penuh") ||           // class full
     lower.includes("bentrok") ||         // schedule conflict
-    lower.includes("sudah tersimpan") || // duplicate enrollment
-    lower.includes("sudah diambil") ||   // already enrolled
     lower.includes("tidak valid") ||     // validation error
     lower.includes("invalid") ||
     lower.includes("duplikat") ||
@@ -332,34 +291,32 @@ export function isPermanentFailure(message: string): boolean {
  */
 export function filterRetryableScheduleIds(
   remaining: string[],
-  messages: string[],
+  messages: SubmitMessage[],
   schedules?: { code: string; class: string; schedule_submit_id: string }[]
 ): string[] {
-  // Build a map: scheduleId -> whether any of its failure messages are permanent
   const permanentIds = new Set<string>();
 
-  messages.forEach((msg) => {
-    const isFailMsg = msg.toLowerCase().startsWith("gagal");
-    if (!isFailMsg) return;
+  messages.forEach((msgObj) => {
+    if (msgObj.type !== "error" && msgObj.type !== "warning") return;
 
-    if (!isPermanentFailure(msg)) return; // transient — keep retrying
+    msgObj.items.forEach((msg) => {
+      if (!isPermanentFailure(msg)) return; // transient — keep retrying
 
-    // Try to identify which schedule ID this message belongs to
-    const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
-    if (simMatch) {
-      permanentIds.add(simMatch[1]);
-      return;
-    }
-
-    // Production format: "Gagal : CODE CLASS ..." — match via schedules map
-    const courseMatch = msg.match(/Gagal\s*:\s*([A-Z0-9]+)\s+([A-Z0-9]+)/i);
-    if (courseMatch && schedules) {
-      const [, code, klass] = courseMatch;
-      const found = schedules.find((s) => s.code === code && s.class === klass);
-      if (found && found.schedule_submit_id) {
-        permanentIds.add(found.schedule_submit_id);
+      const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
+      if (simMatch) {
+        permanentIds.add(simMatch[1]);
+        return;
       }
-    }
+
+      const courseMatch = msg.match(/([A-Z0-9]+)\s+(?:Kelas\s+)?([A-Z0-9]+)/i);
+      if (courseMatch && schedules) {
+        const [, code, klass] = courseMatch;
+        const found = schedules.find((s) => s.code === code && s.class === klass);
+        if (found && found.schedule_submit_id) {
+          permanentIds.add(found.schedule_submit_id);
+        }
+      }
+    });
   });
 
   return remaining.filter((id) => !permanentIds.has(id));
@@ -368,29 +325,38 @@ export function filterRetryableScheduleIds(
 /** Filter out schedule IDs that succeeded in attempt messages. */
 export function filterSucceededScheduleIds(
   currentRemaining: string[],
-  messages: string[],
+  messages: SubmitMessage[],
   schedules?: { code: string; class: string; schedule_submit_id: string }[]
 ): string[] {
   const succeeded = new Set<string>();
 
-  messages.forEach((msg) => {
-    const isSuccessMsg = msg.includes("Kelas Tersimpan") || msg.toUpperCase().includes("BERHASIL");
-    if (!isSuccessMsg) return;
+  messages.forEach((msgObj) => {
+    const isSuccessBlock = msgObj.type === "success";
 
-    const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
-    if (simMatch) {
-      succeeded.add(simMatch[1]);
-      return;
-    }
+    msgObj.items.forEach((msg) => {
+      const isSuccessMsg = 
+        isSuccessBlock ||
+        msg.toUpperCase().includes("BERHASIL") ||
+        msg.toLowerCase().includes("sudah tersimpan") ||
+        msg.toLowerCase().includes("sudah diambil");
+      
+      if (!isSuccessMsg) return;
 
-    const courseMatch = msg.match(/Tersimpan\s*:\s*([A-Z0-9]+)\s+([A-Z0-9]+)/i);
-    if (courseMatch && schedules) {
-      const [, code, klass] = courseMatch;
-      const found = schedules.find((s) => s.code === code && s.class === klass);
-      if (found && found.schedule_submit_id) {
-        succeeded.add(found.schedule_submit_id);
+      const simMatch = msg.match(/\[ID\s+([^\]]+)\]/i);
+      if (simMatch) {
+        succeeded.add(simMatch[1]);
+        return;
       }
-    }
+
+      const courseMatch = msg.match(/([A-Z0-9]+)\s+(?:Kelas\s+)?([A-Z0-9]+)/i);
+      if (courseMatch && schedules) {
+        const [, code, klass] = courseMatch;
+        const found = schedules.find((s) => s.code === code && s.class === klass);
+        if (found && found.schedule_submit_id) {
+          succeeded.add(found.schedule_submit_id);
+        }
+      }
+    });
   });
 
   return currentRemaining.filter((id) => !succeeded.has(id));

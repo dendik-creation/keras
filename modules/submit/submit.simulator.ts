@@ -8,7 +8,7 @@ import type {
   DeleteTargetCourse,
   SyncTargetCourse,
 } from "@/modules/submit/submit.validator";
-import type { ReleaseResult, SubmitResult, SyncResult } from "@/modules/submit/submit.service";
+import type { ReleaseResult, SubmitResult, SyncResult, SubmitMessage } from "@/modules/submit/submit.service";
 
 const SIM_ID_PREFIX = "SIM-";
 
@@ -102,14 +102,18 @@ export async function simulateSubmitSchedules(
   await sleep(randomBetween(300, 1500));
 
   const secured = getSecuredSet(sessionValue);
-  const messages: string[] = [];
+  const messages: SubmitMessage[] = [];
 
   for (const scheduleId of scheduleIds) {
     const parsed = parseSimScheduleId(scheduleId);
     const key = parsed ? courseKey(parsed.code, parsed.klass) : scheduleId;
 
     if (secured.has(scheduleId) || secured.has(key)) {
-      messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah sudah tersimpan`);
+      messages.push({
+        type: "success",
+        title: "BERHASIL",
+        items: [`[ID ${scheduleId}] - Mata kuliah sudah tersimpan`]
+      });
       continue;
     }
 
@@ -118,16 +122,32 @@ export async function simulateSubmitSchedules(
       case "success":
         secured.add(scheduleId);
         secured.add(key);
-        messages.push(`Kelas Tersimpan : [ID ${scheduleId}] - Mata kuliah berhasil disimpan (Test Mode)`);
+        messages.push({
+          type: "success",
+          title: "BERHASIL",
+          items: [`[ID ${scheduleId}] - Mata kuliah berhasil disimpan (Test Mode)`]
+        });
         break;
       case "class_full":
-        messages.push(`Gagal : [ID ${scheduleId}] kelas penuh (Test Mode)`);
+        messages.push({
+          type: "warning",
+          title: "PENUH",
+          items: [`[ID ${scheduleId}] kelas penuh (Test Mode)`]
+        });
         break;
       case "time_conflict":
-        messages.push(`Gagal : [ID ${scheduleId}] bentrok jadwal (Test Mode)`);
+        messages.push({
+          type: "warning",
+          title: "BENTROK",
+          items: [`[ID ${scheduleId}] bentrok jadwal (Test Mode)`]
+        });
         break;
       case "server_busy":
-        messages.push(`Gagal : [ID ${scheduleId}] server sibuk, coba lagi (Test Mode)`);
+        messages.push({
+          type: "error",
+          title: "GAGAL",
+          items: [`[ID ${scheduleId}] server sibuk, coba lagi (Test Mode)`]
+        });
         break;
       case "network_timeout":
         break;

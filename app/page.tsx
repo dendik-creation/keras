@@ -536,6 +536,11 @@ export default function Page() {
             <small
               className="text-sm text-white/50 font-medium leading-tight"
             >
+             Tingkat keberhasilan mendapatkan kelas bergantung terhadap performa server krs kampus.
+            </small>
+            <small
+              className="text-sm text-white/50 font-medium leading-tight"
+            >
               Part of <a href="https://dendikcreation.dev?utm_source=keras?utm_medium=page?utm_campaign=page_load" target="_blank" className="text-white hover:text-[#FF3000]">dendik-creation</a> projects
             </small>
           </div>

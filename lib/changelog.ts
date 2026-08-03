@@ -138,12 +138,11 @@ const changelogHistories = [
   {
     version: "2.4.0",
     date: "3 Aug 2026",
-    title: "Peningkatan Keandalan Perang KRS & Fix Logs",
+    title: "Peningkatan Penanganan Perang KRS",
     changes: [
       "Penerapan sistem Circuit Breaker untuk melindungi sistem saat server universitas sibuk",
       "Manajemen antrean adaptif yang menyesuaikan kecepatan dengan kondisi server universitas",
       "Pengecekan berlapis pada koneksi terputus (504 Timeout) untuk mencegah pengiriman jadwal ganda",
-      "Perbaikan tampilan log server untuk mempermudah pemantauan di production",
     ],
   },
 ];

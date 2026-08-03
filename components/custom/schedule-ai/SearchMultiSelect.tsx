@@ -154,7 +154,7 @@ export default function SearchMultiSelect({
             {grouped.map(({ key, items }) => (
               <div key={key}>
                 <div className="sticky top-0 z-10 flex items-center gap-2 bg-black px-3 py-1.5">
-                  <span className="text-white text-xs font-black uppercase tracking-wide">
+                  <span className="text-white text-xs font-medium uppercase tracking-wide">
                     {key}
                   </span>
                 </div>

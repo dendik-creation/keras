@@ -1,18 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import "@fontsource-variable/bricolage-grotesque/wght.css";
 import "./globals.css";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
 import AnalyticsBoot from "@/components/analytics/AnalyticsBoot";
 import { CSPostHogProvider } from "@/components/analytics/CSPostHogProvider";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  // Variable font: one file serves every weight (400–900). No `weight` array,
-  // otherwise Next fetches a separate static file per weight.
-  display: "swap",
-});
 
 const siteUrl = process.env.APP_URL ?? "https://keras.dendikcreation.dev";
 const siteTitle = "KeRaS";
@@ -103,7 +95,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} swiss-noise antialiased`}>
+      <body className={`swiss-noise antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -97,7 +97,7 @@ export default function GenerateScheduleDialog({
       <DialogContent className="rounded-none border-2 border-black bg-white max-w-[calc(100%-1.5rem)] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-7xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <DialogTitle className="font-black tracking-tight text-black">
+            <DialogTitle className="font-bold tracking-tight text-black">
               Buat Jadwal Dengan AI <br />
               <span className="font-normal text-xs">Jadwal yang dihasilkan mungkin tidak cocok dan perlu disesuaikan manual</span>
             </DialogTitle>

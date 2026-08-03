@@ -49,7 +49,7 @@ export default function WarTestDebugPanel({
       <div className="flex items-center justify-between border-b-2 border-black bg-black px-3 py-1.5 text-white">
         <div className="flex items-center gap-2">
           <Bug className="h-3.5 w-3.5" />
-          <span className="font-black uppercase tracking-widest">
+          <span className="font-bold uppercase tracking-wider">
             War Test Mode
           </span>
         </div>

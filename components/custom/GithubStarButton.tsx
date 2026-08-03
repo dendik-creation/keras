@@ -29,7 +29,7 @@ export default function GithubStarButton({ inverted }: { inverted?: boolean }) {
     >
       <Button
         variant="outline"
-        className={`rounded-none capitalize border-2 transition-colors duration-200 font-bold tracking-widest ${
+        className={`rounded-none capitalize border-2 transition-colors duration-200 font-bold tracking-wider ${
           inverted
             ? "border-white bg-black text-white hover:bg-white hover:text-black"
             : "border-black bg-white text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]"

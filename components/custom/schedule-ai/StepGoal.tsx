@@ -21,7 +21,7 @@ export default function StepGoal({ form }: StepGoalProps) {
 
   return (
     <div>
-      <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+      <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
         Pengoptimalan
       </h4>
       <Controller

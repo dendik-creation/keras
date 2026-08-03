@@ -84,7 +84,7 @@ export default function InstallPWAButton({
         onClick={handleClick}
         title="Install App"
         className={cn(
-          "rounded-none border-2 transition-colors duration-200 font-bold tracking-widest",
+          "rounded-none border-2 transition-colors duration-200 font-bold tracking-wider",
           inverted
             ? "border-white bg-black text-white hover:bg-white hover:text-black"
             : "border-black bg-white text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]",
@@ -99,7 +99,7 @@ export default function InstallPWAButton({
 
   // Full hero variant
   const base =
-    "rounded-none uppercase font-black tracking-widest h-14 text-base transition-colors duration-200 border-2 border-t-0";
+    "rounded-none uppercase font-semibold tracking-wider h-14 text-base transition-colors duration-200 border-2 border-t-0";
 
   return (
     <Button

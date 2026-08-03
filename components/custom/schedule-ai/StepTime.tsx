@@ -37,7 +37,7 @@ export default function StepTime({ form }: StepTimeProps) {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+          <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
             Mulai Paling Awal
           </h4>
           <Controller
@@ -61,7 +61,7 @@ export default function StepTime({ form }: StepTimeProps) {
         </div>
 
         <div>
-          <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+          <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
             Selesai Paling Akhir
           </h4>
           <Controller
@@ -91,7 +91,7 @@ export default function StepTime({ form }: StepTimeProps) {
       )}
 
       <div>
-        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+        <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
           Waktu yang Diinginkan
         </h4>
         <Controller
@@ -124,7 +124,7 @@ export default function StepTime({ form }: StepTimeProps) {
       </div>
 
       <div>
-        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+        <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
           Maksimal Jeda Antar Kelas
         </h4>
         <Controller

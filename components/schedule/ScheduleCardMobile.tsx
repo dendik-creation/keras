@@ -232,7 +232,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
                 )}
               >
                 <div className="flex w-full justify-center items-center">
-                  <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
+                  <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-medium">
                     {course.saved_in_submit ? "Siap Dilepas" : "Siap Dihapus"}
                   </p>
                 </div>
@@ -240,7 +240,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
             )}
             <CardContent className="p-3 flex flex-col justify-between min-h-[90px]">
               <div>
-                <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+                <div className="text-sm font-semibold line-clamp-2 leading-snug mb-1.5 text-black">
                   {course.course}
                 </div>
 
@@ -290,7 +290,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
               onClick={() => setShowConfirmDialog(true)}
               className="absolute inset-0 bg-[#E53935] flex items-center justify-end pr-4 text-white cursor-pointer z-0"
             >
-              <div className="flex items-center gap-1.5 font-bold uppercase text-xs tracking-wider text-white">
+              <div className="flex items-center gap-1.5 font-medium uppercase text-xs tracking-wider text-white">
                 <Trash2 className="w-5 h-5 text-white" />
                 <span>Hapus</span>
               </div>
@@ -305,7 +305,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
               <Card className="border-0 py-2 shadow-none bg-white rounded-none">
                 <CardContent className="px-2 flex flex-col justify-between min-h-[90px]">
                   <div>
-                    <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+                    <div className="text-sm font-semibold line-clamp-2 leading-snug mb-1.5 text-black">
                       {course.course}
                     </div>
 
@@ -393,7 +393,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
           className="border-t-2 border-black rounded-none p-4 bg-white space-y-4"
         >
           <SheetHeader className="p-0 border-b-2 border-black pb-2 text-left">
-            <SheetTitle className="font-black text-sm uppercase tracking-wider text-black line-clamp-1">
+            <SheetTitle className="font-semibold text-sm uppercase tracking-wider text-black line-clamp-1">
               {course.course}
             </SheetTitle>
           </SheetHeader>
@@ -410,7 +410,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
           <div className="flex flex-col gap-2 pt-2 border-t-2 border-black">
             <Button
               variant="destructive"
-              className="w-full justify-start rounded-none font-bold uppercase tracking-wider text-xs h-11 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="w-full justify-start rounded-none font-medium uppercase tracking-wider text-xs h-11 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               onClick={() => {
                 setShowBottomSheet(false);
                 setShowConfirmDialog(true);
@@ -422,7 +422,7 @@ export const ScheduleCardMobile = memo(function ScheduleCardMobile({
 
             <Button
               variant="outline"
-              className="w-full justify-start border-2 border-black rounded-none font-bold uppercase tracking-wider text-xs h-11 bg-white text-black hover:bg-black/5"
+              className="w-full justify-start border-2 border-black rounded-none font-medium uppercase tracking-wider text-xs h-11 bg-white text-black hover:bg-black/5"
               onClick={() => setShowBottomSheet(false)}
             >
               Batal

@@ -98,7 +98,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-base font-black uppercase tracking-wide text-black", className)}
+      className={cn("text-base font-bold uppercase tracking-wide text-black", className)}
       {...props}
     />
   );
@@ -125,7 +125,7 @@ function AlertDialogAction({
     <AlertDialogPrimitive.Action
       className={cn(
         buttonVariants({ variant: "destructive" }),
-        "rounded-none border-2 border-black uppercase font-bold tracking-wider text-xs h-10 px-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+        "rounded-none border-2 border-black uppercase font-medium tracking-wider text-xs h-10 px-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
         className
       )}
       {...props}
@@ -141,7 +141,7 @@ function AlertDialogCancel({
     <AlertDialogPrimitive.Cancel
       className={cn(
         buttonVariants({ variant: "outline" }),
-        "rounded-none border-2 border-black uppercase font-bold tracking-wider text-xs h-10 px-4 bg-white text-black hover:bg-black/5",
+        "rounded-none border-2 border-black uppercase font-medium tracking-wider text-xs h-10 px-4 bg-white text-black hover:bg-black/5",
         className
       )}
       {...props}

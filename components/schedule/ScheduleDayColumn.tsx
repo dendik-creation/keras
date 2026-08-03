@@ -50,7 +50,7 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
       transition={transitionConfig}
       className="flex flex-col gap-2"
     >
-      <div className="text-center font-black py-2 border-b-2 border-black text-black uppercase tracking-widest">
+      <div className="text-center font-bold py-2 border-b-2 border-black text-black uppercase tracking-wider">
         {day}
       </div>
       <motion.div
@@ -94,7 +94,7 @@ export const ScheduleDayColumn = memo(function ScheduleDayColumn({
               exit="exit"
               variants={shouldReduceMotion ? {} : emptyStateVariants}
               layout
-              className="h-full min-h-[120px] text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-widest text-xs font-bold grow rounded"
+              className="h-full min-h-[120px] text-sm gap-3 flex-col bg-[#F2F2F2] flex items-center justify-center text-muted-foreground uppercase tracking-wider text-xs font-medium grow rounded"
             >
               <CalendarSearch className="w-5 h-5" />
               <span>Mau Libur Ya?</span>

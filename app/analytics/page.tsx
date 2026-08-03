@@ -43,14 +43,14 @@ export default function AnalyticsPage() {
             className="w-8 h-8 object-contain"
             priority
           />
-          <span className="text-xl font-black tracking-tighter text-[#111111]">
+          <span className="text-xl font-bold tracking-tight text-[#111111]">
             KeRaS.
           </span>
         </Link>
         <Link href="/">
           <Button
             variant="outline"
-            className="rounded-none border-2 border-[#111111] bg-transparent text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] uppercase font-bold tracking-widest transition-colors duration-200"
+            className="rounded-none border-2 border-[#111111] bg-transparent text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200"
           >
             ← Beranda
           </Button>
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
 
       {/* HEADER */}
       <section className="px-6 pt-16 pb-12 max-w-7xl mx-auto">
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 leading-[0.85] uppercase text-[#111111]">
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6 leading-[0.85] uppercase text-[#111111]">
           Data<br />Penggunaan
         </h1>
         <p className="text-[#555555] font-medium max-w-2xl leading-relaxed text-lg md:text-xl">

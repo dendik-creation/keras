@@ -64,11 +64,11 @@ const DEFAULT_FEATURES: FeatureItem[] = [
 function SectionLabel({ index, label }: { index: string; label: string }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="text-[#FF3000] font-black text-sm tracking-widest tabular-nums">
+      <span className="text-[#FF3000] font-semibold text-sm tracking-wider tabular-nums">
         {index}
       </span>
       <div className="w-8 h-0.5 bg-[#FF3000]" />
-      <span className="text-xs font-bold uppercase tracking-widest text-black">
+      <span className="text-xs font-medium uppercase tracking-wider text-black">
         {label}
       </span>
     </div>
@@ -94,7 +94,7 @@ function FeatureVisualizationPlaceholder({ label }: { label: string }) {
           />
         </svg>
       </div>
-      <span className="font-mono text-xs uppercase tracking-widest text-black/50 text-center font-bold">
+      <span className="font-mono text-xs uppercase tracking-wider text-black/50 text-center font-medium">
         {label}
       </span>
       <span className="text-[10px] font-mono uppercase tracking-wider text-black/30 border border-black/10 px-2 py-0.5">
@@ -231,7 +231,7 @@ export default function FeatureShowcase({
             </div>
 
             {/* Editorial Headline */}
-            <h2 className="feat-sec-headline opacity-0 text-4xl sm:text-5xl lg:text-5xl font-black uppercase tracking-tighter leading-[0.92] text-black mb-6">
+            <h2 className="feat-sec-headline opacity-0 text-4xl sm:text-5xl lg:text-5xl font-extrabold uppercase tracking-tight leading-[0.92] text-black mb-6">
               Satu platform.
               <br />
               <span className="text-[#FF3000]">Setiap langkah</span> KRS kamu.
@@ -247,7 +247,7 @@ export default function FeatureShowcase({
             {/* Primary CTA */}
             <div className="feat-sec-cta opacity-0 mb-12">
               <a href="#hero">
-                <Button className="rounded-none bg-black text-white hover:bg-[#FF3000] hover:text-white uppercase font-black tracking-widest h-12 px-8 text-sm transition-colors duration-200 border-2 border-black group">
+                <Button className="rounded-none bg-black text-white hover:bg-[#FF3000] hover:text-white uppercase font-semibold tracking-wider h-12 px-8 text-sm transition-colors duration-200 border-2 border-black group">
                   Mulai Sekarang{" "}
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
                 </Button>
@@ -278,14 +278,14 @@ export default function FeatureShowcase({
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   className={`feat-sec-nav-item opacity-0 w-full text-left py-4 px-2 border-b border-black/15 flex items-center justify-between transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3000] ${
                     isActive
-                      ? "border-l-4 border-l-[#FF3000] pl-3 text-black font-black"
+                      ? "border-l-4 border-l-[#FF3000] pl-3 text-black font-bold"
                       : "text-black/50 hover:text-black font-semibold"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={`text-xs font-mono tracking-wider tabular-nums ${
-                        isActive ? "text-[#FF3000] font-black" : "text-black/40"
+                        isActive ? "text-[#FF3000] font-bold" : "text-black/40"
                       }`}
                     >
                       {feature.number}
@@ -330,11 +330,11 @@ export default function FeatureShowcase({
               <div className="w-full flex items-center justify-between border-b border-black/10 pb-4 mb-6">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-[#FF3000] block" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-black">
+                  <span className="text-xs font-mono font-medium uppercase tracking-wider text-black">
                     {activeFeature.number} / {activeFeature.title}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 bg-black/5 px-2 py-0.5 border border-black/10">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-black/40 bg-black/5 px-2 py-0.5 border border-black/10">
                   Interactive Showcase
                 </span>
               </div>

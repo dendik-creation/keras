@@ -79,11 +79,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         {/* Page Title */}
         {pageTitle && (
           <div data-tour-desktop="schedule-page-title" data-tour-mobile="schedule-page-title" className="flex flex-col border-l-2 border-black pl-2.5 md:pl-4 overflow-hidden">
-            <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-black leading-none truncate">
+            <h2 className="font-medium text-xs md:text-sm uppercase tracking-wider text-black leading-none truncate">
               {pageTitle}
             </h2>
             {pageDescription && (
-              <span className="text-[10px] md:text-xs text-[#555555] font-medium mt-0.5 truncate">
+              <span className="text-[10px] md:text-xs text-[#555555] font-normal mt-0.5 truncate">
                 {pageDescription}
               </span>
             )}
@@ -99,12 +99,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                 <span className="font-bold text-black text-md">
                   {firstLetterCapitalized(name)}
                 </span>
-                <span className="text-xs font-black text-[#555555]">{firstLetterCapitalized(nim)}</span>
+                <span className="text-xs font-medium text-[#555555]">{firstLetterCapitalized(nim)}</span>
               </div>
             )}
             <Avatar size="lg" className="border-2 border-black rounded-none transition-colors duration-200 group-hover:bg-[#FF3000]">
               <AvatarImage loading="lazy" src={avatarSrc} alt={name} className="rounded-none object-cover" />
-              <AvatarFallback className="rounded-none bg-black text-white font-black text-base group-hover:bg-[#FF3000]">
+              <AvatarFallback className="rounded-none bg-black text-white font-bold text-base group-hover:bg-[#FF3000]">
                 {firstLetterCapitalized(name)?.charAt(0)}
               </AvatarFallback>
             </Avatar>

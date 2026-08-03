@@ -25,9 +25,9 @@ export default function BottomNav() {
             key={item.url}
             href={item.url}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-1 h-full uppercase tracking-widest text-[10px] transition-all duration-200 border-r-2 last:border-r-0 border-black",
+              "relative flex flex-col items-center justify-center gap-1 h-full uppercase tracking-wider text-[10px] transition-all duration-200 border-r-2 last:border-r-0 border-black",
               isActive
-                ? "bg-black text-white font-black"
+                ? "bg-black text-white font-bold"
                 : "bg-white text-black font-semibold active:bg-[#FF3000] active:text-white",
             )}
           >

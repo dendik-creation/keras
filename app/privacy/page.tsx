@@ -86,7 +86,7 @@ export default function PrivacyPage() {
           <p>
             Kami menganut prinsip Zero Database untuk data pribadi. Alur komunikasi terjadi secara langsung dan tersentralisasi pada sisi klien.
           </p>
-          <div className="font-mono text-sm bg-white border-2 border-[#111111] p-6 my-6 text-center font-bold tracking-widest flex flex-col items-center gap-4">
+          <div className="font-mono text-sm bg-white border-2 border-[#111111] p-6 my-6 text-center font-semibold tracking-wider flex flex-col items-center gap-4">
             <div className="border-2 border-[#111111] py-2 px-6 w-full max-w-xs">Browser</div>
             <div>↓</div>
             <div className="border-2 border-[#FF3000] text-[#FF3000] py-2 px-6 w-full max-w-xs">KeRaS Bridge</div>
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
             Punya pertanyaan atau menemukan celah keamanan? Laporkan secara langsung melalui repositori kami.
           </p>
           <div className="mt-6">
-            <a href="https://github.com/dendik-creation/keras/issues" target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center border-2 border-[#111111] bg-white px-8 font-bold uppercase tracking-widest text-sm text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] transition-colors">
+            <a href="https://github.com/dendik-creation/keras/issues" target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center border-2 border-[#111111] bg-white px-8 font-semibold uppercase tracking-wider text-sm text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] transition-colors">
               GitHub Issues
             </a>
           </div>

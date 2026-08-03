@@ -44,7 +44,7 @@ function FlowNode({ size = "secondary", label, children, className = "" }: NodeP
         {children}
       </div>
       <span
-        className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-black text-center leading-tight max-w-[100px]"
+        className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-black text-center leading-tight max-w-[100px]"
         aria-label={label}
       >
         {label}
@@ -56,11 +56,11 @@ function FlowNode({ size = "secondary", label, children, className = "" }: NodeP
 const SectionLabel = ({ index, label, inverted }: { index: string; label: string; inverted?: boolean }) => {
   return (
     <div className="flex items-center gap-4 mb-12">
-      <span className="text-[#FF3000] font-black text-sm tracking-widest tabular-nums">
+      <span className="text-[#FF3000] font-semibold text-sm tracking-wider tabular-nums">
         {index}
       </span>
       <div className="w-8 h-0.5 bg-[#FF3000]" />
-      <span className={`text-xs font-bold uppercase tracking-widest ${inverted ? 'text-white' : 'text-black'}`}>
+      <span className={`text-xs font-medium uppercase tracking-wider ${inverted ? 'text-white' : 'text-black'}`}>
         {label}
       </span>
     </div>
@@ -432,7 +432,7 @@ export default function CenterFlow() {
           {/* Large Headline */}
           <h2
             ref={headlineRef}
-            className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.92] text-black mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold uppercase tracking-tight leading-[0.92] text-black mb-6"
           >
             Cerita Dibalik<br />
             <span className="text-[#FF3000]">Kegagalan</span> Mendapatkan Kelas
@@ -443,7 +443,7 @@ export default function CenterFlow() {
             ref={paragraphRef}
             className="text-base lg:text-lg text-[#444444] font-medium leading-relaxed mb-8 max-w-xl"
           >
-            KeRaS mengakhiri kegagalan tersebut. Sebagai jembatan, KeRaS membantu membuatkan jadwal dan mendapatkan kelas sesuai keinginanmu.
+            KeRaS mengakhiri kegagalan tersebut. Sebagai jembatan, KeRaS membantu membuatkan jadwal dan mendapatkan kelas sesuai keinginanmu<span className="text-[#FF3000]">*</span>.
           </p>
 
           {/* Key Feature Highlights */}
@@ -455,7 +455,7 @@ export default function CenterFlow() {
             ].map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 border-l-2 border-black pl-3 py-1">
                 <CheckCircle2 className="w-4 h-4 text-[#FF3000] shrink-0" />
-                <span className="text-xs font-bold uppercase tracking-wider text-black">
+                <span className="text-xs font-medium uppercase tracking-wider text-black">
                   {item}
                 </span>
               </div>

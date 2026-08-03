@@ -94,7 +94,7 @@ function SegmentedSchedulePreviewInner({
               type="button"
               onClick={() => handleSelectDay(d.key)}
               className={cn(
-                "relative flex flex-col items-center justify-center py-2 px-1 text-xs font-black uppercase tracking-wider transition-all duration-150 border-2 select-none",
+                "relative flex flex-col items-center justify-center py-2 px-1 text-xs font-medium uppercase tracking-wider transition-all duration-150 border-2 select-none",
                 isActive
                   ? "bg-black text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   : "bg-white text-black border-black hover:bg-black/5",
@@ -124,11 +124,11 @@ function SegmentedSchedulePreviewInner({
       {/* Active Day Header */}
       <div className="flex justify-between items-center px-3.5 py-2 bg-[#F2F2F2] text-black border-2 border-black">
         <div className="flex items-center gap-2">
-          <h4 className="font-black text-sm uppercase tracking-widest text-black">
+          <h4 className="font-semibold text-sm uppercase tracking-wider text-black">
             {activeDayObj.full}
           </h4>
         </div>
-        <span className="text-xs font-bold uppercase tracking-wider text-[#555555]">
+        <span className="text-xs font-medium uppercase tracking-wider text-[#555555]">
           {dayCourses.length} Mata Kuliah
         </span>
       </div>
@@ -173,7 +173,7 @@ function SegmentedSchedulePreviewInner({
             ) : (
               <div className="min-h-[140px] flex flex-col items-center justify-center gap-2 text-center bg-[#F2F2F2] border border-black/20 p-6">
                 <CalendarSearch className="w-7 h-7 text-[#FF3000]" />
-                <span className="font-black text-xs uppercase tracking-widest text-black">
+                <span className="font-medium text-xs uppercase tracking-wider text-black">
                   Tidak Ada Kuliah
                 </span>
                 <span className="text-[11px] text-muted-foreground font-medium">

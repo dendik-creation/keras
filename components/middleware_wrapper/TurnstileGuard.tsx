@@ -117,17 +117,17 @@ export default function TurnstileGuard({ children }: { children: ReactNode }) {
 
       <div className="flex items-center gap-4">
         <div className="w-8 h-0.5 bg-[#FF3000]" />
-        <span className="text-xs font-bold tracking-widest text-black">
+        <span className="text-xs font-medium tracking-wider text-black">
           Sebentar Wok
         </span>
         <div className="w-8 h-0.5 bg-[#FF3000]" />
       </div>
 
-      <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-black leading-[0.9] text-center">
+      <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-black leading-[0.9] text-center">
         Kamu <span className="text-[#FF3000]">Robot</span> Gak Sih😹
       </h1>
 
-      <p className="text-sm text-[#555555] font-medium text-center max-w-md border-x-2 border-[#FF3000] px-4">
+      <p className="text-sm text-[#555555] font-normal text-center max-w-md border-x-2 border-[#FF3000] px-4">
         Cukup tunggu KeRaS untuk mengecek keaslianmu.
       </p>
 
@@ -139,7 +139,7 @@ export default function TurnstileGuard({ children }: { children: ReactNode }) {
             widgetIdRef.current = null;
             setStatus("challenge");
           }}
-          className="bg-black text-white rounded-none font-black tracking-widest h-12 px-8 text-sm hover:bg-[#FF3000] transition-colors duration-200"
+          className="bg-black text-white rounded-none font-semibold tracking-wider h-12 px-8 text-sm hover:bg-[#FF3000] transition-colors duration-200"
         >
           Coba Lagi
         </button>

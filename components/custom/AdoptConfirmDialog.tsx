@@ -47,7 +47,7 @@ export default function AdoptConfirmDialog({
             <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
               <CalendarCheck2 className="text-white w-4 h-4" />
             </div>
-            <DialogTitle className="font-black uppercase tracking-tight text-black">
+            <DialogTitle className="font-bold uppercase tracking-tight text-black">
               Adopsi Jadwal Ini?
             </DialogTitle>
           </div>
@@ -80,7 +80,7 @@ export default function AdoptConfirmDialog({
         )}
 
         {hasExisting && (
-          <div className="flex items-start gap-2 border-2 border-[#FF3000] bg-[#FF3000]/5 p-3 text-xs font-bold text-black">
+          <div className="flex items-start gap-2 border-2 border-[#FF3000] bg-[#FF3000]/5 p-3 text-xs font-medium text-black">
             <TriangleAlert className="w-4 h-4 text-[#FF3000] flex-shrink-0 mt-0.5" />
             <span>
               Kamu sudah punya jadwal tersimpan. Mengadopsi jadwal ini akan
@@ -93,13 +93,13 @@ export default function AdoptConfirmDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="rounded-none border-2 border-black uppercase font-black tracking-widest"
+            className="rounded-none border-2 border-black uppercase font-semibold tracking-wider"
           >
             Batal
           </Button>
           <Button
             onClick={onConfirm}
-            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
+            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200"
           >
             {hasExisting ? "Ganti & Adopsi" : "Adopsi Jadwal"}
           </Button>

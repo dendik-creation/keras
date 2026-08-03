@@ -131,7 +131,7 @@ export default function Page() {
                     height={32}
                     className="w-8 h-8 object-contain flex-shrink-0"
                   />
-                  <DialogTitle className="font-black uppercase tracking-tight text-black">
+                  <DialogTitle className="font-bold uppercase tracking-tight text-black">
                     Hanya Untuk Universitas Muria Kudus
                   </DialogTitle>
                 </div>
@@ -149,7 +149,7 @@ export default function Page() {
                 <DialogClose asChild>
                   <Button
                     onClick={() => handleDisclaimerChange(true)}
-                    className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
+                    className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200"
                   >
                     <BadgeCheck className="w-4 h-4 mr-2" />
                     Saya Paham
@@ -171,7 +171,7 @@ export default function Page() {
                     height={32}
                     className="w-8 h-8 object-contain flex-shrink-0"
                   />
-                  <DialogTitle className="font-black uppercase tracking-tight text-black">
+                  <DialogTitle className="font-bold uppercase tracking-tight text-black">
                     Pengingat Untukmu
                   </DialogTitle>
                 </div>
@@ -184,7 +184,7 @@ export default function Page() {
                 <DialogClose asChild>
                   <Button
                     onClick={() => handleReminderChange(true)}
-                    className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200"
+                    className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200"
                   >
                     <BadgeCheck className="w-4 h-4 mr-2" />
                     Saya Mengerti
@@ -216,7 +216,7 @@ export default function Page() {
                     priority
                   />
                   <div className="flex flex-col">
-                    <span className="font-black tracking-tighter text-black text-lg leading-none">
+                    <span className="font-bold tracking-tight text-black text-lg leading-none">
                       KeRaS
                     </span>
                     <span className="text-xs font-medium text-[#555555] leading-none mt-0.5">
@@ -230,7 +230,7 @@ export default function Page() {
                   <div className="w-full max-w-md">
                     {/* Form heading */}
                     <div className="mb-10">
-                      <h1 className="text-5xl md:text-6xl mb-3 font-black uppercase tracking-tighter text-black leading-[0.85]">
+                      <h1 className="text-5xl md:text-6xl mb-3 font-extrabold uppercase tracking-tight text-black leading-[0.85]">
                         Login <span className="text-[#FF3000]">Dulu Wok</span>
                       </h1>
                       <p className="text-[#555555] text-sm font-medium leading-snug">
@@ -250,7 +250,7 @@ export default function Page() {
                         <Field>
                           <FieldLabel
                             htmlFor="username"
-                            className="text-xs font-black uppercase tracking-widest text-black mb-1"
+                            className="text-xs font-medium uppercase tracking-wider text-black mb-1"
                           >
                             Username
                           </FieldLabel>
@@ -271,7 +271,7 @@ export default function Page() {
                         <Field>
                           <FieldLabel
                             htmlFor="password"
-                            className="text-xs font-black uppercase tracking-widest text-black mb-1"
+                            className="text-xs font-medium uppercase tracking-wider text-black mb-1"
                           >
                             Password
                           </FieldLabel>
@@ -292,7 +292,7 @@ export default function Page() {
                           <Button
                             disabled={isLoading}
                             type="submit"
-                            className="w-full rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest h-16 text-base transition-colors duration-200 mt-2"
+                            className="w-full rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-semibold tracking-wider h-16 text-base transition-colors duration-200 mt-2"
                           >
                             {isLoading ? (
                               <Loader2 className="animate-spin w-5 h-5" />
@@ -305,7 +305,7 @@ export default function Page() {
                         {/* Disclaimer notice */}
                         <Field>
                           <div className="border-l-2 border-[#FF3000] pl-3 py-1">
-                            <span className="text-xs text-[#555555] font-medium leading-snug">
+                            <span className="text-xs text-[#555555] font-normal leading-snug">
                               Sebaiknya tidak berpindah akun, nanti kena sendiri
                               akibatnya😹
                             </span>
@@ -319,7 +319,7 @@ export default function Page() {
                 {/* Back to home */}
                 <Link
                   href="/"
-                  className="text-xs font-bold uppercase tracking-widest text-[#555555] hover:text-[#FF3000] transition-colors duration-200 w-fit"
+                  className="text-xs font-medium uppercase tracking-wider text-[#555555] hover:text-[#FF3000] transition-colors duration-200 w-fit"
                 >
                   ← Kembali ke Beranda
                 </Link>
@@ -342,12 +342,12 @@ export default function Page() {
               <div className="absolute top-0 left-1/2 h-full w-0.5 bg-white/20" />
               {/* Wordmark */}
               <div className="absolute bottom-25 left-10">
-                <span className="text-white/90 font-black tracking-tighter text-5xl leading-none">
+                <span className="text-white/90 font-extrabold tracking-tight text-5xl leading-none">
                   Sudah KeRaS<span className="text-[#FF3000]">.</span>
                 </span>
               </div>
               <div className="absolute bottom-10 left-10">
-                <span className="text-white/90 font-black tracking-tighter text-5xl leading-none">
+                <span className="text-white/90 font-extrabold tracking-tight text-5xl leading-none">
                   Kah MatkuLmu?
                 </span>
               </div>

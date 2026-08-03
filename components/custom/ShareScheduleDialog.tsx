@@ -124,7 +124,7 @@ export default function ShareScheduleDialog({
             <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
               <Share2 className="text-white w-4 h-4" />
             </div>
-            <DialogTitle className="font-black uppercase tracking-tight text-black">
+            <DialogTitle className="font-bold uppercase tracking-tight text-black">
               Bagikan Jadwal
             </DialogTitle>
           </div>
@@ -160,7 +160,7 @@ export default function ShareScheduleDialog({
           <Button
             onClick={handleNativeShare}
             disabled={shortening || !url}
-            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-black tracking-widest transition-colors duration-200 w-full"
+            className="rounded-none bg-black text-white hover:bg-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200 w-full"
           >
             <Share2 className="w-4 h-4 mr-2" />
             Bagikan Link

@@ -7,7 +7,7 @@ export default function StepGenerating() {
   return (
     <div className="border-2 border-black bg-white">
       <div className="border-b-2 border-black bg-black px-4 py-2.5">
-        <h4 className="font-black uppercase tracking-wide text-xs text-white">
+        <h4 className="font-medium uppercase tracking-wide text-xs text-white">
           Membuat Jadwal
         </h4>
       </div>

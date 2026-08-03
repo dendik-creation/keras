@@ -228,17 +228,17 @@ export default function SubmitClientPage({ warTestMode }: Props) {
           {/* 1. Progress Card */}
           <div data-tour-mobile="war-control-panel" className="bg-white text-black p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] space-y-2">
             <div className="flex justify-between items-center">
-              <span className="font-black text-xs uppercase tracking-widest text-[#FF3000]">
+              <span className="font-medium text-xs uppercase tracking-wider text-[#FF3000]">
                 PERANG KRS
               </span>
               <Badge
                 variant="outline"
-                className="bg-black text-white border-black font-bold text-xs uppercase px-2 py-0.5"
+                className="bg-black text-white border-black font-medium text-xs uppercase px-2 py-0.5"
               >
                 {war.securedCount} / {war.totalCount} Diamankan
               </Badge>
             </div>
-            <div className="text-xl font-black text-black uppercase tracking-tight">
+            <div className="text-xl font-bold text-black uppercase tracking-tight">
               {war.securedCount} / {war.totalCount} Mata Kuliah Diamankan
             </div>
             {/* Progress bar */}
@@ -263,7 +263,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                 !war.isWarStarted
               }
               className={cn(
-                "w-full h-13 bg-[#FF3000] hover:bg-black text-white border-2 border-black rounded-none font-black text-base uppercase tracking-widest shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
+                "w-full h-13 bg-[#FF3000] hover:bg-black text-white border-2 border-black rounded-none font-bold text-base uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
                 war.isSubmitting && "animate-pulse",
               )}
             >
@@ -286,7 +286,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
               onClick={() => war.checkWarStatus()}
               disabled={war.isFindingSchedule}
               className={cn(
-                "w-full h-13 bg-white text-black hover:bg-black hover:text-white border-2 border-black rounded-none font-black text-sm uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
+                "w-full h-13 bg-white text-black hover:bg-black hover:text-white border-2 border-black rounded-none font-semibold text-sm uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2",
                 war.isFindingSchedule && "animate-pulse",
               )}
             >
@@ -307,7 +307,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
           {/* 3. Schedule Preview (Segmented Day Selector) */}
           <div data-tour-mobile="war-schedule-table" className="flex flex-col gap-2">
             <div className="flex justify-between items-center px-1">
-              <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                 <Sword className="w-4 h-4 text-[#FF3000]" /> Jadwal Perang KRS
               </h3>
               <span className="text-[10px] font-bold text-black uppercase tracking-wider">
@@ -327,7 +327,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
 
           {/* 4. Activity (Timeline) */}
           <div data-tour-mobile="war-activity-log" className="flex flex-col gap-2">
-            <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2 px-1">
+            <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2 px-1">
               <Sword className="w-4 h-4 text-[#FF3000]" /> Aktivitas Perang (
               {war.logs.length})
             </h3>
@@ -335,7 +335,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
               {war.logs.length === 0 ? (
                 <div className="py-6 flex flex-col items-center justify-center text-center gap-2 bg-[#F2F2F2] border-2 border-dashed border-black/30">
                   <Sword className="w-6 h-6 text-black/40" />
-                  <span className="text-xs font-black uppercase tracking-widest text-black/70">
+                  <span className="text-xs font-medium uppercase tracking-wider text-black/70">
                     Belum Ada Aktivitas Perang
                   </span>
                 </div>
@@ -347,7 +347,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                       className="border-2 border-black bg-[#F2F2F2] p-2.5 space-y-1.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-black">
+                        <span className="text-xs font-medium uppercase tracking-wider text-black">
                           Fase {log.attempt}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -424,7 +424,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
           {readyReleases.length > 0 && (
             <div className="fixed bottom-16 inset-x-0 z-40 bg-black text-white border-t-2 border-black p-3 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom-5 duration-200">
               <div className="flex flex-col">
-                <span className="font-black text-xs uppercase tracking-widest text-[#FF3000]">
+                <span className="font-medium text-xs uppercase tracking-wider text-[#FF3000]">
                   {readyReleases.length} Mata Kuliah Dipilih
                 </span>
                 <span className="text-[10px] text-white/70">
@@ -441,7 +441,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                     variant="destructive"
                     size="sm"
                     disabled={war.isSubmitting}
-                    className="rounded-none uppercase font-bold tracking-wider text-xs h-10 border border-white"
+                    className="rounded-none uppercase font-medium tracking-wider text-xs h-10 border border-white"
                   >
                     <Trash2 className="w-4 h-4 mr-1.5" />
                     <span>Hapus Terpilih</span>
@@ -471,7 +471,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                   >
                     <div data-tour-desktop="war-control-panel" className="p-4 border-b-2 border-black bg-white space-y-4">
                       <div className="">
-                        <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
+                        <h3 className="font-bold text-lg uppercase tracking-tight flex items-center gap-2">
                           <Sword className="w-5 h-5" /> Ayo Perang KRS
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -482,7 +482,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
 
                       {war.totalCount > 0 && (
                         <div className="border-2 border-black bg-[#F2F2F2] px-3 py-2">
-                          <div className="flex items-center justify-between text-xs font-bold tracking-widest">
+                          <div className="flex items-center justify-between text-xs font-medium tracking-wider">
                             <span>Diamankan</span>
                             <span className="tabular-nums">
                               {war.securedCount} / {war.totalCount} Mata Kuliah
@@ -551,13 +551,13 @@ export default function SubmitClientPage({ warTestMode }: Props) {
 
                   <div data-tour-desktop="war-activity-log" className="grow overflow-auto flex flex-col">
                     <div className="px-4 py-2 bg-[#F2F2F2] border-b-2 border-black">
-                      <span className="text-xs font-black uppercase tracking-widest text-black">
+                      <span className="text-xs font-medium uppercase tracking-wider text-black">
                         Aktivitas perang ({war.logs.length} aktivitas)
                       </span>
                     </div>
                     <ScrollArea className="grow p-4">
                       {war.logs.length === 0 && (
-                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground opacity-60 gap-2 border-2 border-dashed border-black uppercase tracking-widest text-xs font-bold">
+                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground opacity-60 gap-2 border-2 border-dashed border-black uppercase tracking-wider text-xs font-medium">
                           <Sword className="w-8 h-8" />
                           <span className="text-sm">
                             Kamu belum melakukan perang
@@ -627,7 +627,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                               <div className="mt-2 text-xs space-y-2">
                                 {log.status === "processing" && (
                                   <Alert className="py-2 bg-blue-50 border border-blue-300">
-                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-bold">
+                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-medium">
                                       <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
                                       <span>Processing... Submitting payload to server</span>
                                     </AlertDescription>
@@ -635,7 +635,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                                 )}
                                 {log.status === "submitting" && (
                                   <Alert className="py-2 bg-blue-50 border border-blue-300">
-                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-bold">
+                                    <AlertDescription className="text-xs text-blue-900 flex items-center gap-1.5 font-medium">
                                       <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
                                       <span>Submitting payload to server...</span>
                                     </AlertDescription>
@@ -701,7 +701,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                 <div data-tour-desktop="war-schedule-table" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
-                      <h3 className="font-black text-lg uppercase tracking-tight">
+                      <h3 className="font-bold text-lg uppercase tracking-tight">
                         Tabel Jadwal
                       </h3>
                       <p className="text-xs text-muted-foreground">
@@ -723,7 +723,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                               disabled={
                                 readyReleases.length == 0 || war.isSubmitting
                               }
-                              className="rounded-none uppercase font-bold tracking-widest"
+                              className="rounded-none uppercase font-semibold tracking-wider"
                             >
                               <Trash2 />
                               <span>Hapus Terpilih</span>
@@ -733,10 +733,10 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                         confirmAction={handleSubmitRelease}
                       />
                       <div className="text-right">
-                        <span className="text-xs text-muted-foreground block uppercase tracking-widest">
+                        <span className="text-xs text-muted-foreground block uppercase tracking-wider">
                           Total SKS
                         </span>
-                        <span className="font-black text-lg text-[#FF3000] tabular-nums">
+                        <span className="font-bold text-lg text-[#FF3000] tabular-nums">
                           {totalSKS}
                         </span>
                       </div>

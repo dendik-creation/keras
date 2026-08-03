@@ -19,24 +19,24 @@ export function LegalLayout({ children, title, subtitle, meta }: { children: Rea
       <nav className="relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-[#111111]">
         <Link href="/" className="flex items-center gap-3">
           <Image src="/logo.png" alt="KeRaS" width={32} height={32} className="w-8 h-8 object-contain" priority />
-          <span className="text-xl font-black tracking-tighter text-[#111111]">KeRaS.</span>
+          <span className="text-xl font-bold tracking-tight text-[#111111]">KeRaS.</span>
         </Link>
         <Link href="/">
-          <Button variant="outline" className="rounded-none border-2 border-[#111111] bg-transparent text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] uppercase font-bold tracking-widest transition-colors duration-200">
+          <Button variant="outline" className="rounded-none border-2 border-[#111111] bg-transparent text-[#111111] hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000] uppercase font-semibold tracking-wider transition-colors duration-200">
             ← Beranda
           </Button>
         </Link>
       </nav>
 
       <section className="px-6 pt-16 pb-12 max-w-7xl mx-auto">
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 leading-[0.85] uppercase text-[#111111]">
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6 leading-[0.85] uppercase text-[#111111]">
           {title}
         </h1>
         <p className="text-[#555555] font-medium max-w-2xl leading-relaxed text-lg md:text-xl">
           {subtitle}
         </p>
         {meta && (
-          <div className="mt-8 flex flex-col md:flex-row gap-4 text-xs font-bold uppercase tracking-widest text-[#555555]">
+          <div className="mt-8 flex flex-col md:flex-row gap-4 text-xs font-medium uppercase tracking-wider text-[#555555]">
             {meta}
           </div>
         )}
@@ -89,7 +89,7 @@ export function LegalSidebar({ toc }: { toc: { id: string, label: string, index:
   return (
     <>
       <div className="lg:hidden mb-8">
-        <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between border-2 border-[#111111] px-4 py-3 font-bold uppercase tracking-widest text-sm bg-white" aria-expanded={isOpen}>
+        <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between border-2 border-[#111111] px-4 py-3 font-semibold uppercase tracking-wider text-sm bg-white" aria-expanded={isOpen}>
           <span>Daftar Isi</span>
           <ChevronDown className={clsx("w-5 h-5 transition-transform", isOpen && "rotate-180")} />
         </button>
@@ -97,7 +97,7 @@ export function LegalSidebar({ toc }: { toc: { id: string, label: string, index:
           <div className="border-x-2 border-b-2 border-[#111111] bg-white flex flex-col">
             {toc.map(item => (
               <button key={item.id} onClick={() => handleScrollClick(item.id)} className={clsx("text-left px-4 py-3 border-b-2 border-[#111111] last:border-0 font-medium text-sm transition-colors", activeId === item.id ? "bg-[#FF3000] text-white" : "hover:bg-gray-100")}>
-                <span className="font-black mr-2">{item.index}</span> {item.label}
+                <span className="font-bold mr-2">{item.index}</span> {item.label}
               </button>
             ))}
           </div>
@@ -105,7 +105,7 @@ export function LegalSidebar({ toc }: { toc: { id: string, label: string, index:
       </div>
 
       <aside className="hidden lg:block sticky top-[112px] self-start h-fit max-h-screen">
-        <h2 className="text-sm font-black uppercase tracking-widest mb-6 border-b-2 border-[#111111] pb-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-6 border-b-2 border-[#111111] pb-4">
           Daftar Isi
         </h2>
         <nav className="flex flex-col gap-4">
@@ -115,7 +115,7 @@ export function LegalSidebar({ toc }: { toc: { id: string, label: string, index:
               onClick={() => handleScrollClick(item.id)}
               className={clsx("text-left text-sm font-medium tracking-wide transition-colors group flex items-start gap-3", activeId === item.id ? "text-[#FF3000]" : "text-[#555555] hover:text-[#111111]")}
             >
-              <span className={clsx("font-black tabular-nums transition-colors", activeId === item.id ? "text-[#FF3000]" : "text-[#111111]")}>
+              <span className={clsx("font-bold tabular-nums transition-colors", activeId === item.id ? "text-[#FF3000]" : "text-[#111111]")}>
                 {item.index}
               </span>
               <span>{item.label}</span>
@@ -138,10 +138,10 @@ export function LegalSection({ id, children }: { id: string, children: ReactNode
 export function LegalHeading({ index, title }: { index: string, title: string }) {
   return (
     <div className="mb-6 flex flex-col md:flex-row md:items-baseline gap-2 md:gap-4 border-b-2 border-[#111111] pb-4">
-      <span className="text-[#FF3000] font-black text-2xl md:text-3xl tabular-nums tracking-tighter">
+      <span className="text-[#FF3000] font-bold text-2xl md:text-3xl tabular-nums tracking-tight">
         {index}.
       </span>
-      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-[#111111]">
+      <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-[#111111]">
         {title}
       </h2>
     </div>
@@ -155,7 +155,7 @@ export function LegalTable({ headers, rows }: { headers: string[], rows: ReactNo
         <thead>
           <tr className="bg-[#111111] text-white">
             {headers.map((h, i) => (
-              <th key={i} className="p-4 font-bold uppercase tracking-widest text-xs border-r-2 border-[#111111] last:border-0 whitespace-nowrap">{h}</th>
+              <th key={i} className="p-4 font-medium uppercase tracking-wider text-xs border-r-2 border-[#111111] last:border-0 whitespace-nowrap">{h}</th>
             ))}
           </tr>
         </thead>
@@ -176,7 +176,7 @@ export function LegalTable({ headers, rows }: { headers: string[], rows: ReactNo
 export function LegalNotice({ children }: { children: ReactNode }) {
   return (
     <div className="border-l-4 border-[#FF3000] pl-6 py-2 my-8 bg-white border-y-2 border-r-2 border-[#111111]">
-      <div className="font-bold text-sm uppercase tracking-widest text-[#FF3000] mb-2 mt-2">Notice</div>
+      <div className="font-semibold text-sm uppercase tracking-wider text-[#FF3000] mb-2 mt-2">Notice</div>
       <div className="text-[#555555] font-medium leading-relaxed mb-2">{children}</div>
     </div>
   );

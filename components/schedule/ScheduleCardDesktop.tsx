@@ -105,7 +105,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
               )}
             >
               <div className="flex w-full justify-center items-center">
-                <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-bold">
+                <p className="m-0 text-xs w-full text-center uppercase tracking-wide font-medium">
                   {course.saved_in_submit ? "Siap Dilepas" : "Siap Dihapus"}
                 </p>
               </div>
@@ -131,7 +131,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
             )}
 
             <div>
-              <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+              <div className="text-sm font-semibold line-clamp-2 leading-snug mb-1.5 text-black">
                 {course.course}
               </div>
 
@@ -171,7 +171,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
           <CardContent className="p-3 flex flex-col justify-between min-h-[95px]">
             <div className="absolute z-20 bottom-0 left-0 w-full h-2 hover:h-8 transition-all bg-black hover:bg-[#FF3000]">
               <button
-                className="text-white flex items-center justify-center gap-2 text-xs text-center w-full absolute bottom-0 cursor-pointer left-0 font-bold uppercase tracking-widest"
+                className="text-white flex items-center justify-center gap-2 text-xs text-center w-full absolute bottom-0 cursor-pointer left-0 font-medium uppercase tracking-wider"
                 style={{ minHeight: "2rem" }}
                 onClick={() => onRemove?.(course)}
               >
@@ -180,7 +180,7 @@ export const ScheduleCardDesktop = memo(function ScheduleCardDesktop({
             </div>
 
             <div>
-              <div className="text-sm font-black line-clamp-2 leading-snug mb-1.5 text-black">
+              <div className="text-sm font-semibold line-clamp-2 leading-snug mb-1.5 text-black">
                 {course.course}
               </div>
 

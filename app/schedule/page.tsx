@@ -441,17 +441,17 @@ export default function Page() {
           {/* 1. Summary Card */}
           <div className="bg-white text-black p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#555555] block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#555555] block">
                 TOTAL SKS
               </span>
-              <div className="text-3xl font-black text-[#FF3000] tabular-nums tracking-tight flex items-baseline gap-1">
+              <div className="text-3xl font-bold text-[#FF3000] tabular-nums tracking-tight flex items-baseline gap-1">
                 {totalSKS}{" "}
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
               <Badge
                 variant="outline"
-                className="bg-black text-white border-black font-bold text-xs uppercase px-2.5 py-0.5"
+                className="bg-black text-white border-black font-medium text-xs uppercase px-2.5 py-0.5"
               >
                 {selectedCourses.length} Matkul
               </Badge>
@@ -464,7 +464,7 @@ export default function Page() {
             data-tour-mobile="schedule-refresh-button"
             disabled={syncState !== "idle"}
             onClick={handleFindSchedules}
-            className="w-full h-12 bg-black text-white hover:bg-[#FF3000] border-2 border-black rounded-none uppercase font-bold tracking-widest text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="w-full h-12 bg-black text-white hover:bg-[#FF3000] border-2 border-black rounded-none uppercase font-semibold tracking-wider text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
             {syncState !== "idle" ? (
               <Loader2 className="animate-spin w-5 h-5" />
@@ -476,14 +476,14 @@ export default function Page() {
 
           {/* Mobile Actions Menu (Bottom Drawer) */}
           <div className="flex items-center justify-between border-b-2 border-black pb-2 pt-1">
-            <span className="font-black text-xs uppercase tracking-widest text-black">
+            <span className="font-medium text-xs uppercase tracking-wider text-black">
               Aksi {"& Navigasi"}
             </span>
             <Button
               data-tour-mobile="schedule-actions"
               variant="outline"
               size="sm"
-              className="border-2 border-black rounded-none uppercase font-bold text-xs tracking-wider"
+              className="border-2 border-black rounded-none uppercase font-medium text-xs tracking-wider"
               onClick={() => setOpenMobileSheet(true)}
             >
               Aksi Jadwal{" "}
@@ -504,7 +504,7 @@ export default function Page() {
                 type="button"
                 onClick={() => setSelectedSemFilter("ALL")}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-black uppercase tracking-wider border-2 whitespace-nowrap transition-all",
+                  "px-3 py-1.5 text-xs font-medium uppercase tracking-wider border-2 whitespace-nowrap transition-all",
                   selectedSemFilter === "ALL"
                     ? "bg-[#FF3000] text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                     : "bg-white text-black border-black hover:bg-black/5",
@@ -523,7 +523,7 @@ export default function Page() {
                     type="button"
                     onClick={() => setSelectedSemFilter(sem.semester)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-black uppercase tracking-wider border-2 whitespace-nowrap transition-all",
+                      "px-3 py-1.5 text-xs font-medium uppercase tracking-wider border-2 whitespace-nowrap transition-all",
                       isSelected
                         ? "bg-[#FF3000] text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                         : "bg-white text-black border-black hover:bg-black/5",
@@ -539,7 +539,7 @@ export default function Page() {
           {/* 4. Course List Accordion */}
           <div data-tour-mobile="schedule-course-list" className="flex flex-col gap-2">
             <div className="flex justify-between items-center px-1">
-              <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-[#FF3000]" /> Daftar Mata
                 Kuliah
               </h3>
@@ -570,7 +570,7 @@ export default function Page() {
                   className="p-8 border-2 border-dashed border-black bg-white flex flex-col items-center justify-center gap-2 text-center"
                 >
                   <SearchX className="w-8 h-8 text-[#FF3000]" />
-                  <span className="text-xs font-bold uppercase tracking-wider">
+                  <span className="text-xs font-medium uppercase tracking-wider">
                     Tidak ada mata kuliah
                   </span>
                 </motion.div>
@@ -588,7 +588,7 @@ export default function Page() {
                         value={`sem-${semIdx}`}
                         className="border-2 border-black bg-white"
                       >
-                        <AccordionTrigger className="font-black text-xs uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-3 py-2 border-b-2 border-black">
+                        <AccordionTrigger className="font-medium text-xs uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-3 py-2 border-b-2 border-black">
                           <div className="flex justify-between items-center w-full pr-2">
                             <span>{sem.semester}</span>
                             <Badge
@@ -623,7 +623,7 @@ export default function Page() {
                                     <AccordionTrigger className="px-3 py-2 hover:no-underline text-left">
                                       <div className="flex items-center justify-between w-full pr-2 gap-2">
                                         <div className="flex flex-col text-left overflow-hidden">
-                                          <span className="font-bold text-xs text-black truncate">
+                                          <span className="font-medium text-xs text-black truncate">
                                             {courseName}
                                           </span>
                                           <span className="text-[10px] text-muted-foreground font-semibold">
@@ -709,7 +709,7 @@ export default function Page() {
 
           {/* 5. Schedule Preview (Segmented Day Selector) */}
           <div data-tour-mobile="schedule-timetable" className="flex flex-col gap-2 mt-2">
-            <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
               <CalendarClock className="w-4 h-4 text-[#FF3000]" /> Preview Jadwal
             </h3>
             <SegmentedSchedulePreview
@@ -727,7 +727,7 @@ export default function Page() {
             whileHover={{ scale: 1.05 }}
             onClick={(e) => openGenerateAiDialog(e)}
             disabled={isWarInProgress}
-            className="fixed bottom-20 right-4 z-40 bg-[#FF3000] text-white px-3.5 py-2.5 border-2 border-black flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-black text-xs uppercase tracking-wider"
+            className="fixed bottom-20 right-4 z-40 bg-[#FF3000] text-white px-3.5 py-2.5 border-2 border-black flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-medium text-xs uppercase tracking-wider"
           >
             <Sparkles className="w-4 h-4 fill-white text-white animate-pulse" />
             <span>AI</span>
@@ -743,7 +743,7 @@ export default function Page() {
                 <ScrollArea className="h-full bg-[#F2F2F2]">
                   <div data-tour-desktop="schedule-course-list" className="p-4 space-y-4">
                     <div className="flex flex-col gap-2">
-                      <h3 className="font-black text-lg uppercase tracking-tight flex items-center gap-2">
+                      <h3 className="font-bold text-lg uppercase tracking-tight flex items-center gap-2">
                         <BookOpen className="w-5 h-5" /> Daftar Mata Kuliah
                       </h3>
                       <p className="text-xs text-muted-foreground">
@@ -755,7 +755,7 @@ export default function Page() {
                         disabled={syncState !== "idle"}
                         onClick={handleFindSchedules}
                         size={"sm"}
-                        className="bg-black text-white hover:bg-[#FF3000] rounded-none uppercase font-bold tracking-widest"
+                        className="bg-black text-white hover:bg-[#FF3000] rounded-none uppercase font-semibold tracking-wider"
                       >
                         {syncState !== "idle" ? (
                           <Loader2 className="animate-spin" />
@@ -798,7 +798,7 @@ export default function Page() {
                         {groupedData.length > 0 &&
                           groupedData.map((sem, semIdx) => (
                             <AccordionItem key={semIdx} value={`sem-${semIdx}`}>
-                              <AccordionTrigger className="font-black text-md uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-4 mb-2 border-2 border-black">
+                              <AccordionTrigger className="font-bold text-md uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-4 mb-2 border-2 border-black">
                                 {sem.semester}
                               </AccordionTrigger>
                               <AccordionContent className="px-2 pt-2">
@@ -934,7 +934,7 @@ export default function Page() {
                 <div data-tour-desktop="schedule-timetable" className="flex flex-col h-full bg-white">
                   <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#F2F2F2]">
                     <div>
-                      <h3 className="font-black text-lg uppercase tracking-tight">
+                      <h3 className="font-bold text-lg uppercase tracking-tight">
                         Tabel Jadwal
                       </h3>
                       <p className="text-xs text-muted-foreground">
@@ -943,10 +943,10 @@ export default function Page() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-xs text-muted-foreground block uppercase tracking-widest">
+                        <span className="text-xs text-muted-foreground block uppercase tracking-wider">
                           Total SKS
                         </span>
-                        <span className="font-black text-lg text-[#FF3000] tabular-nums">
+                        <span className="font-bold text-lg text-[#FF3000] tabular-nums">
                           {totalSKS}
                         </span>
                       </div>
@@ -957,7 +957,7 @@ export default function Page() {
                             data-tour-desktop="schedule-actions"
                             size="sm"
                             variant="outline"
-                            className="rounded-none border-2 border-black uppercase font-bold tracking-widest"
+                            className="rounded-none border-2 border-black uppercase font-semibold tracking-wider"
                           >
                             Aksi Jadwal
                             <ChevronDown className="ml-2" />

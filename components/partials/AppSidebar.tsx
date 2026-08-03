@@ -74,7 +74,7 @@ export default function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
                 priority
               />
               <div className="flex flex-col">
-                <span className="text-black font-black uppercase tracking-tighter text-base leading-none">
+                <span className="text-black font-bold uppercase tracking-tight text-base leading-none">
                   KeRaS
                 </span>
                 <span className="text-[#555555] text-xs font-medium mt-0.5 leading-none">
@@ -96,7 +96,7 @@ export default function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
                   >
                     <button
                       disabled
-                      className="flex w-full items-center gap-2 p-2 text-black uppercase text-xs font-black tracking-widest"
+                      className="flex w-full items-center gap-2 p-2 text-black uppercase text-xs font-medium tracking-wider"
                     >
                       <ArrowBigRightDash />
                       {item.title}
@@ -113,7 +113,7 @@ export default function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
                       href={item.url === pathname ? "#" : item.url}
                       onClick={() => onOpenChange(false)}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-none transition-colors duration-200 border-2 font-bold uppercase tracking-widest text-sm",
+                        "flex items-center gap-2 px-3 py-2 rounded-none transition-colors duration-200 border-2 font-semibold uppercase tracking-wider text-sm",
                         isActive
                           ? "bg-accent text-white border-black hover:border-black"
                           : "bg-transparent border-black text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]",
@@ -139,7 +139,7 @@ export default function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
             href={isHomeActive ? "#" : "/"}
             onClick={() => onOpenChange(false)}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-none transition-colors duration-200 border-2 font-bold uppercase tracking-widest text-sm",
+              "flex items-center gap-2 px-3 py-2 rounded-none transition-colors duration-200 border-2 font-semibold uppercase tracking-wider text-sm",
               isHomeActive
                 ? "bg-accent text-white border-black hover:border-black"
                 : "bg-transparent border-black text-black hover:bg-[#FF3000] hover:text-white hover:border-[#FF3000]",

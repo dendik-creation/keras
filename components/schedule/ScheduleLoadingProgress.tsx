@@ -38,17 +38,17 @@ export function ScheduleLoadingProgress({
       {progress || isCompleted ? (
         <>
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-1 font-black text-2xl text-black tabular-nums">
+            <div className="flex items-center gap-1 font-bold text-2xl text-black tabular-nums">
               <RollingNumber
                 value={displayDone}
-                className="font-black text-3xl text-black"
+                className="font-bold text-3xl text-black"
               />
               <span className="text-[#FF3000] mt-2">/</span>
               <RollingNumber
                 value={displayTotal}
-                className="font-black text-lg text-black"
+                className="font-bold text-lg text-black"
               />
-              <span className="text-xs font-bold text-[#555555] ml-1.5 mt-3.5">Jadwal</span>
+              <span className="text-xs font-medium text-[#555555] ml-1.5 mt-3.5">Jadwal</span>
             </div>
           </div>
 
@@ -62,7 +62,7 @@ export function ScheduleLoadingProgress({
             </div>
           </div>
 
-          <span className="text-xs font-bold text-[#555555] max-w-xs leading-relaxed min-h-[32px]">
+          <span className="text-xs font-medium text-[#555555] max-w-xs leading-relaxed min-h-[32px]">
             {isCompleted ? (
               <>
                 <span className="block text-black">BentaR...</span>
@@ -79,7 +79,7 @@ export function ScheduleLoadingProgress({
             variant="schedule-refresh"
             aria-label="Mencari ketersediaan jadwal"
           />
-          <span className="text-xs font-bold text-[#555555] max-w-xs leading-relaxed min-h-[32px]">
+          <span className="text-xs font-medium text-[#555555] max-w-xs leading-relaxed min-h-[32px]">
             Sedang mencari ketersediaan jadwal, tapi agak lama hehe...
           </span>
         </>

@@ -97,7 +97,7 @@ export default function ImportAiResultDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-[#FF3000]" />
-            <DialogTitle className="font-black tracking-tight text-black">
+            <DialogTitle className="font-bold tracking-tight text-black">
               Import Jadwal Rekomendasi AI
             </DialogTitle>
           </div>
@@ -109,7 +109,7 @@ export default function ImportAiResultDialog({
 
         <div className="py-2 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wider text-black flex items-center gap-1.5">
               <span>Tempel hasil dari AI</span>
             </label>
             <textarea
@@ -128,7 +128,7 @@ export default function ImportAiResultDialog({
           {recommendations.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1">
+                <span className="text-xs font-medium uppercase tracking-wider text-black flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-[#FF3000]" />
                   Pilih rekomendasi ({recommendations.length} dapat dibaca)
                 </span>
@@ -168,7 +168,7 @@ export default function ImportAiResultDialog({
                             >
                               {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                             </div>
-                            <span className="font-black text-sm text-black">{rec.title}</span>
+                            <span className="font-semibold text-sm text-black">{rec.title}</span>
                           </div>
 
                           <div className="flex items-center gap-1.5">
@@ -185,7 +185,7 @@ export default function ImportAiResultDialog({
                         </div>
 
                         {rec.reason && (
-                          <p className="text-xs text-[#555555] font-medium mt-1 pl-6">
+                          <p className="text-xs text-[#555555] font-normal mt-1 pl-6">
                             <span className="font-bold text-black">Alasan:</span> {rec.reason}
                           </p>
                         )}
@@ -232,7 +232,7 @@ export default function ImportAiResultDialog({
           <Button
             type="button"
             disabled={isProcessing || !pastedText.trim()}
-            className="rounded-none bg-[#FF3000] hover:bg-[#D92900] text-white border-2 border-black font-black"
+            className="rounded-none bg-[#FF3000] hover:bg-[#D92900] text-white border-2 border-black font-bold"
             onClick={handleImport}
           >
             <CheckCircle2 className="w-4 h-4 mr-1.5" />

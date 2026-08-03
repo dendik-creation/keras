@@ -183,18 +183,18 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
             <div className="max-w-xl">
               {/* Section label */}
               <div className="gsap-headline opacity-0 flex items-center gap-4 mb-6">
-                <span className="text-[#FF3000] font-black text-sm tracking-widest">
+                <span className="text-[#FF3000] font-semibold text-sm tracking-wider">
                   !
                 </span>
                 <div className="w-8 h-0.5 bg-[#FF3000]" />
-                <span className="text-xs font-bold uppercase tracking-widest text-black">
+                <span className="text-xs font-medium uppercase tracking-wider text-black">
                   Status Sistem
                 </span>
               </div>
 
               {/* Headline */}
               <div className="mb-6 gsap-headline opacity-0">
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-black uppercase leading-[0.85]">
+                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-black uppercase leading-[0.85]">
                   KRS Belum <span className="text-[#FF3000]">Dibuka</span>
                 </h1>
               </div>
@@ -225,11 +225,11 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
                     {!timeReady ? (
                       <Skeleton className="w-12 h-12 bg-[#F2F2F2]" />
                     ) : (
-                      <span className="text-4xl md:text-5xl font-black text-black leading-none">
+                      <span className="text-4xl md:text-5xl font-extrabold text-black leading-none">
                         <RollingNumber value={block.value} />
                       </span>
                     )}
-                    <span className="text-[10px] font-black text-[#555555] tracking-[0.2em] mt-2 uppercase">
+                    <span className="text-[10px] font-bold text-[#555555] tracking-[0.2em] mt-2 uppercase">
                       {block.label}
                     </span>
                   </div>
@@ -238,7 +238,7 @@ export default function SiteOffGuard({ children }: { children: ReactNode }) {
 
               {/* Back button */}
               <Link className="w-full block gsap-btn opacity-0" href={"/"}>
-                <Button className="w-full bg-black text-white rounded-none uppercase font-black tracking-widest h-14 text-base hover:bg-[#FF3000] transition-colors duration-200">
+                <Button className="w-full bg-black text-white rounded-none uppercase font-semibold tracking-wider h-14 text-base hover:bg-[#FF3000] transition-colors duration-200">
                   <ChevronLeft className="w-5 h-5 mr-2" />
                   Kembali Ke Beranda
                 </Button>

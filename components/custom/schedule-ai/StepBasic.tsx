@@ -36,7 +36,7 @@ export default function StepBasic({ form, offeringCourses }: StepBasicProps) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+        <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
           Target SKS
         </h4>
         <Controller
@@ -87,7 +87,7 @@ export default function StepBasic({ form, offeringCourses }: StepBasicProps) {
       </div>
 
       <div>
-        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+        <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
           Prioritas Semester
         </h4>
         <p className="text-xs text-muted-foreground mb-2">
@@ -123,7 +123,7 @@ export default function StepBasic({ form, offeringCourses }: StepBasicProps) {
       </div>
 
       <div>
-        <h4 className="font-black uppercase tracking-wide text-sm mb-2">
+        <h4 className="font-semibold uppercase tracking-wide text-sm mb-2">
           Hari Kuliah yang Diinginkan
         </h4>
         <p className="text-xs text-muted-foreground mb-2">

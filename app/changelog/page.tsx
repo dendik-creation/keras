@@ -53,7 +53,7 @@ export default function ChangelogPage() {
           return (
             <LegalSection key={item.version} id={sectionId}>
               <LegalHeading index={sectionIndex} title={`${item.title}`} />
-              <div className="text-xs font-bold uppercase tracking-widest text-[#555555] -mt-2 mb-4">
+              <div className="text-xs font-medium uppercase tracking-wider text-[#555555] -mt-2 mb-4">
                 {item.version} | {item.date}
               </div>
               <ul className="list-disc pl-6 space-y-2 mt-4 font-medium text-[#555555]">

@@ -26,7 +26,7 @@ export function ActionDrawerItem({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex items-center p-4 border-2 font-bold uppercase tracking-wider text-xs transition-colors rounded-none disabled:opacity-50 disabled:cursor-not-allowed",
+        "flex items-center p-4 border-2 font-medium uppercase tracking-wider text-xs transition-colors rounded-none disabled:opacity-50 disabled:cursor-not-allowed",
         variant === "default" && "bg-white border-black text-black hover:bg-black/5",
         variant === "primary" && "bg-white border-[#FF3000] text-black hover:bg-black/5",
         variant === "danger" && "bg-[#FF3000] border-black text-white hover:bg-[#E62B00]"

@@ -41,11 +41,11 @@ gsap.registerPlugin(ScrollTrigger);
 function SectionLabel({ index, label, inverted }: { index: string; label: string; inverted?: boolean }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="text-[#FF3000] font-black text-sm tracking-widest tabular-nums">
+      <span className="text-[#FF3000] font-semibold text-sm tracking-wider tabular-nums">
         {index}
       </span>
       <div className="w-8 h-0.5 bg-[#FF3000]" />
-      <span className={`text-xs font-bold uppercase tracking-widest ${inverted ? 'text-white' : 'text-black'}`}>
+      <span className={`text-xs font-medium uppercase tracking-wider ${inverted ? 'text-white' : 'text-black'}`}>
         {label}
       </span>
     </div>
@@ -203,11 +203,11 @@ export default function Page() {
               className="w-8 h-8 object-contain bg-white rounded-sm p-0.5"
               priority
             />
-            <span className="text-xl font-black tracking-tighter text-white">
+            <span className="text-xl font-bold tracking-tight text-white">
               KeRaS.
             </span>
           </div>
-          <div className="hidden md:flex gap-10 text-xs font-bold text-white uppercase tracking-widest">
+          <div className="hidden md:flex gap-10 text-xs font-medium text-white uppercase tracking-wider">
             {[
               ["#features", "Fitur"],
               ["#security", "Keamanan"],
@@ -239,7 +239,7 @@ export default function Page() {
       >
 
         {/* Headline — centered, two-line, orange on line 2 only */}
-        <h1 className="text-center text-[3.2rem] leading-[0.85] sm:text-6xl md:text-[5rem] lg:text-[7rem] xl:text-[5.5rem] font-black tracking-tighter text-white mb-8">
+        <h1 className="text-center text-[3.2rem] leading-[0.85] sm:text-6xl md:text-[5rem] lg:text-[7rem] xl:text-[5.5rem] font-extrabold tracking-tight text-white mb-8">
           <span data-reveal-mask className="block overflow-hidden">
             Adios
           </span>
@@ -265,7 +265,7 @@ export default function Page() {
         {/* Description — centered, max 600px, below headline */}
         <p className="gsap-hero-sub opacity-0 text-base md:text-lg text-white/70 leading-relaxed font-medium text-center mx-auto mb-8 max-w-[600px]">
           Untuk kamu yang selalu kesusahan mengatur jadwal mata kuliahmu.{" "}
-          <span className="text-white font-black">KeRaS</span> hadir
+          <span className="text-white font-bold">KeRaS</span> hadir
           sebagai solusi objektif, cepat, jelas, tanpa drama.
         </p>
 
@@ -273,7 +273,7 @@ export default function Page() {
         <div className="gsap-cta-btn opacity-0 flex flex-col items-center gap-4 mb-16">
           <div className="flex flex-col sm:flex-row gap-3 items-center">
             <Link href="/login">
-              <Button className="rounded-none w-full sm:w-auto bg-[#FF3000] text-white hover:bg-white hover:text-black uppercase font-black tracking-widest h-12 px-8 text-sm transition-colors duration-200 border-0">
+              <Button className="rounded-none w-full sm:w-auto bg-[#FF3000] text-white hover:bg-white hover:text-black uppercase font-semibold tracking-wider h-12 px-8 text-sm transition-colors duration-200 border-0">
                 Mulai Sekarang <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -298,7 +298,7 @@ export default function Page() {
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/40 block" />
               </div>
               <span className="flex-1 mx-3 text-[10px] font-mono text-white/70 bg-white/5 px-3 py-1 rounded-sm truncate">
-                keras.dendikcreation.dev/schedule
+                Scheduling Page
               </span>
             </div>
             {/* Screenshot — inside browser frame */}
@@ -374,7 +374,7 @@ export default function Page() {
         id="word"
         className="relative z-10 border-b-2 border-black px-6 py-24 md:py-40 max-w-7xl mx-auto flex items-center justify-center"
       >
-        <h2 className="gsap-word opacity-0 text-center text-6xl sm:text-8xl md:text-[10rem] font-black uppercase tracking-tighter leading-none">
+        <h2 className="gsap-word opacity-0 text-center text-6xl sm:text-8xl md:text-[10rem] font-extrabold uppercase tracking-tight leading-none">
           Objektif<span className="text-[#FF3000]">.</span>
         </h2>
       </section>
@@ -393,11 +393,11 @@ export default function Page() {
             <div className="gsap-security-col opacity-0 md:border-r-2 border-b-2 md:border-b-0 border-black p-8 md:p-14">
               <span
                 aria-hidden="true"
-                className="block text-[5rem] md:text-[7rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_black] mb-6"
+                className="block text-[5rem] md:text-[7rem] font-bold leading-none text-transparent [-webkit-text-stroke:1.5px_black] mb-6"
               >
                 01
               </span>
-              <h3 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.9] mb-6">
+              <h3 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-[0.9] mb-6">
                 Yang KeRaS.
                 <br />
                 <span className="text-[#FF3000]">Simpan</span>
@@ -410,11 +410,11 @@ export default function Page() {
             <div className="gsap-security-col opacity-0 p-8 md:p-14 bg-black">
               <span
                 aria-hidden="true"
-                className="block text-[5rem] md:text-[7rem] font-black leading-none text-transparent [-webkit-text-stroke:1.5px_white] mb-6"
+                className="block text-[5rem] md:text-[7rem] font-bold leading-none text-transparent [-webkit-text-stroke:1.5px_white] mb-6"
               >
                 02
               </span>
-              <h3 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.9] mb-6 text-white">
+              <h3 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-[0.9] mb-6 text-white">
                 Yang Tidak
                 <br />
                 <span className="text-[#FF3000]">KeRaS. Sentuh</span>
@@ -441,15 +441,15 @@ export default function Page() {
           <div className="gsap-analytics-content opacity-0 grid md:grid-cols-12 gap-10 items-end">
             <div className="md:col-span-8">
               <div className="mb-8 flex items-center gap-4">
-                <span className="text-[#FF3000] group-hover:text-white font-black text-sm tracking-widest tabular-nums transition-colors duration-200">
+                <span className="text-[#FF3000] group-hover:text-white font-semibold text-sm tracking-wider tabular-nums transition-colors duration-200">
                   04
                 </span>
                 <div className="w-8 h-0.5 bg-[#FF3000] group-hover:bg-white transition-colors duration-200" />
-                <span className="text-xs font-bold uppercase tracking-widest text-white transition-colors duration-200">
+                <span className="text-xs font-medium uppercase tracking-wider text-white transition-colors duration-200">
                   Analitik
                 </span>
               </div>
-              <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.88] text-white">
+              <h2 className="text-5xl md:text-7xl font-extrabold uppercase tracking-tight leading-[0.88] text-white">
                 Lihat Data
                 <br />
                 Penggunaan
@@ -460,7 +460,7 @@ export default function Page() {
               </p>
             </div>
             <div className="md:col-span-4 flex md:justify-end items-center gap-3">
-              <span className="text-white group-hover:text-white font-black tracking-widest text-sm flex items-center gap-2">
+              <span className="text-white group-hover:text-white font-semibold tracking-wider text-sm flex items-center gap-2">
                 Buka Dashboard{" "}
                 <ExternalLink className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
               </span>
@@ -495,12 +495,12 @@ export default function Page() {
               height={32}
               className="w-8 h-8 object-contain bg-white"
             />
-            <span className="text-xl font-black tracking-tighter text-white">
+            <span className="text-xl font-bold tracking-tight text-white">
               KeRaS.
             </span>
           </div>
 
-          <h3 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter text-white max-w-3xl leading-[0.92]">
+          <h3 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase tracking-tight text-white max-w-3xl leading-[0.92]">
             KRS-an jadi
             <br />
             <span className="text-[#FF3000]">lebih tenang</span>,
@@ -513,20 +513,20 @@ export default function Page() {
             <a href="https://github.com/dendik-creation/keras/" target="_blank" rel="noreferrer">
               <Button
                 variant="outline"
-                className="rounded-none border-2 border-white bg-transparent text-white hover:bg-[#FF3000] hover:border-[#FF3000] gap-2 uppercase font-bold tracking-widest transition-colors duration-200"
+                className="rounded-none border-2 border-white bg-transparent text-white hover:bg-[#FF3000] hover:border-[#FF3000] gap-2 uppercase font-semibold tracking-wider transition-colors duration-200"
               >
                 <Github className="w-4 h-4" /> kasih star 😁
               </Button>
             </a>
 
             <div className="flex items-center gap-6">
-              <Link href="/changelog" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+              <Link href="/changelog" className="text-sm font-semibold uppercase tracking-wider text-white/70 hover:text-[#FF3000] transition-colors">
                 Changelog
               </Link>
-              <Link href="/privacy" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+              <Link href="/privacy" className="text-sm font-semibold uppercase tracking-wider text-white/70 hover:text-[#FF3000] transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-[#FF3000] transition-colors">
+              <Link href="/terms" className="text-sm font-semibold uppercase tracking-wider text-white/70 hover:text-[#FF3000] transition-colors">
                 Terms
               </Link>
             </div>

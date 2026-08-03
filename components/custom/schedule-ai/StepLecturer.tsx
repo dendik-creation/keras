@@ -20,7 +20,7 @@ export default function StepLecturer({ form, offeringCourses }: StepLecturerProp
 
   return (
     <div className="flex flex-col gap-2">
-      <h4 className="font-black uppercase tracking-wide text-sm">
+      <h4 className="font-semibold uppercase tracking-wide text-sm">
         Preferensi Dosen
       </h4>
       <p className="text-xs text-muted-foreground mb-2">

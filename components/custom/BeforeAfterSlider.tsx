@@ -98,7 +98,7 @@ export default function BeforeAfterSlider({
     []
   );
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(true);
     setHasInteracted(true);
     updatePosition(e.clientX);

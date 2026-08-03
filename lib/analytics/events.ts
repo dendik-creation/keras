@@ -14,9 +14,9 @@ export { identifyStudent, resetAnalytics, applyGuestPersonProperties };
 export type BaseWarProperties = {
   request_id?: string;
   war_mode: "test" | "production";
-  total_courses: number;
-  successful_courses?: number;
-  failed_courses?: number;
+  courses_requested?: number;
+  courses_success?: number;
+  courses_failed?: number;
   retry_count?: number;
   total_attempts?: number;
   execution_duration_ms?: number;
@@ -89,101 +89,7 @@ export function trackWarReadyCheckCompleted(props: {
   capture("war_ready_check_completed", buildWarProperties(props));
 }
 
-/** 6. Fired ONCE when WAR submission process is initiated by user. */
-export function trackWarSubmissionStarted(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  total_courses: number;
-}): void {
-  capture("war_submission_started", buildWarProperties(props), {
-    reliable: true,
-  });
-}
 
-/** 7. Fired when waiting phase starts before or during submission. */
-export function trackWarWaitingStarted(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  waiting_duration_ms: number;
-}): void {
-  capture("war_waiting_started", buildWarProperties(props));
-}
-
-/** 8. Fired when a submission attempt starts. */
-export function trackWarSubmissionAttemptStarted(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  attempt: number;
-  total_attempts: number;
-}): void {
-  capture("war_submission_attempt_started", buildWarProperties(props));
-}
-
-/** 9. Fired when a submission attempt finishes. */
-export function trackWarSubmissionAttemptFinished(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  attempt: number;
-  duration_ms: number;
-  success_count: number;
-  failed_count: number;
-}): void {
-  capture("war_submission_attempt_finished", buildWarProperties(props));
-}
-
-/** 10. Fired when a retry attempt is triggered. */
-export function trackWarSubmissionRetry(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  retry_count: number;
-  attempt: number;
-}): void {
-  capture("war_submission_retry", buildWarProperties(props));
-}
-
-/** 11. Fired ONCE when the entire WAR submission completes. */
-export function trackWarSubmissionCompleted(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  total_courses: number;
-  successful_courses: number;
-  failed_courses: number;
-  retry_count: number;
-  total_attempts: number;
-  execution_duration_ms: number;
-  waiting_duration_ms?: number;
-  validation_duration_ms?: number;
-}): void {
-  capture("war_submission_completed", buildWarProperties(props), {
-    reliable: true,
-  });
-}
-
-/** 12. Fired ONCE if WAR submission is cancelled or aborted by user. */
-export function trackWarSubmissionCancelled(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  total_courses: number;
-  duration_ms: number;
-  reason?: string;
-}): void {
-  capture("war_submission_cancelled", buildWarProperties(props), {
-    reliable: true,
-  });
-}
-
-/** 13. Fired ONCE if WAR submission encounters a fatal error or failure. */
-export function trackWarSubmissionFailed(props: {
-  request_id: string;
-  war_mode: "test" | "production";
-  total_courses: number;
-  duration_ms: number;
-  error_message?: string;
-}): void {
-  capture("war_submission_failed", buildWarProperties(props), {
-    reliable: true,
-  });
-}
 
 /** 14. Fired when user releases or deletes courses from WAR schedule. */
 export function trackWarReleaseSchedule(props: {

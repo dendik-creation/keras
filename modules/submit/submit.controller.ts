@@ -99,22 +99,34 @@ export async function syncSubmit(req: Request) {
 }
 
 import { processThroughGate } from "@/lib/server/war-gate";
+import { captureWarLifecycleEvent, WarLifecycleEventName } from "@/lib/analytics/war-event-builder";
 import { ProductionSubmissionExecutor, TestSubmissionExecutor } from "./submit.executor";
 
 import { v4 as uuidv4 } from "uuid";
 
+// We keep a lightweight adapter to map the old signature to our new standardized builder
+function captureWarEvent(nim: string, eventName: WarLifecycleEventName, properties: any) {
+  const mapped = {
+    ...properties,
+    submission_id: properties.request_id || "unknown"
+  };
+  delete mapped.request_id;
+  captureWarLifecycleEvent(nim, eventName, mapped);
+}
+
 /** POST /api/submit — submit selected schedule ids ("perang submit"). */
 export async function postSubmit(req: Request) {
+  let nim = "unknown";
+  const requestId = uuidv4();
+  const requestStartTime = performance.now();
   try {
     const sessionCookie = await getSessionCookie();
     if (!sessionCookie) return unauthorized();
 
     const body = await req.json();
-    const nim = body.nim || "unknown";
+    nim = body.nim || "unknown";
     const isTestMode = isWarTestMode();
     const mode = isTestMode ? "test" : "production";
-    const requestId = uuidv4();
-    const requestStartTime = performance.now();
 
     const acceptHeader = req.headers.get("accept") || "";
     const isStreamMode = body.stream !== false && (acceptHeader.includes("application/x-ndjson") || acceptHeader.includes("*/*") || acceptHeader === "");
@@ -240,19 +252,38 @@ export async function postSubmit(req: Request) {
       let wave1Result: any = null;
       let allMessages: any[] = [];
 
+      captureWarLifecycleEvent(nim, "QUEUE_ENTERED", { submission_id: requestId, war_mode: mode });
       await processThroughGate(
         nim,
         isTestMode,
         payloadStr,
         async () => {
+          captureWarLifecycleEvent(nim, "QUEUE_RELEASED", { submission_id: requestId, queue_wait_duration_ms: performance.now() - requestStartTime });
+          captureWarLifecycleEvent(nim, "WAR_STARTED", { submission_id: requestId, total_courses: scheduleIds.length, stream: false });
           logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
           const WAVE1_ATTEMPTS_NON_STREAM = 3;
           for (let attempt = 1; attempt <= WAVE1_ATTEMPTS_NON_STREAM; attempt++) {
             if (wave1Remaining.length === 0 && attempt > 1) break;
-            const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
+            captureWarLifecycleEvent(nim, "ATTEMPT_STARTED", { submission_id: requestId, attempt });
+            const attemptStart = performance.now();
+            const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining, () => {
+              captureWarLifecycleEvent(nim, "WAITING_RESPONSE", { submission_id: requestId, attempt });
+            });
+            captureWarLifecycleEvent(nim, "ATTEMPT_FINISHED", {
+              submission_id: requestId,
+              attempt,
+              execution_duration_ms: performance.now() - attemptStart,
+              result: attemptResult.isSuccess ? "success" : "failed",
+              successful_courses: attemptResult.messages.length,
+              http_status: attemptResult.statusCode
+            });
             
             if (attemptResult.statusCode === 504) {
+              captureWarLifecycleEvent(nim, "UNKNOWN_COMMIT_STATE", { submission_id: requestId, http_status: 504 });
+              captureWarLifecycleEvent(nim, "VERIFYING", { submission_id: requestId });
+              const vStart = performance.now();
               await verifySchedules(sessionCookie.value, wave1Remaining, resolvedSchedules, attemptResult);
+              captureWarLifecycleEvent(nim, "BACKGROUND_VERIFYING", { submission_id: requestId, verification_duration_ms: performance.now() - vStart });
             }
             
             wave1Result = attemptResult;
@@ -267,6 +298,7 @@ export async function postSubmit(req: Request) {
             }
           }
           logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Completed\nremainingCount=${wave1Remaining.length}`);
+          captureWarLifecycleEvent(nim, "WAR_COMPLETED", { submission_id: requestId, total_duration_ms: performance.now() - requestStartTime, result: "completed" });
           return wave1Result;
         },
         requestStartTime,
@@ -375,11 +407,14 @@ export async function postSubmit(req: Request) {
 
           // Wave 1: up to 2 attempts inside the priority gate.
           // Gate releases after this block → normal students proceed immediately.
+          captureWarLifecycleEvent(nim, "QUEUE_ENTERED", { submission_id: requestId, war_mode: mode });
           await processThroughGate(
             nim,
             isTestMode,
             payloadStr,
             async () => {
+              captureWarLifecycleEvent(nim, "QUEUE_RELEASED", { submission_id: requestId, queue_wait_duration_ms: performance.now() - requestStartTime });
+              captureWarLifecycleEvent(nim, "WAR_STARTED", { submission_id: requestId, total_courses: scheduleIds.length, stream: true });
               logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Started`);
               const WAVE1_ATTEMPTS = 3;
 
@@ -414,7 +449,19 @@ export async function postSubmit(req: Request) {
                   attempt,
                 });
 
-                const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining);
+                captureWarLifecycleEvent(nim, "ATTEMPT_STARTED", { submission_id: requestId, attempt });
+            const attemptStart = performance.now();
+            const attemptResult = await executor.execute(sessionCookie.value, wave1Remaining, () => {
+              captureWarLifecycleEvent(nim, "WAITING_RESPONSE", { submission_id: requestId, attempt });
+            });
+            captureWarLifecycleEvent(nim, "ATTEMPT_FINISHED", {
+              submission_id: requestId,
+              attempt,
+              execution_duration_ms: performance.now() - attemptStart,
+              result: attemptResult.isSuccess ? "success" : "failed",
+              successful_courses: attemptResult.messages.length,
+              http_status: attemptResult.statusCode
+            });
                 finalResult = attemptResult;
 
                 if (attemptResult.statusCode === 504) {
@@ -466,6 +513,7 @@ export async function postSubmit(req: Request) {
               }
 
               logger.info(`[war-gate]\nrequestId=${requestId}\nnim=${nim}\nmode=${mode}\nWave 1 Completed\nremainingCount=${wave1Remaining.length}`);
+              captureWarLifecycleEvent(nim, "WAR_COMPLETED", { submission_id: requestId, total_duration_ms: performance.now() - requestStartTime, result: "completed" });
               send({ type: "event", name: "SUBMISSION_COMPLETED" });
               return finalResult;
             },
@@ -527,6 +575,11 @@ export async function postSubmit(req: Request) {
     if (mapped) return mapped;
 
     logger.error("SUBMIT ERROR:", error.message);
+    captureWarLifecycleEvent(nim, "WAR_FAILED", {
+      submission_id: requestId,
+      error_message: error.message,
+      total_duration_ms: performance.now() - requestStartTime
+    });
     return NextResponse.json(
       {
         success: false,

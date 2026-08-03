@@ -19,11 +19,11 @@ async function maybeInjectChaos() {
 }
 
 export interface SubmissionExecutor {
-  execute(sessionValue: string, scheduleIds: string[]): Promise<SubmitResult>;
+  execute(sessionValue: string, scheduleIds: string[], onWaitingResponse?: () => void): Promise<SubmitResult>;
 }
 
 export class ProductionSubmissionExecutor implements SubmissionExecutor {
-  async execute(sessionValue: string, scheduleIds: string[]): Promise<SubmitResult> {
+  async execute(sessionValue: string, scheduleIds: string[], onWaitingResponse?: () => void): Promise<SubmitResult> {
     const keepAliveAgent = createKeepAliveAgent();
     const headers = {
       Cookie: sessionValue,
@@ -40,6 +40,10 @@ export class ProductionSubmissionExecutor implements SubmissionExecutor {
     const startMs = Date.now();
     try {
       await maybeInjectChaos();
+
+      if (onWaitingResponse) {
+        onWaitingResponse();
+      }
 
       submitResponse = await axiosScrapClient.post(
         envVariable.KRS_POST_SCHEDULES,
@@ -146,7 +150,10 @@ export class ProductionSubmissionExecutor implements SubmissionExecutor {
 }
 
 export class TestSubmissionExecutor implements SubmissionExecutor {
-  async execute(sessionValue: string, scheduleIds: string[]): Promise<SubmitResult> {
+  async execute(sessionValue: string, scheduleIds: string[], onWaitingResponse?: () => void): Promise<SubmitResult> {
+    if (onWaitingResponse) {
+      onWaitingResponse();
+    }
     return simulateSubmitSchedules(sessionValue, scheduleIds);
   }
 }

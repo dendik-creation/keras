@@ -4,6 +4,7 @@ import "./globals.css";
 import { GooeyToaster } from "@/components/ui/goey-toaster";
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
 import AnalyticsBoot from "@/components/analytics/AnalyticsBoot";
+import { CSPostHogProvider } from "@/components/analytics/CSPostHogProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -131,9 +132,11 @@ export default function RootLayout({
             }),
           }}
         />
-        <LocalStorageProvider>{children}</LocalStorageProvider>
-        <GooeyToaster />
-        <AnalyticsBoot />
+        <CSPostHogProvider>
+          <LocalStorageProvider>{children}</LocalStorageProvider>
+          <GooeyToaster />
+          <AnalyticsBoot />
+        </CSPostHogProvider>
       </body>
     </html>
   );

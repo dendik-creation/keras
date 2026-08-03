@@ -21,12 +21,6 @@ import { WAR_IN_PROGRESS_KEY } from "@/providers/LocalStorageProvider";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import {
   ActiveUser,
-  trackWarSubmissionStarted,
-  trackWarSubmissionAttemptStarted,
-  trackWarSubmissionAttemptFinished,
-  trackWarSubmissionRetry,
-  trackWarSubmissionCompleted,
-  trackWarSubmissionFailed,
   trackWarReadyCheckStarted,
   trackWarReadyCheckCompleted,
   trackWarReleaseSchedule,
@@ -542,11 +536,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
         ? crypto.randomUUID()
         : `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    trackWarSubmissionStarted({
-      request_id: requestId,
-      war_mode: warMode,
-      total_courses: current.courses.length,
-    });
+
 
     const submissionStartedAt = Date.now();
     let submissionCompletedFired = false;
@@ -590,13 +580,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
         gooeyToast.error("Terjadi Kesalahan", {
           description: "Gagal memulai perang KRS.",
         });
-        trackWarSubmissionFailed({
-          request_id: requestId,
-          war_mode: warMode,
-          total_courses: current.courses.length,
-          duration_ms: Date.now() - submissionStartedAt,
-          error_message: `HTTP ${response.status}`,
-        });
+
         submissionCompletedFired = true;
         dispatch({ type: "FINISH_WAR" });
         return;
@@ -632,21 +616,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
               attemptStartTimes[attempt] = Date.now();
               dispatch({ type: "ATTEMPT_STARTED", attempt });
 
-              if (attempt > 1) {
-                trackWarSubmissionRetry({
-                  request_id: requestId,
-                  war_mode: warMode,
-                  retry_count: attempt - 1,
-                  attempt,
-                });
-              }
 
-              trackWarSubmissionAttemptStarted({
-                request_id: requestId,
-                war_mode: warMode,
-                attempt,
-                total_attempts: TOTAL_ATTEMPTS,
-              });
             } else if (name === "ATTEMPT_FINISHED" && attempt && result) {
               const startTime = attemptStartTimes[attempt] || Date.now();
               const durationMs = Date.now() - startTime;
@@ -725,14 +695,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
                 },
               });
 
-              trackWarSubmissionAttemptFinished({
-                request_id: requestId,
-                war_mode: warMode,
-                attempt,
-                duration_ms: durationMs,
-                success_count: successCount,
-                failed_count: failureCount,
-              });
+
             } else if (name === "PHASE_SKIPPED" || name === "phase_skipped") {
               const targetPhase = data.phase || attempt;
               if (targetPhase) {
@@ -775,14 +738,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
     } catch (error) {
       if (!submissionCompletedFired) {
         submissionCompletedFired = true;
-        trackWarSubmissionFailed({
-          request_id: requestId,
-          war_mode: warMode,
-          total_courses: current.courses.length,
-          duration_ms: Date.now() - submissionStartedAt,
-          error_message:
-            error instanceof Error ? error.message : "Koneksi terputus saat submit.",
-        });
+
       }
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Koneksi terputus saat submit.",
@@ -807,16 +763,7 @@ export function useSubmitWarEngine(warTestModeProp?: boolean) {
 
     if (!submissionCompletedFired) {
       submissionCompletedFired = true;
-      trackWarSubmissionCompleted({
-        request_id: requestId,
-        war_mode: warMode,
-        total_courses: totalCourses,
-        successful_courses: successfulCourses,
-        failed_courses: failedCourses,
-        retry_count: retryCount,
-        total_attempts: totalAttempts,
-        execution_duration_ms: execDuration,
-      });
+
     }
   }, [getWarMode, syncWithServer]);
 

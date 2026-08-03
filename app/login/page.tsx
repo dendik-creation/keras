@@ -231,7 +231,7 @@ export default function Page() {
                     {/* Form heading */}
                     <div className="mb-10">
                       <h1 className="text-5xl md:text-6xl mb-3 font-extrabold uppercase tracking-tight text-black leading-[0.85]">
-                        Login <span className="text-[#FF3000]">Dulu Wok</span>
+                        Login <span className="text-[#FF3000]">Dulu</span>
                       </h1>
                       <p className="text-[#555555] text-sm font-medium leading-snug">
                         Masukkan Username dan Password kamu{" "}
@@ -278,7 +278,7 @@ export default function Page() {
                           <Input
                             id="password"
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="• • • •"
                             disabled={isLoading}
                             required
                             onChange={handleChange}

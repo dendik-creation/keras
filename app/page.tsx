@@ -35,6 +35,7 @@ import GithubStarButton from "@/components/custom/GithubStarButton";
 import ContributionGrid from "@/components/landing/ContributionGrid";
 import CenterFlow from "@/components/landing/CenterFlow";
 import MagicBento from "@/components/landing/MagicBento";
+import BeforeAfterSlider from "@/components/custom/BeforeAfterSlider";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -302,16 +303,13 @@ export default function Page() {
               </span>
             </div>
             {/* Screenshot — inside browser frame */}
-            <div className="relative border-x-2 border-b-2 border-white/15 rounded-b-md overflow-hidden">
-              <Image
-                src="/landing_images/hero_desktop.png"
-                alt="KeRaS Desktop — Schedule Generator"
-                width={1920}
-                height={1080}
-                className="w-full h-auto object-top"
-                priority
+            <BeforeAfterSlider
+              beforeImage="/landing_images/hero_desktop_before.png"
+              afterImage="/landing_images/hero_desktop_after.png"
+              altBefore="Manual Schedule Planning"
+              altAfter="AI-Generated Schedule"
               />
-            </div>
+
           </div>
 
           {/* ── Mobile ─ < md ── */}
@@ -374,8 +372,8 @@ export default function Page() {
         id="word"
         className="relative z-10 border-b-2 border-black px-6 py-24 md:py-40 max-w-7xl mx-auto flex items-center justify-center"
       >
-        <h2 className="gsap-word opacity-0 text-center text-6xl sm:text-8xl md:text-[10rem] font-extrabold uppercase tracking-tight leading-none">
-          Objektif<span className="text-[#FF3000]">.</span>
+        <h2 className="gsap-word opacity-0 text-center text-6xl sm:text-8xl md:text-[10rem] font-extrabold tracking-tight leading-none">
+          Begitulah<span className="text-[#FF3000]">.</span>
         </h2>
       </section>
 
@@ -536,7 +534,7 @@ export default function Page() {
             <small
               className="text-sm text-white/50 font-medium leading-tight"
             >
-             Tingkat keberhasilan mendapatkan kelas bergantung terhadap performa server krs kampus.
+             (*) Tingkat keberhasilan mendapatkan kelas bergantung terhadap performa server krs kampus.
             </small>
             <small
               className="text-sm text-white/50 font-medium leading-tight"

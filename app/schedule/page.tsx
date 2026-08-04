@@ -134,6 +134,9 @@ export default function Page() {
         return;
       }
 
+      setSyncState("completed");
+      await new Promise((resolve) => setTimeout(resolve, 750));
+
       const reconcileResult = reconcileSavedSchedule(savedSchedule, finalData);
 
       if (!reconcileResult.success) {
@@ -178,8 +181,6 @@ export default function Page() {
           description: `${summary.manual_review} mata kuliah membutuhkan konfirmasi ulang.`,
         });
       }
-
-      setSyncState("completed");
     } catch (error) {
       gooeyToast.error("Terjadi Kesalahan", {
         description: "Gagal mengambil jadwal kuliah",
@@ -586,7 +587,7 @@ export default function Page() {
                       <AccordionItem
                         key={semIdx}
                         value={`sem-${semIdx}`}
-                        className="border-2 border-black bg-white"
+                        className="border-2 border-black bg-white last:border-b-2"
                       >
                         <AccordionTrigger className="font-medium text-xs uppercase tracking-wide hover:no-underline bg-[#F2F2F2] px-3 py-2 border-b-2 border-black">
                           <div className="flex justify-between items-center w-full pr-2">
@@ -618,7 +619,7 @@ export default function Page() {
                                 >
                                   <AccordionItem
                                     value={code}
-                                    className="border-2 border-black bg-white"
+                                    className="border-2 border-black bg-white last:border-b-2"
                                   >
                                     <AccordionTrigger className="px-3 py-2 hover:no-underline text-left">
                                       <div className="flex items-center justify-between w-full pr-2 gap-2">
@@ -824,7 +825,7 @@ export default function Page() {
                                         <AccordionItem
                                           key={code}
                                           value={code}
-                                          className="border-2 border-black bg-white"
+                                          className="border-2 border-black bg-white last:border-b-2"
                                         >
                                           <AccordionTrigger className="px-4 hover:no-underline">
                                             <div className="flex items-center justify-between w-full pr-4">

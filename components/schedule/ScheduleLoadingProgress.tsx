@@ -41,7 +41,7 @@ export function ScheduleLoadingProgress({
             <div className="flex items-center gap-1 font-bold text-2xl text-black tabular-nums">
               <RollingNumber
                 value={displayDone}
-                className="font-bold text-3xl text-black"
+                className="font-bold text-4xl text-black"
               />
               <span className="text-[#FF3000] mt-2">/</span>
               <RollingNumber
@@ -55,9 +55,10 @@ export function ScheduleLoadingProgress({
           <div className="w-full max-w-xs space-y-1.5">
             <div className="h-4 w-full border-2 border-black bg-[#F2F2F2] overflow-hidden p-0.5 relative">
               <div
-                className="h-full bg-[#FF3000] transition-all duration-300 ease-out relative flex items-center justify-end pr-0.5"
+                className="h-full bg-[#FF3000] transition-all duration-300 ease-out relative flex items-center justify-end pr-0.5 overflow-hidden"
                 style={{ width: `${percentage}%` }}
               >
+                <div className="absolute inset-y-0 left-0 w-[150px] bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer" />
               </div>
             </div>
           </div>

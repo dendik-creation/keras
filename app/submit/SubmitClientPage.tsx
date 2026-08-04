@@ -469,7 +469,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                       width: "100%",
                     }}
                   >
-                    <div data-tour-desktop="war-control-panel" className="p-4 border-b-2 border-black bg-white space-y-4">
+                    <div data-tour-desktop="war-control-panel" className="p-3 border-b-2 border-black bg-white space-y-4">
                       <div className="">
                         <h3 className="font-bold text-lg uppercase tracking-tight flex items-center gap-2">
                           <Sword className="w-5 h-5" /> Ayo Perang KRS
@@ -574,7 +574,7 @@ export default function SubmitClientPage({ warTestMode }: Props) {
                           <AccordionItem
                             key={log.attempt}
                             value={`item-${log.attempt}`}
-                            className={`border-2 px-3 bg-white ${
+                            className={`border-2 px-3 bg-white last:border-b-2 ${
                               log.status === "completed" || log.status === "success"
                                 ? "border-black bg-white"
                                 : log.status === "failed"
@@ -775,4 +775,3 @@ export default function SubmitClientPage({ warTestMode }: Props) {
     </AuthAccess>
   );
 }
-

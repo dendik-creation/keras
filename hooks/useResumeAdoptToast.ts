@@ -68,16 +68,18 @@ export function useResumeAdoptToast({
 
     if (readyToastShown.current) return;
     readyToastShown.current = true;
-    gooeyToast.success("Ketersediaan Jadwal Diperbarui", {
-      description: "Lanjutkan proses adopsi jadwal yang dibagikan ke kamu.",
-      action: {
-        label: "Lanjutkan Adopsi",
-        onClick: () => {
-          removeLocalStorage("krs_pending_schedule_adoption");
-          router.push(cleanPath);
+    setTimeout(() => {
+      gooeyToast.success("Siap Adopsi Jadwal", {
+        description: "Lanjutkan proses adopsi jadwal yang dibagikan ke kamu.",
+        action: {
+          label: "Lanjutkan Adopsi",
+          onClick: () => {
+            removeLocalStorage("krs_pending_schedule_adoption");
+            router.push(cleanPath);
+          },
         },
-      },
-    });
+      });
+    }, 400);
   }, [resumeAdopt, isHydrated, offeringCourse, router]);
 }
 

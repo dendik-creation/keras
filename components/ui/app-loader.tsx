@@ -31,10 +31,10 @@ export function AppLoader({
     defaultState = "composing";
     defaultSize = 64;
   } else if (variant === "schedule-refresh") {
-    defaultState = "searching";
+    defaultState = "composing";
     defaultSize = 64;
   } else if (variant === "schedule-extracting") {
-    defaultState = "solving";
+    defaultState = "shaping";
     defaultSize = 64;
   } else if (variant === "ai-generating") {
     defaultState = "solving";

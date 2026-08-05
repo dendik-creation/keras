@@ -7,7 +7,7 @@ export function getServerAnalytics() {
     return posthogClient
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
 
   if (apiKey) {

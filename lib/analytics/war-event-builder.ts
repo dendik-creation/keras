@@ -1,4 +1,5 @@
 import { getServerAnalytics } from "./server";
+import { hashNim } from "./identity";
 
 export type WarResult = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
 export type VerificationResult = "NOT_REQUIRED" | "SUCCESS" | "FAILED" | "TIMEOUT";
@@ -88,13 +89,16 @@ function ensureNonNegative(val: any): number | undefined {
  * Standardized analytics builder for all WAR lifecycle events.
  * This ensures consistency and enforces the schema.
  */
-export function captureWarLifecycleEvent(
+export async function captureWarLifecycleEvent(
   nim: string,
   eventName: WarLifecycleEventName,
   properties: WarEventProperties
 ) {
   const posthog = getServerAnalytics();
   if (posthog) {
+    // Must match the client's identify() distinct id (lib/analytics/person.ts)
+    // or server-emitted WAR events never join the Login funnel for this person.
+    const distinctId = await hashNim(nim);
     const warSessionId = process.env.NEXT_PUBLIC_WAR_SESSION_ID || "UNKNOWN_SESSION";
 
     const sanitizedProps: Record<string, any> = {
@@ -145,7 +149,7 @@ export function captureWarLifecycleEvent(
     }
     
     posthog.capture({
-      distinctId: nim,
+      distinctId,
       event: eventName,
       properties: {
         ...sanitizedProps,

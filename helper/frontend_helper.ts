@@ -44,7 +44,7 @@ function redirectToLoginOn401() {
 export async function fetchOfferingCourses(
   onProgress: (done: number, total: number) => void,
 ): Promise<OfferingCourse[] | null> {
-  const response = await fetch("/api/schedule");
+  const response = await fetch("/api/schedule", { cache: "no-store" });
   if (response.status === 401) {
     redirectToLoginOn401();
     return null;

@@ -173,6 +173,23 @@ export function trackScheduleAdopted(
   );
 }
 
+export type SurveySubmittedProperties = {
+  overall_satisfaction: number;
+  nps: number;
+  features_used_count: number;
+  pain_points_count: number;
+};
+
+/** Fired when a student successfully submits the satisfaction survey. */
+export function trackSurveySubmitted(props: SurveySubmittedProperties): void {
+  capture("survey_submitted", props, { reliable: true });
+}
+
+/** Fired when survey submission fails (network, validation, or backend rejection). */
+export function trackSurveySubmitFailed(props: { reason: string }): void {
+  capture("survey_submit_failed", props);
+}
+
 /** Fired when a student successfully generates a schedule via AI dialog. */
 export function trackAiScheduleGenerated(
   courseCount: number,

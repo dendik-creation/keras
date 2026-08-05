@@ -13,6 +13,7 @@ import {
   Home,
   LucideProps,
   Sword,
+  MessageSquareMore,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,6 +41,12 @@ const sidebarNavs: NavItems = [
     title: "Perang KRS",
     url: "/submit",
     icon: Sword,
+  },
+  {
+    type: "item",
+    title: "Survei",
+    url: "/survey",
+    icon: MessageSquareMore,
   },
 ];
 

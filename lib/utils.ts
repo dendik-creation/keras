@@ -40,4 +40,6 @@ export const envVariable = {
   WAR_PRIORITY_DISCOVERY_WINDOW_MS: parseInt(process.env.WAR_PRIORITY_DISCOVERY_WINDOW_MS || "2000", 10),
   WAR_PENDING_PAYLOAD_TTL_SECONDS: parseInt(process.env.WAR_PENDING_PAYLOAD_TTL_SECONDS || "30", 10),
   REDIS_URL: process.env.REDIS_URL || "",
+  SURVEY_ENDPOINT: process.env.SURVEY_ENDPOINT,
+  SURVEY_API_KEY: process.env.SURVEY_API_KEY,
 };

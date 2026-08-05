@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LogoutMenu from "@/components/custom/LogoutMenu";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppHeaderProps {
   classNames?: string;
@@ -40,11 +39,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   pageDescription,
   onMenuClick,
 }) => {
-  const isMobile = useIsMobile();
-  const fallbackAvatar = useMemo(
-    () => `/avatar/${avatars[Math.floor(Math.random() * avatars.length)]}`,
-    [],
-  );
+  const fallbackAvatar = useMemo(() => {
+    const hash = name
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return `/avatar/${avatars[hash % avatars.length]}`;
+  }, [name]);
   const avatarSrc = avatarUrl || fallbackAvatar;
   const firstLetterCapitalized = (text: string) => {
     const newText = text.toLowerCase();
@@ -94,14 +94,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="flex items-center gap-3 cursor-pointer select-none group">
-            {!isMobile && (
-              <div className="flex text-sm flex-col justify-center items-end">
-                <span className="font-bold text-black text-md">
-                  {firstLetterCapitalized(name)}
-                </span>
-                <span className="text-xs font-medium text-[#555555]">{firstLetterCapitalized(nim)}</span>
-              </div>
-            )}
+            <div className="hidden md:flex text-sm flex-col justify-center items-end">
+              <span className="font-bold text-black text-md">
+                {firstLetterCapitalized(name)}
+              </span>
+              <span className="text-xs font-medium text-[#555555]">{firstLetterCapitalized(nim)}</span>
+            </div>
             <Avatar size="lg" className="border-2 border-black rounded-none transition-colors duration-200 group-hover:bg-[#FF3000]">
               <AvatarImage loading="lazy" src={avatarSrc} alt={name} className="rounded-none object-cover" />
               <AvatarFallback className="rounded-none bg-black text-white font-bold text-base group-hover:bg-[#FF3000]">

@@ -367,7 +367,7 @@ export default function AdoptSchedulePage() {
           </div>
           {isWarInProgress && (
             <p className="text-xs text-[#555555] font-normal">
-              Adopsi jadwal dikunci sementara — perang KRS sedang berlangsung.
+              Adopsi jadwal dikunci sementara karena proses KRS sedang berlangsung.
             </p>
           )}
         </div>

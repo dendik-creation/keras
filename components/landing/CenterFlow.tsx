@@ -427,15 +427,15 @@ export default function CenterFlow() {
 
         {/* ─── LEFT COLUMN — EDITORIAL STORY (45% / 5 cols) ─── */}
         <div className="lg:col-span-5 flex flex-col items-start">
-          <SectionLabel index="02" label="Mengapa KeRaS Hadir" />
+          <SectionLabel index="01" label="Cara Kerja KeRaS" />
 
           {/* Large Headline */}
           <h2
             ref={headlineRef}
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold uppercase tracking-tight leading-[0.92] text-black mb-6"
           >
-            Cerita Dibalik<br />
-            <span className="text-[#FF3000]">Kegagalan</span> Mendapatkan Kelas
+            Dari Pilihan Kelas<br />
+            Menjadi <span className="text-[#FF3000]">Rencana Jadwal</span>
           </h2>
 
           {/* Supporting Paragraph */}
@@ -443,15 +443,16 @@ export default function CenterFlow() {
             ref={paragraphRef}
             className="text-base lg:text-lg text-[#444444] font-medium leading-relaxed mb-8 max-w-xl"
           >
-            KeRaS mengakhiri kegagalan tersebut. Sebagai jembatan, KeRaS membantu membuatkan jadwal dan mendapatkan kelas sesuai keinginanmu<span className="text-[#FF3000]">*</span>.
+            Pilih mata kuliah yang ingin diambil. KeRaS membantu membandingkan
+            kelas, memeriksa bentrok jadwal, menyimpan jadwal, dan merekomendasikan jadwal dengan AI.
           </p>
 
           {/* Key Feature Highlights */}
           <div ref={highlightsRef} className="flex flex-col gap-3 mb-10 w-full">
             {[
-              "100+ Jadwal kelas berhasil dibaca",
-              "AI untuk preferensi jadwalmu",
-              "Satu klik submit untuk semua kelas",
+              "Bandingkan kelas yang tersedia",
+              "Periksa bentrok jadwal kuliah",
+              "Susun pilihan berdasarkan preferensi",
             ].map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 border-l-2 border-black pl-3 py-1">
                 <CheckCircle2 className="w-4 h-4 text-[#FF3000] shrink-0" />
@@ -569,7 +570,7 @@ export default function CenterFlow() {
               <FlowNode label="" size="main">
                 <Image
                   src="/logo.png"
-                  alt="KeRaS AI Engine"
+                  alt=""
                   width={Math.round(MAIN_SIZE * 0.55)}
                   height={Math.round(MAIN_SIZE * 0.55)}
                   className="object-contain"
@@ -696,7 +697,7 @@ export default function CenterFlow() {
               <FlowNode label="" size="main">
                 <Image
                   src="/logo.png"
-                  alt="KeRaS AI Engine"
+                  alt=""
                   width={Math.round(MAIN_SIZE * 0.55)}
                   height={Math.round(MAIN_SIZE * 0.55)}
                   className="object-contain"

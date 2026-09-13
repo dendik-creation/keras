@@ -7,24 +7,18 @@ import {
   LegalHeading,
 } from "@/components/custom/legal";
 import changelogHistories from "@/lib/changelog";
+import { pageSocialMetadata } from "@/lib/site";
+
+const pageDescription =
+  "Catatan perubahan, pembaruan fitur, dan riwayat rilis KeRaS.";
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
+  description: pageDescription,
   alternates: {
     canonical: "/changelog",
   },
-  openGraph: {
-    title: "Changelog | KeRaS",
-    description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
-    url: "/changelog",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Changelog | KeRaS",
-    description: "Catatan perubahan, pembaruan fitur, dan riwayat rilis platform KeRaS.",
-  }
+  ...pageSocialMetadata("Changelog | KeRaS", pageDescription, "/changelog"),
 };
 
 const toc = changelogHistories.map((item, idx) => ({
@@ -33,7 +27,7 @@ const toc = changelogHistories.map((item, idx) => ({
   index: String(idx + 1).padStart(2, "0"),
 }));
 
-const latestVersion = changelogHistories[0]?.version ?? "—";
+const latestVersion = changelogHistories[0]?.version ?? "Belum ada";
 
 export default function ChangelogPage() {
   return (
@@ -44,15 +38,15 @@ export default function ChangelogPage() {
         <span>Terbaru {latestVersion}</span>
       }
     >
-      <LegalSidebar toc={toc} />
+      <LegalSidebar reverseNumberIndex toc={toc} />
 
       <LegalContent>
         {changelogHistories.map((item, idx) => {
           const sectionId = `v${item.version.replace(/\./g, "-")}`;
-          const sectionIndex = String(idx + 1).padStart(2, "0");
+          const sectionIndexReversed = String(changelogHistories.length - idx).padStart(2, "0");
           return (
             <LegalSection key={item.version} id={sectionId}>
-              <LegalHeading index={sectionIndex} title={`${item.title}`} />
+              <LegalHeading index={sectionIndexReversed} title={`${item.title}`} />
               <div className="text-xs font-medium uppercase tracking-wider text-[#555555] -mt-2 mb-4">
                 {item.version} | {item.date}
               </div>

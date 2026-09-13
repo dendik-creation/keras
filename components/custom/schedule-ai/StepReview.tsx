@@ -32,7 +32,7 @@ export default function StepReview({ form }: StepReviewProps) {
     },
     {
       label: "Jam Kelas",
-      value: `${values.earliest_start} — ${values.latest_end}`,
+      value: `${values.earliest_start} hingga ${values.latest_end}`,
     },
     {
       label: "Mata Kuliah",

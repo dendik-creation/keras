@@ -24,28 +24,21 @@ export default function BeforeAfterSlider({
   showIntroAnimation = true,
   className,
 }: BeforeAfterSliderProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [imagesLoaded, setImagesLoaded] = useState(0);
+  const isLoaded = imagesLoaded >= 2;
 
   const handleImageLoad = () => {
     setImagesLoaded((prev) => prev + 1);
   };
 
   useEffect(() => {
-    if (imagesLoaded >= 2) {
-      setIsLoaded(true);
-    }
-  }, [imagesLoaded]);
-
-  useEffect(() => {
     if (!isLoaded || !showIntroAnimation || hasInteracted || !containerRef.current) return;
 
-    let observer: IntersectionObserver;
     let animationFrame: number;
     let startTime: number | null = null;
     
@@ -69,7 +62,7 @@ export default function BeforeAfterSlider({
       }
     };
 
-    observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           animationFrame = requestAnimationFrame(animate);
@@ -150,7 +143,7 @@ export default function BeforeAfterSlider({
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="slider"
-      aria-label="Compare before and after schedule"
+      aria-label="Bandingkan jadwal sebelum dan sesudah disusun"
       aria-valuenow={Math.round(position)}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -164,6 +157,7 @@ export default function BeforeAfterSlider({
           height={1080}
           className="w-full h-auto object-cover pointer-events-none"
           priority
+          sizes="(min-width: 1280px) 985px, (min-width: 768px) 77vw, 100vw"
           onLoad={handleImageLoad}
           draggable={false}
         />
@@ -182,7 +176,7 @@ export default function BeforeAfterSlider({
           width={1920}
           height={1080}
           className="w-full h-full object-cover pointer-events-none"
-          priority
+          sizes="(min-width: 1280px) 985px, (min-width: 768px) 77vw, 100vw"
           onLoad={handleImageLoad}
           draggable={false}
         />

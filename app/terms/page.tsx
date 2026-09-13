@@ -7,24 +7,17 @@ import {
   LegalHeading,
   LegalNotice
 } from "@/components/custom/legal";
+import { pageSocialMetadata } from "@/lib/site";
+
+const pageDescription = "Syarat dan ketentuan penggunaan aplikasi KeRaS.";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
-  description: "Syarat dan ketentuan penggunaan platform KeRaS.",
+  description: pageDescription,
   alternates: {
     canonical: "/terms",
   },
-  openGraph: {
-    title: "Terms & Conditions | KeRaS",
-    description: "Syarat dan ketentuan penggunaan platform KeRaS.",
-    url: "/terms",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Terms & Conditions | KeRaS",
-    description: "Syarat dan ketentuan penggunaan platform KeRaS.",
-  }
+  ...pageSocialMetadata("Syarat dan Ketentuan | KeRaS", pageDescription, "/terms"),
 };
 
 const toc = [

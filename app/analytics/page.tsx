@@ -1,26 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { pageSocialMetadata } from "@/lib/site";
+
+const pageDescription = "Statistik penggunaan KeRaS secara anonim.";
 
 export const metadata: Metadata = {
   title: "Analitik",
-  description: "Statistik penggunaan KeRaS secara anonim",
+  description: pageDescription,
   alternates: {
     canonical: "/analytics",
   },
-  openGraph: {
-    title: "Analitik | KeRaS",
-    description: "Statistik penggunaan KeRaS secara anonim",
-    url: "/analytics",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Analitik | KeRaS",
-    description: "Statistik penggunaan KeRaS secara anonim",
-  }
+  ...pageSocialMetadata("Analitik | KeRaS", pageDescription, "/analytics"),
 };
 
 const DASHBOARD_EMBED_URL =

@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "KeRaS",
     short_name: "KeRaS",
-    description: "KeRaS",
+    description:
+      "Alat bantu tidak resmi untuk menyusun rencana jadwal kuliah mahasiswa UMK.",
     start_url: "/",
     scope: "/",
     display: "standalone",

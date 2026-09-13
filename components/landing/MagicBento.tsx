@@ -143,44 +143,44 @@ const PreviewAnalytics = () => (
 const DEFAULT_CARDS: BentoCardData[] = [
   {
     color: "#ffffff",
-    title: "Unified Schedule View",
-    description: "Susun jadwal mata kuliah dengan tampilan yang terpadu dan nyaman",
-    badges: ["Clean UI"],
+    title: "Tampilan Jadwal Terpadu",
+    description: "Lihat mata kuliah pilihan dalam satu susunan jadwal mingguan.",
+    badges: ["Jadwal"],
     preview: <PreviewUnifiedSchedule />,
   },
   {
     color: "#ffffff",
     title: "Perang KRS",
-    description: "Rapid submit demi mengamankan jadwal kelasmu",
-    badges: ["Cepat", "Sekali Klik"],
+    description: "Kirim kelas pilihan melalui sesi aktif saat periode KRS berlangsung.",
+    badges: ["Submit", "Satu Klik"],
     preview: <PreviewPerangKRS />,
   },
   {
     color: "#ffffff",
-    title: "Zero Database",
-    description: "Tidak ada data yang disimpan di server, semua di browser Anda",
-    badges: ["Privacy First"],
+    title: "Tersimpan di Browser",
+    description: "Rencana jadwal disimpan di browser yang kamu gunakan.",
+    badges: ["Privasi"],
     preview: <PreviewZeroDB />,
   },
   {
     color: "#ffffff",
     title: "Jadwal Realtime",
-    description: "Jadwal selalu terbaru ketika kamu meminta KeRaS untuk memperbaruinya",
-    badges: ["REALTIME", "SYNC"],
+    description: "Muat ulang informasi kelas dari portal kampus saat diperlukan.",
+    badges: ["Perbarui", "Sinkronisasi"],
     preview: <PreviewRealtime />,
   },
   {
     color: "#ffffff",
-    title: "Share Schedule",
-    description: "Bagikan jadwalmu dengan temanmu untuk saling menjaga kelas",
-    badges: ["SHARE"],
+    title: "Bagikan Jadwal",
+    description: "Kirim tautan rencana jadwal agar teman dapat meninjau atau menyalinnya.",
+    badges: ["Bagikan"],
     preview: <PreviewShare />,
   },
   {
     color: "#ffffff",
-    title: "Instant Analytics",
-    description: "Pantau distribusi analitik mulai dari jumlah users, sebaran prodi, dan lainnya",
-    badges: ["Reporting"],
+    title: "Analitik Penggunaan",
+    description: "Ringkasan penggunaan KeRaS pada dashboard publik.",
+    badges: ["Laporan"],
     preview: <PreviewAnalytics />,
   },
 ];
@@ -697,7 +697,7 @@ const MagicBento: React.FC<MagicBentoProps> = ({
 
           const cardContent = (
             <div className="magic-bento-card__content font-sans">
-              <h2 className="magic-bento-card__title">{card.title}</h2>
+              <h3 className="magic-bento-card__title">{card.title}</h3>
               <p className="magic-bento-card__description">{card.description}</p>
               <div className="magic-bento-card__badges">
                 {card.badges?.map((badge, i) => (

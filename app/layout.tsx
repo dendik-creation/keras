@@ -5,33 +5,27 @@ import { GooeyToaster } from "@/components/ui/goey-toaster";
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider";
 import AnalyticsBoot from "@/components/analytics/AnalyticsBoot";
 import { CSPostHogProvider } from "@/components/analytics/CSPostHogProvider";
-
-const siteUrl = process.env.APP_URL ?? "https://keras.dendikcreation.dev";
-const siteTitle = "KeRaS";
-const siteDescription =
-  "Siapkan jadwal KRS-mu dengan mudah — objektif, cepat, tanpa drama. Perang KRS satu klik, tanpa simpan data pribadi.";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
-    template: `%s — ${siteTitle}`,
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
   },
-  description: siteDescription,
-  applicationName: siteTitle,
+  description: siteConfig.description,
+  applicationName: siteConfig.name,
   alternates: {
-    canonical: siteUrl,
+    canonical: "/",
   },
   keywords: [
     "KRS",
     "jadwal kuliah",
-    "perang KRS",
-    "KRS mahasiswa",
-    "krs umk",
-    "krs universitas muria kudus",
-    "mata kuliah umk",
-    "mata kuliah universitas muria kudus",
-    "penjadwalan mata kuliah",
+    "KRS UMK",
+    "jadwal kuliah UMK",
+    "persiapan KRS",
+    "penyusunan jadwal kuliah",
+    "Universitas Muria Kudus",
     "KeRaS",
   ],
   authors: [{ name: "dendik-creation", url: "https://dendikcreation.dev" }],
@@ -39,7 +33,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: siteTitle,
+    title: siteConfig.name,
   },
   robots: {
     index: true,
@@ -51,26 +45,26 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "id_ID",
-    url: siteUrl,
-    siteName: siteTitle,
-    title: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
-    description: siteDescription,
+    locale: siteConfig.locale,
+    url: "/",
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.description,
     images: [
       {
-        url: "/og-image.png",
+        url: siteConfig.ogImage,
         width: 1200,
         height: 630,
-        alt: "KeRaS — Siapkan Jadwal KRS-mu dengan Mudah",
+        alt: "KeRaS, alat bantu penyusunan jadwal kuliah mahasiswa UMK",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteTitle} — Siapkan Jadwal KRS-mu dengan Mudah`,
-    description: siteDescription,
-    images: ["/og-image.png"],
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
   },
   icons: {
     icon: [
@@ -94,36 +88,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="id">
       <body className={`swiss-noise antialiased`}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@graph": [
-                {
-                  "@type": "WebSite",
-                  name: siteTitle,
-                  url: siteUrl,
-                  description: siteDescription,
-                },
-                {
-                  "@type": "SoftwareApplication",
-                  name: siteTitle,
-                  url: siteUrl,
-                  description: siteDescription,
-                  applicationCategory: "EducationalApplication",
-                  operatingSystem: "Web",
-                  offers: {
-                    "@type": "Offer",
-                    price: "0",
-                  },
-                }
-              ]
-            }),
-          }}
-        />
         <CSPostHogProvider>
           <LocalStorageProvider>{children}</LocalStorageProvider>
           <GooeyToaster />

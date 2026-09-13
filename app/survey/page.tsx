@@ -5,9 +5,7 @@ import { SurveyForm } from "./survey-form";
 export const metadata: Metadata = {
   title: "Survei Kepuasan Pengguna - KeRaS",
   description: "Bantu kami meningkatkan kualitas KeRaS dengan mengisi survei singkat.",
-  alternates: {
-    canonical: "/survey",
-  },
+  robots: { index: false, follow: false },
   openGraph: {
     title: "Survei Kepuasan Pengguna - KeRaS",
     description: "Bantu kami meningkatkan kualitas KeRaS dengan mengisi survei singkat.",

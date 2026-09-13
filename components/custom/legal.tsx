@@ -15,7 +15,7 @@ export function LegalLayout({ children, title, subtitle, meta }: { children: Rea
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#111111] font-sans selection:bg-[#FF3000] selection:text-white">
       <motion.div className="fixed top-0 left-0 right-0 h-1 bg-[#FF3000] origin-left z-50" style={{ scaleX }} />
-      
+
       <nav className="relative z-20 flex justify-between items-center px-6 py-5 max-w-7xl mx-auto border-b-2 border-[#111111]">
         <Link href="/" className="flex items-center gap-3">
           <Image src="/logo.png" alt="KeRaS" width={32} height={32} className="w-8 h-8 object-contain" priority />
@@ -54,7 +54,7 @@ export function LegalLayout({ children, title, subtitle, meta }: { children: Rea
   );
 }
 
-export function LegalSidebar({ toc }: { toc: { id: string, label: string, index: string }[] }) {
+export function LegalSidebar({ toc, reverseNumberIndex = false }: { toc: { id: string, label: string, index: string }[], reverseNumberIndex?: boolean }) {
   const [activeId, setActiveId] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -116,7 +116,7 @@ export function LegalSidebar({ toc }: { toc: { id: string, label: string, index:
               className={clsx("text-left text-sm font-medium tracking-wide transition-colors group flex items-start gap-3", activeId === item.id ? "text-[#FF3000]" : "text-[#555555] hover:text-[#111111]")}
             >
               <span className={clsx("font-bold tabular-nums transition-colors", activeId === item.id ? "text-[#FF3000]" : "text-[#111111]")}>
-                {item.index}
+                {reverseNumberIndex ? toc.length + 1 - Number(item.index) : item.index}
               </span>
               <span>{item.label}</span>
             </button>

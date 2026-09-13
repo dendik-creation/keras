@@ -11,21 +11,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   openGraph: {
     type: "website",
-    title: `${title} — KeRaS`,
+    title: `${title} | KeRaS`,
     description,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "KeRaS — Siapkan Jadwal KRS-mu dengan Mudah",
+        alt: "Jadwal kuliah yang dibagikan melalui KeRaS",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${title} — KeRaS`,
+    title: `${title} | KeRaS`,
     description,
     images: ["/og-image.png"],
   },

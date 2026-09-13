@@ -103,7 +103,7 @@ export default function ShareScheduleDialog({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "Jadwal KRS — KeRaS",
+          title: "Jadwal KRS | KeRaS",
           text: "Adopsi jadwal KRS-ku di KeRaS",
           url,
         });
